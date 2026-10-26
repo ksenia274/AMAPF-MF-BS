@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Reference minimal makespan for anonymous MAPF by BFS over joint positions (tiny grids only).
 
-Usage: brute_force.py MAP.map FILE.scen K [CONSTRAINTS]   -> prints "T=<min makespan>" or "T=-1"
+Usage: brute_force.py MAP.map FILE.scen N [CONSTRAINTS] [--teams K]   -> prints "T=<min makespan>" or "T=-1"
 
-State at step t = set of occupied cells (agents are anonymous). Each agent waits or moves to a
+With --teams K agent i belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team
+(colored MAPF); the state is then the set of occupied cells of every team.
+State at step t = set of occupied cells (agents of one team are anonymous). Each agent waits or moves to a
 4-neighbour; forbidden: two agents in one cell, two agents swapping along an edge, constraints.
 Solved at step T if the set equals the goal set and no goal has a vertex constraint at a time >= T
 (agents stay at their goals forever). T=0 is possible (starts = goals); bs_single starts from T=1.
@@ -59,7 +61,9 @@ def read_constraints(path):
     return vertex, edge
 
 
-def min_makespan(w, h, grid, starts, goals, vertex=(), edge=()):
+def min_makespan(w, h, grid, starts, goals, vertex=(), edge=(), teams=None):
+    """teams[i] = team of agent i (default: one team). Agents of a team are anonymous: each must end in a goal
+    of its team (the goals of a team = goals of its agents). The constraints apply to all agents."""
     free = lambda c: 0 <= c[0] < w and 0 <= c[1] < h and grid[c[1]][c[0]] not in "@T"
     options = {}  # cell -> [cell itself, free neighbours]
     for y in range(h):
@@ -68,27 +72,33 @@ def min_makespan(w, h, grid, starts, goals, vertex=(), edge=()):
                 options[(x, y)] = [(x, y)] + [c for c in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)) if free(c)]
     vertex, edge = set(vertex), set(edge)
     last = max([t for _, t in vertex] + [t + 1 for _, _, t in edge] + [0])  # no constraints after this step
-    goal_set = tuple(sorted(goals))
+    teams = teams or [0] * len(starts)
+    n_teams = max(teams) + 1
+    # state = tuple over teams of the sorted cells of the team's agents
+    group = lambda cells: tuple(tuple(sorted(c for c, j in zip(cells, teams) if j == team)) for team in range(n_teams))
+    goal_state = group(goals)
+    team_of = [j for j in range(n_teams) for _ in goal_state[j]]  # team of each position of a flattened state
     last_at_goal = max([t for c, t in vertex if c in set(goals)] + [-1])
 
-    layer = {tuple(sorted(starts))} if not any((s, 0) in vertex for s in starts) else set()
+    layer = {group(starts)} if not any((s, 0) in vertex for s in starts) else set()
     t = 0
     while True:
-        if goal_set in layer and last_at_goal < t:
+        if goal_state in layer and last_at_goal < t:
             return t
         nxt = set()
         for state in layer:
-            for new in itertools.product(*(options[c] for c in state)):
+            flat = [c for cells in state for c in cells]
+            for new in itertools.product(*(options[c] for c in flat)):
                 if len(set(new)) < len(new):
                     continue  # vertex conflict
                 if any((c, t + 1) in vertex for c in new):
                     continue
-                if any(u != v and (u, v, t) in edge for u, v in zip(state, new)):
+                if any(u != v and (u, v, t) in edge for u, v in zip(flat, new)):
                     continue
-                moved = {(u, v) for u, v in zip(state, new) if u != v}
+                moved = {(u, v) for u, v in zip(flat, new) if u != v}
                 if any((v, u) in moved for u, v in moved):
-                    continue  # swap conflict
-                nxt.add(tuple(sorted(new)))
+                    continue  # swap conflict (inside a team it can be replaced by two waits, so it is never needed)
+                nxt.add(tuple(tuple(sorted(c for c, j in zip(new, team_of) if j == team)) for team in range(n_teams)))
         # After the last constraint everybody may wait, so layers only grow; a fixpoint means no solution
         # (t > last also guarantees that the goal test above was not blocked by a goal constraint).
         if t > last and nxt == layer:
@@ -97,11 +107,18 @@ def min_makespan(w, h, grid, starts, goals, vertex=(), edge=()):
 
 
 def main():
-    map_path, scen_path, k = sys.argv[1], sys.argv[2], int(sys.argv[3])
+    args = sys.argv[1:]
+    n_teams = 1
+    if "--teams" in args:
+        i = args.index("--teams")
+        n_teams = int(args[i + 1])
+        del args[i:i + 2]
+    map_path, scen_path, k = args[0], args[1], int(args[2])
     w, h, grid = read_map(map_path)
     starts, goals = read_scen(scen_path, k)
-    vertex, edge = read_constraints(sys.argv[4] if len(sys.argv) > 4 else None)
-    print(f"T={min_makespan(w, h, grid, starts, goals, vertex, edge)}")
+    vertex, edge = read_constraints(args[3] if len(args) > 3 else None)
+    teams = [i % n_teams for i in range(len(starts))]  # as make_colored_yaml.py
+    print(f"T={min_makespan(w, h, grid, starts, goals, vertex, edge, teams)}")
 
 
 if __name__ == "__main__":
