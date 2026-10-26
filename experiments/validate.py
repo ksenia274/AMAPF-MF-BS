@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Check an anonymous MAPF solution independently of the solver.
 
-Usage: validate.py MAP.map FILE.scen K ROUTES [CONSTRAINTS]
+Usage: validate.py MAP.map FILE.scen K ROUTES [CONSTRAINTS] [--teams NT]
 
 ROUTES (written by bs_single / bs_team): first line "T K", then K lines "x,y x,y ..." with T+1 positions;
 agent i starts at the start of row i of the .scen. Goals are anonymous: the final cells must be
 exactly the set of the K goals. Checked: starts, moves (wait or 4-neighbour, free cells),
 goal assignment, vertex conflicts, swap (edge) conflicts, and the constraints (format of brute_force.py;
-after step T every agent stays in its final cell forever). Exit code 0 iff no violations.
+after step T every agent stays in its final cell forever). With --teams NT agent i belongs to team i % NT and
+the final cells of every team must be exactly its goals (colored MAPF). Exit code 0 iff no violations.
 """
 import os
 import sys
@@ -50,7 +51,7 @@ def read_routes(path):
     return T, k, routes
 
 
-def check(w, h, grid, starts, goals, T, routes, vertex=(), edge=()):
+def check(w, h, grid, starts, goals, T, routes, vertex=(), edge=(), n_teams=1):
     """Returns {kind: [messages]}; empty if the solution is valid."""
     errors = {}
 
@@ -75,9 +76,12 @@ def check(w, h, grid, starts, goals, T, routes, vertex=(), edge=()):
     if errors:  # positions are unusable, stop before conflict checks
         return errors
 
-    if Counter(r[-1] for r in routes) != Counter(goals):
-        missing = Counter(goals) - Counter(r[-1] for r in routes)
-        err("goals", f"final cells are not the goal set; goals without an agent: {sorted(missing)[:MAX_SHOWN]}")
+    for team in range(n_teams):
+        finals = Counter(r[-1] for a, r in enumerate(routes) if a % n_teams == team)
+        team_goals = Counter(g for a, g in enumerate(goals) if a % n_teams == team)
+        if finals != team_goals:
+            missing = team_goals - finals
+            err("goals", f"team {team}: final cells are not its goal set; goals without an agent: {sorted(missing)[:MAX_SHOWN]}")
     for t in range(T + 1):
         at = {}
         for a, r in enumerate(routes):
@@ -105,12 +109,18 @@ def check(w, h, grid, starts, goals, T, routes, vertex=(), edge=()):
 
 
 def main():
-    map_path, scen_path, k, routes_path = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
+    args = sys.argv[1:]
+    n_teams = 1
+    if "--teams" in args:
+        i = args.index("--teams")
+        n_teams = int(args[i + 1])
+        del args[i:i + 2]
+    map_path, scen_path, k, routes_path = args[0], args[1], int(args[2]), args[3]
     w, h, grid = read_map(map_path)
     starts, goals = read_scen(scen_path, k)
-    vertex, edge = read_constraints(sys.argv[5] if len(sys.argv) > 5 else None)
+    vertex, edge = read_constraints(args[4] if len(args) > 4 else None)
     T, k_routes, routes = read_routes(routes_path)
-    errors = check(w, h, grid, starts, goals, T, routes, vertex, edge)
+    errors = check(w, h, grid, starts, goals, T, routes, vertex, edge, n_teams)
     if k_routes != k:
         errors.setdefault("format", []).append(f"header says {k_routes} agents, expected {k}")
 

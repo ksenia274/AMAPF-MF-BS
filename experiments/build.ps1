@@ -9,7 +9,7 @@ $env:PATH = "$MinGW;$oldPath"
 Push-Location $PSScriptRoot
 $failed = $false
 try {
-    foreach ($name in 'bs_single', 'bs_trace', 'bs_team') {
+    foreach ($name in 'bs_single', 'bs_trace', 'bs_team', 'flow_ref', 'cbm') {
         Write-Host "g++ -O3 -static -o $name.exe $name.cpp"
         & g++ -O3 -static -o "$name.exe" "$name.cpp"
         if ($LASTEXITCODE -ne 0) { Write-Host "FAILED: $name" -ForegroundColor Red; $failed = $true }

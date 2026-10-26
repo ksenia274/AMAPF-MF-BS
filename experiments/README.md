@@ -32,6 +32,17 @@ Files:
 - `compare_brute.py EXE` - EXE vs brute_force.py on every start/goal set of 1x5, 2x3, 3x3, 2x4 grids
   (bs_single: 5157 instances, 0 mismatches); `--random N --vertex NV --edge NE` - random tiny instances
   with constraints, routes checked by validate.py (bs_team: vertex constraints 8000, edge and mixed 12000 instances, 0 mismatches).
+- `flow_ref.cpp` - independent reference: plain max flow (Dinic) on the full time-expanded network, rebuilt for
+  every T from a distance lower bound; no code shared with Bulk Search. `flow_ref MAP SCEN K` prints `T=.. ms=..`.
+- `cbm.cpp` - CBM for colored MAPF with makespan: CBS over teams (agent i in team i % K), low level = BulkSearchTeam.
+  Node: constraints + plan of every team (unchanged plans shared with the parent), key = max team T. Earliest conflict
+  between different teams (vertex, then swap; teams that finished earlier stay in their goals); two children with a
+  constraint for one team each; the team is replanned with T from the parent's key. Order: key, then fewer teams in
+  conflicts, then the later node. Swaps inside a team are replaced by two waits + exchange of the route tails.
+  `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M]` prints T and the counters
+  (nodes generated/expanded, low-level calls, low-level / high-level / total ms); T=-1 = limit hit.
+- `compare_cbm.py CBM_EXE --random N --seed S` - cbm vs `brute_force.py --teams` on random tiny colored instances,
+  routes checked by `validate.py --teams`.
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.
@@ -44,7 +55,8 @@ so the .exe run with any PATH (the `-Wreturn-type` warning about the original ma
 ```
 .\experiments\build.ps1
 experiments/bs_single.exe MAP.map FILE.scen K [out.routes]
-python experiments/validate.py MAP.map FILE.scen K out.routes
+python experiments/validate.py MAP.map FILE.scen K out.routes [CONSTRAINTS] [--teams NT]
+experiments/cbm.exe MAP.map FILE.scen N K out.routes --time-limit 60
 BS_TRACE=1 experiments/bs_trace.exe experiments/t/line.map experiments/t/line2.scen 2
 python experiments/make_colored_yaml.py MAP.map FILE.scen N K out.yaml
 ```
@@ -85,3 +97,16 @@ Step 2, bs_team with constraints (2026-10-21):
 | den520d, 1000 | T=45, 3.9 s | T=45, 5.1 s | T=45, 6.1 s |
 | Berlin_1_256, 256 | T=51, 2.7 s | T=51, 3.0 s | T=51, 3.3 s |
 | Berlin_1_256, 1000 | T=61, 7.2 s | T=61, 8.3 s | T=62, 11.6 s |
+
+Step 3 (2026-10-27):
+- early leaving of a taken goal without constraints (see bs_team.hpp): bs_single equals flow_ref on all 25 scens,
+  K = 1, 2, 4, ..., max of empty-8-8, -16-16, -32-32, -48-48, random-32-32-10/20, random-64-64-10/20, maze-32-32-2/4,
+  room-32-32-4, room-64-64-8/16: 3225 instances, 0 mismatches (flow_ref up to 37 s per instance).
+- `brute_force.py --teams`: unchanged for one team (compare_brute.py, 5157 instances, 0 mismatches).
+- cbm vs colored brute force (`compare_cbm.py --random 1500 --seed 2/3 --max-nodes 20000`): 3000 instances,
+  0 mismatches, routes valid; 10 hit the node limit. Rerun with larger limits: 3 found the optimal T after 15k, 45k,
+  296k CT nodes; one (brute T=11, 3x4 grid, 4 agents, 3 teams) not solved within 3M nodes / 123 s.
+  CBS with the makespan key has large plateaus: conflicts of teams below the maximum do not raise the key.
+- larger maps (scen 1, 60 s): random-32-32-10 N=64 K=4: T=24, 109 nodes, 0.8 s; N=128 K=8: T=22, 2297 nodes, 15 s
+  (both valid). room-64-64-8 N=128 K=4, den520d N=256 K=4, Berlin_1_256 N=256 K=8 and N=512 K=4: time limit,
+  the low level takes ~99% of the time (~1 s per replanning on Berlin).

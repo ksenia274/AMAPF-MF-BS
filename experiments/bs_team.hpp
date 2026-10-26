@@ -88,8 +88,10 @@ public:
         forbiddenMoves[(long long)from * n + to].insert(t);
     }
 
-    // Minimal makespan T (as the original main: T = 1, 2, ..., the flow is kept between T); -1 if none up to maxT.
-    int solveMinMakespan(int maxT)
+    // Minimal makespan T >= minT (as the original main: T = minT, minT+1, ..., the flow is kept between T);
+    // -1 if none up to maxT. Solvability is monotone in T (an agent may stay one more step in its goal),
+    // so starting from minT gives max(minT, the minimal makespan).
+    int solveMinMakespan(int maxT, int minT = 1)
     {
         numOfExpansions = 0;
         solvedT = -1;
@@ -99,7 +101,7 @@ public:
         sort(vertexConstraints.begin(), vertexConstraints.end());
         remainingGoals = startCells.size();
         partialReset();
-        int T = 1;
+        int T = max(minT, 1);
         while (T <= maxT && !solve(T))
             ++T;
         solvedT = T <= maxT ? T : -1;
