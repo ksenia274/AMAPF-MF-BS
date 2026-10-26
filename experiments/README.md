@@ -11,11 +11,27 @@ Files:
   (T+1 positions, agent i = row i of the .scen). Extraction follows `edges` forward from every start;
   after the last stored edge in a taken goal (`idx >= timeAssigningGoalCell`) the agent stays there implicitly.
 - `validate.py` - independent checker of such a routes file: starts, moves, final cells = goal set,
-  vertex and swap conflicts; prints `last_arrival` and `sum_of_costs`, exit code 0 iff OK.
+  vertex and swap conflicts, optional constraints file (agents stay in their goals after T); prints `last_arrival` and `sum_of_costs`, exit code 0 iff OK.
 - `bs_trace.cpp` - copy of `flow-bs.cpp`, additions marked `// [TRACE]`. With `BS_TRACE=1` prints to stderr
   every augmenting path (raw and decoded: move / wait / in->out / CANCEL ...) and `edges`, `blocks`,
   `timeAssigningGoalCell` after it. Check it still matches the source: `diff --strip-trailing-cr ../src/flow-bs.cpp bs_trace.cpp`.
   Node (cell, idx): idx = 2t is "in"-copy of layer t, idx = 2t+1 is "out"-copy.
+- `bs_team.hpp` - the same search as a class without globals: `bs::Grid` (map, shared) and
+  `bs::BulkSearchTeam` (one team: starts, goals, its own flow); `bs_team.cpp` - CLI with the interface of bs_single
+  plus `bs_team MAP SCEN K [ROUTES|-] [CONSTRAINTS]`.
+  Vertex constraint (v, t): `2t` goes to `blocks[v]` as a cut of the waiting chain (inserted when T > t);
+  a goal with a constraint at t >= T can't be final (the agent stays there forever); a constraint at a start at t = 0
+  means no solution. With constraints the waits in taken goals are stored explicitly (see the comment in bs_team.hpp):
+  the original lets an agent leave its taken goal only at the earliest step, which is not enough with constraints.
+  Edge constraint (u -> v, t) = move (u, 2t+1) -> (v, 2t+2): in getAllTimestepCostPairs an even entry y into v is the
+  move (u, y-1) -> (v, y); if it is forbidden, the next allowed y+2, y+4, ... inside the same bulk of v is taken.
+- `compare_exe.py EXE_A EXE_B` - regression on the step-1 set: T, expansions and routes must be equal
+  (bs_single vs bs_team: 1124 instances, 0 mismatches).
+- `brute_force.py` - reference minimal makespan by BFS over sets of occupied cells (tiny grids only),
+  with optional constraints file (`v x y t`, `e x1 y1 x2 y2 t`); prints `T=...` (T=0 if starts = goals).
+- `compare_brute.py EXE` - EXE vs brute_force.py on every start/goal set of 1x5, 2x3, 3x3, 2x4 grids
+  (bs_single: 5157 instances, 0 mismatches); `--random N --vertex NV --edge NE` - random tiny instances
+  with constraints, routes checked by validate.py (bs_team: vertex constraints 8000, edge and mixed 12000 instances, 0 mismatches).
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.
@@ -50,3 +66,22 @@ Routes + `validate.py` (2026-10-20), all OK, no swap conflicts found:
 
 `estimates.txt` holds lower bounds, so T > estimate is possible (room-64-64-8: 26 vs 25 for K=256, 17 vs 13 for K=1000).
 The source has no explicit swap prohibition, so swaps are not excluded in principle - keep validating.
+
+Step 2, bs_team with constraints (2026-10-21):
+- optimality: `compare_brute.py bs_team.exe --random 2000 --vertex NV --edge NE --tmax TM --seed S` for
+  (NV, NE, TM, S) = (2,0,8,2), (5,0,6,3), (10,0,10,4), (3,0,4,5), (0,5,8,11), (0,15,6,12), (3,6,8,13), (8,12,10,14),
+  (2,3,4,15), (0,20,4,16): 20000 instances, T equal to brute force, all routes valid. The constraints change the
+  optimal T in 46% (vertex 2), 6% (edge 5), 60% (3+6) and 83% (8+12) of the instances.
+- the test catches errors: a mutant without the edge-constraint shift gives 141, without explicit goal waits 57
+  mismatches on 1000 instances (vertex 3, edge 6, seed 13).
+- large maps: 10 vertex + 10 edge constraints taken from positions and moves of the unconstrained solution,
+  routes valid; cost of the explicit goal waits (one irrelevant constraint) and of the 20 constraints:
+
+| map, K | no constraints | explicit goal waits | 20 constraints |
+|---|---|---|---|
+| random-32-32-10, 64 | T=12, 13 ms | T=12, 15 ms | T=13, 22 ms |
+| room-64-64-8, 256 | T=26, 0.20 s | T=26, 0.28 s | T=26, 0.33 s |
+| maze-128-128-2, 256 | T=252, 6.6 s | T=252, 20.5 s | T=252, 21.4 s |
+| den520d, 1000 | T=45, 3.9 s | T=45, 5.1 s | T=45, 6.1 s |
+| Berlin_1_256, 256 | T=51, 2.7 s | T=51, 3.0 s | T=51, 3.3 s |
+| Berlin_1_256, 1000 | T=61, 7.2 s | T=61, 8.3 s | T=62, 11.6 s |
