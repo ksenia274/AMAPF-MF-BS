@@ -39,10 +39,15 @@ Files:
   between different teams (vertex, then swap; teams that finished earlier stay in their goals); two children with a
   constraint for one team each; the team is replanned with T from the parent's key. Order: key, then fewer teams in
   conflicts, then the later node. Swaps inside a team are replaced by two waits + exchange of the route tails.
-  `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M]` prints T and the counters
-  (nodes generated/expanded, low-level calls, low-level / high-level / total ms); T=-1 = limit hit.
+  `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--tie later|earlier] [--diag]` prints T and
+  the counters (nodes generated/expanded, low-level calls, low-level / high-level / total ms, sum of T over the
+  low-level calls, swaps fixed inside teams); T=-1 = limit hit. A child constraint that is already in the team's
+  set stops the run (internal error). `--diag`: root key, depth, max constraints per team, repeated constraint
+  sets (64-bit hashes), keys of the expanded nodes.
 - `compare_cbm.py CBM_EXE --random N --seed S` - cbm vs `brute_force.py --teams` on random tiny colored instances,
   routes checked by `validate.py --teams`.
+- `figures/` - slide figures (`make_figures.py`, PNG + CSV): CBM vs N and K on random-32-32-10, low/high-level
+  time shares, the smallest instance where bs_team without explicit goal waits was wrong (corridor 1x3).
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.
@@ -99,9 +104,10 @@ Step 2, bs_team with constraints (2026-10-21):
 | Berlin_1_256, 1000 | T=61, 7.2 s | T=61, 8.3 s | T=62, 11.6 s |
 
 Step 3 (2026-10-27):
-- early leaving of a taken goal without constraints (see bs_team.hpp): bs_single equals flow_ref on all 25 scens,
-  K = 1, 2, 4, ..., max of empty-8-8, -16-16, -32-32, -48-48, random-32-32-10/20, random-64-64-10/20, maze-32-32-2/4,
-  room-32-32-4, room-64-64-8/16: 3225 instances, 0 mismatches (flow_ref up to 37 s per instance).
+- early leaving of a taken goal without constraints (see bs_team.hpp) does not change the makespan - empirically,
+  3225 instances, 0 mismatches: bs_single vs flow_ref on all 25 scens, K = 1, 2, 4, ..., max of empty-8-8, -16-16,
+  -32-32, -48-48, random-32-32-10/20, random-64-64-10/20, maze-32-32-2/4, room-32-32-4, room-64-64-8/16
+  (flow_ref up to 37 s per instance); plus 5157 tiny instances vs brute force.
 - `brute_force.py --teams`: unchanged for one team (compare_brute.py, 5157 instances, 0 mismatches).
 - cbm vs colored brute force (`compare_cbm.py --random 1500 --seed 2/3 --max-nodes 20000`): 3000 instances,
   0 mismatches, routes valid; 10 hit the node limit. Rerun with larger limits: 3 found the optimal T after 15k, 45k,
@@ -110,3 +116,16 @@ Step 3 (2026-10-27):
 - larger maps (scen 1, 60 s): random-32-32-10 N=64 K=4: T=24, 109 nodes, 0.8 s; N=128 K=8: T=22, 2297 nodes, 15 s
   (both valid). room-64-64-8 N=128 K=4, den520d N=256 K=4, Berlin_1_256 N=256 K=8 and N=512 K=4: time limit,
   the low level takes ~99% of the time (~1 s per replanning on Berlin).
+
+Step 3 diagnostics (2026-10-27):
+- constraints at the horizon (bs_team, one team): vertex (goal, T_opt) - 1310 tests, answer > T_opt or no solution,
+  equal to brute force; edge on a last move (t = T_opt-1) - 645 tests, equal to brute force.
+- the repeated-constraint check never fired (3000 random colored instances rerun, the 4 hard cases).
+- hard cases, expanded CT nodes per key (tie "later"; keys below the optimum are the same for "earlier"):
+  T=5: 1:1 2:10 3:252 4:6589 5:3194 (198 of 15282 nodes repeat a constraint set);
+  T=6: 3:10 4:137 5:9896 6:14937 (2468 of 45069); T=9: 6:130 7:4376 8:145070 9:46 (12635 of 295726);
+  T=11: 5:2 6:144 7:2210 8:40791 9:>544262 at the 1M node limit (172776 repeats). An honest plateau: every node with
+  a key below the optimum has to be expanded, and the levels grow ~15x per key.
+- swaps inside teams fixed: 0 in all runs (3000 colored instances, series on random-32-32-10, 64x64 runs).
+- 64x64, N=128, K=4, idle machine: room-64-64-8 T=43, 2797 nodes, 52 s, 17.9 ms and T=43 per low-level call;
+  random-64-64-10 T=30, 99 nodes, 1.7 s. The step-3 table above was measured under load (room-64-64-8 then timed out).
