@@ -3,8 +3,8 @@
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--tie later|earlier] [--diag]
 // Prints "T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
-// lowlevel_sum_T=.. swaps_fixed=.." (--diag: a second line with the root key, depth, constraints, repeated
-// constraint sets and the keys of the expanded nodes);
+// lowlevel_sum_T=.. swaps_fixed=.. last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
+// current lower bound at a limit; --diag: a second line with the root key, depth, constraints, repeated constraint sets);
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "bs_team.hpp"
 using namespace std;
@@ -53,7 +53,7 @@ public:
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
     int rootKey = -1, maxDepth = 0, maxConstraintsPerTeam = 0;
     long long duplicateConstraintSets = 0; // generated nodes whose constraint sets (per team) were already seen
-    map<int, long long> expandedByKey;
+    map<int, long long> expandedByKey;     // expanded CT nodes per key (cheap, always counted)
 
     CBM(const bs::Grid &grid, const vector<int> &starts, const vector<int> &goals, int numTeams)
         : g(grid), teamAgents(numTeams), teamStarts(numTeams), teamGoals(numTeams)
@@ -100,8 +100,7 @@ public:
             if (node->first.t == -1)
                 return node;
             ++nodesExpanded;
-            if (diag)
-                ++expandedByKey[node->key];
+            ++expandedByKey[node->key];
             const Conflict &c = node->first;
             for (int side = 0; side < 2; ++side)
             {
@@ -371,14 +370,15 @@ int main(int argc, char *argv[])
     cout << "T=" << (result ? result->key : -1) << " nodes_generated=" << cbm.nodesGenerated
          << " nodes_expanded=" << cbm.nodesExpanded << " lowlevel_calls=" << cbm.lowLevelCalls
          << " lowlevel_ms=" << (long long)(cbm.lowLevelSec * 1000) << " highlevel_ms=" << (long long)((total - cbm.lowLevelSec) * 1000)
-         << " total_ms=" << (long long)(total * 1000) << " lowlevel_sum_T=" << cbm.lowLevelSumT << " swaps_fixed=" << cbm.swapsFixed << endl;
+         << " total_ms=" << (long long)(total * 1000) << " lowlevel_sum_T=" << cbm.lowLevelSumT << " swaps_fixed=" << cbm.swapsFixed
+         << " last_key=" << (cbm.expandedByKey.empty() ? -1 : cbm.expandedByKey.rbegin()->first) << " expanded_by_key=";
+    for (auto &kv : cbm.expandedByKey)
+        cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;
+    cout << endl;
     if (diag)
     {
         cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam
-             << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << " expanded_by_key=";
-        for (auto &kv : cbm.expandedByKey)
-            cout << kv.first << ":" << kv.second << " ";
-        cout << endl;
+             << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << endl;
     }
     if (!result)
         return 2;

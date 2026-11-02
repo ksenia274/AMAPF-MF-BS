@@ -41,13 +41,15 @@ Files:
   conflicts, then the later node. Swaps inside a team are replaced by two waits + exchange of the route tails.
   `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--tie later|earlier] [--diag]` prints T and
   the counters (nodes generated/expanded, low-level calls, low-level / high-level / total ms, sum of T over the
-  low-level calls, swaps fixed inside teams); T=-1 = limit hit. A child constraint that is already in the team's
+  low-level calls, swaps fixed inside teams, the max expanded key and the expanded nodes per key); T=-1 = limit hit. A child constraint that is already in the team's
   set stops the run (internal error). `--diag`: root key, depth, max constraints per team, repeated constraint
-  sets (64-bit hashes), keys of the expanded nodes.
+  sets (64-bit hashes).
 - `compare_cbm.py CBM_EXE --random N --seed S` - cbm vs `brute_force.py --teams` on random tiny colored instances,
   routes checked by `validate.py --teams`.
 - `figures/` - slide figures (`make_figures.py`, PNG + CSV): CBM vs N and K on random-32-32-10, low/high-level
   time shares, the smallest instance where bs_team without explicit goal waits was wrong (corridor 1x3).
+- `cbm_paper_exp1.py` - experiment 1 of the CBM paper (teams of 5, random-32-32-10), results in
+  `cbm_paper_exp1.csv` / `cbm_paper_exp1.md`.
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.
