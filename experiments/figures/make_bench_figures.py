@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bar charts of cbm_bench.py results: median replanning time and share of solved instances per map.
 
-Usage: make_bench_figures.py BENCH.csv OUT_PREFIX   -> OUT_PREFIX_replan.png, OUT_PREFIX_solved.png
+Usage: make_bench_figures.py BENCH.csv OUT_PREFIX [--solved-only]   -> OUT_PREFIX_replan.png, OUT_PREFIX_solved.png
 One panel per team mode (k4, g5); bars = variants; the value is written on every bar.
 Median replanning time of a map = median over its runs of the per-run median.
 """
@@ -63,8 +63,9 @@ def main():
     def solved(rs):
         return sum(r["status"] == "solved" for r in rs) / len(rs) if rs else None
 
-    bars(rows, replan, "ms", "Median time of one replanning (all N of the map)",
-         lambda y: f"{y:.1f}" if y < 100 else f"{y:.0f}", prefix + "_replan.png", False)
+    if "--solved-only" not in sys.argv:
+        bars(rows, replan, "ms", "Median time of one replanning (all N of the map)",
+             lambda y: f"{y:.1f}" if y < 100 else f"{y:.0f}", prefix + "_replan.png", False)
     bars(rows, solved, "share solved", "Share of instances solved in 60 s (all N of the map)",
          lambda y: f"{y:.2f}", prefix + "_solved.png", True)
 

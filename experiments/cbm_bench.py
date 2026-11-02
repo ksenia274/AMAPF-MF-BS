@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Stage 3: CBM with the low levels bs, flow, floww and the tie-breaks conflicts / late on MovingAI maps.
 
-Usage: cbm_bench.py OUT.csv [--stage 3a] [--scens 1,2,3] [--time-limit 60] [--mem-limit 8000]
+Usage: cbm_bench.py OUT.csv [--stage 3a|3b] [--scens 1,2,3] [--time-limit 60] [--mem-limit 8000]
        cbm_bench.py --summary OUT.csv          (markdown table; makespan check over the variants)
 Instance: random scen s of the map, the first N agents. Modes: k4 - K = 4 teams, agent i in team i % 4;
 g5 - K = ceil(N/5) teams of consecutive agents (5 each, the last ones 4 if 5 does not divide N).
@@ -23,8 +23,19 @@ DATA = os.path.join(HERE, "..", "data")
 STAGES = {
     "3a": [("empty-32-32", [20, 40, 64]), ("random-32-32-10", [20, 40, 64]), ("room-32-32-4", [20, 40, 64]),
            ("maze-32-32-2", [20, 40, 64]), ("random-64-64-10", [64, 128]), ("room-64-64-8", [64, 128])],
+    "3b": [("warehouse-10-20-10-2-1", [64, 128]), ("empty-128-128", [64, 128]), ("Berlin_1_256", [64, 128, 256]),
+           ("empty-256-256", [64, 128, 256])],
     "smoke": [("empty-32-32", [20]), ("room-64-64-8", [64])],
 }
+OWN_MAPS = os.path.join(HERE, "maps")
+
+
+def map_and_scen(name, s):
+    """MovingAI files, or our own maps (make_empty_maps.py) from maps/."""
+    if os.path.exists(os.path.join(OWN_MAPS, name + ".map")):
+        return os.path.join(OWN_MAPS, name + ".map"), os.path.join(OWN_MAPS, f"{name}-random-{s}.scen")
+    return (os.path.join(DATA, "mapf-map", name + ".map"),
+            os.path.join(DATA, "mapf-scen-random", "scen-random", f"{name}-random-{s}.scen"))
 VARIANTS = {"bs": ["--low", "bs"], "flow": ["--low", "flow"], "floww": ["--low", "floww"],
             "bs-late": ["--low", "bs", "--tiebreak", "late"]}
 OUT_FIELDS = ["status", "T", "nodes_generated", "nodes_expanded", "lowlevel_calls", "lowlevel_ms", "total_ms",
@@ -50,11 +61,10 @@ def run(args):
         w = csv.DictWriter(f, FIELDS)
         w.writeheader()
         for name, ns in STAGES[opt["--stage"]]:
-            mp = os.path.join(DATA, "mapf-map", name + ".map")
             for n in ns:
                 for mode in ("k4", "g5"):
                     for s in map(int, opt["--scens"].split(",")):
-                        src = os.path.join(DATA, "mapf-scen-random", "scen-random", f"{name}-random-{s}.scen")
+                        mp, src = map_and_scen(name, s)
                         if mode == "k4":
                             scen, k = src, 4
                         else:

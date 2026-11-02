@@ -3,7 +3,7 @@
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww]
-//            [--tiebreak conflicts|late] [--tie later|earlier] [--mem-limit MB] [--diag]
+//            [--tiebreak conflicts|late] [--tie later|earlier] [--mem-limit MB] [--diag] [--first-replan]
 // Order of the open list: key, then (conflicts, as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one); --tiebreak late skips the number of conflicting teams.
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
@@ -12,6 +12,8 @@
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
 // --diag: a second line with the root key, depth, constraints, repeated constraint sets.
 // --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
+// --first-replan: only the low-level call of the first team in the root (no weights for floww: no team is planned
+// before it); prints "status=solved|timeout|memory|no_solution T=.. ms=.. net_nodes=.. net_edges=.. peak_mb=..".
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "flow_team.hpp"
 #ifdef _WIN32
@@ -167,6 +169,12 @@ public:
             }
         }
         return nullptr;
+    }
+
+    shared_ptr<const TeamPlan> firstReplan(double timeLimitSec)
+    {
+        deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
+        return replan(0, TeamPlan(), 1, {});
     }
 
     // Routes of all agents in the order of the .scen, padded to the makespan.
@@ -456,7 +464,7 @@ int main(int argc, char *argv[])
     int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
-    bool tieEarlier = false, tieConflicts = true, diag = false;
+    bool tieEarlier = false, tieConflicts = true, diag = false, firstOnly = false;
     string low = "bs";
     for (int i = 5; i < argc; ++i)
     {
@@ -477,6 +485,8 @@ int main(int argc, char *argv[])
             tieConflicts = a.substr(11) != "late";
         else if (a == "--mem-limit" && i + 1 < argc)
             memLimitMb = atoll(argv[++i]);
+        else if (a == "--first-replan")
+            firstOnly = true;
         else if (a == "--diag")
             diag = true;
         else
@@ -537,6 +547,33 @@ int main(int argc, char *argv[])
     cbm.tieConflicts = tieConflicts;
     cbm.low = low;
     cbm.diag = diag;
+    auto peakMb = []() {
+        double mb = 0;
+#ifdef _WIN32
+        PROCESS_MEMORY_COUNTERS pmc;
+        if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+            mb = pmc.PeakWorkingSetSize / 1048576.0;
+#endif
+        return mb;
+    };
+    if (firstOnly)
+    {
+        shared_ptr<const TeamPlan> plan;
+        bool outOfMemory = false;
+        try
+        {
+            plan = cbm.firstReplan(timeLimit);
+        }
+        catch (const bad_alloc &)
+        {
+            outOfMemory = true;
+        }
+        double ms = duration<double>(steady_clock::now() - start).count() * 1000;
+        cout << "status=" << (plan ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : "no_solution")
+             << " T=" << (plan ? plan->T : -1) << fixed << setprecision(3) << " ms=" << ms << " net_nodes=" << cbm.netNodesMax
+             << " net_edges=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
+        return plan ? 0 : outOfMemory ? 5 : 2;
+    }
     shared_ptr<CTNode> result;
     bool outOfMemory = false;
     try
@@ -557,12 +594,6 @@ int main(int argc, char *argv[])
     auto &ms = cbm.replanMs;
     sort(ms.begin(), ms.end());
     auto quantile = [&](double q) { return ms.empty() ? 0.0 : ms[min<size_t>(ms.size() - 1, (size_t)(q * ms.size()))]; };
-    double peakMb = 0;
-#ifdef _WIN32
-    PROCESS_MEMORY_COUNTERS pmc;
-    if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
-        peakMb = pmc.PeakWorkingSetSize / 1048576.0;
-#endif
     cout << "status=" << status << " T=" << (result ? result->key : -1) << " nodes_generated=" << cbm.nodesGenerated
          << " nodes_expanded=" << cbm.nodesExpanded << " lowlevel_calls=" << cbm.lowLevelCalls
          << " lowlevel_ms=" << (long long)(cbm.lowLevelSec * 1000) << " highlevel_ms=" << (long long)((total - cbm.lowLevelSec) * 1000)
@@ -572,7 +603,7 @@ int main(int argc, char *argv[])
         cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;
     cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " pruned_unreachable=" << cbm.prunedUnreachable
          << " replan_ms_median=" << quantile(0.5) << " replan_ms_p90=" << quantile(0.9) << " replan_ms_max=" << (ms.empty() ? 0.0 : ms.back())
-         << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb << endl;
+         << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
     if (diag)
     {
         cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam
