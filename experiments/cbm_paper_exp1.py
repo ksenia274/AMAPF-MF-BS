@@ -24,15 +24,19 @@ FIELDS = ["N", "K", "scen", "solved", "T", "valid", "nodes_generated", "nodes_ex
 
 
 def grouped_scen(path, n, out):
+    """K = ceil(N/5) teams of consecutive agents; team g gets as many agents as cbm's i % K gives it (5, or 4 when
+    5 does not divide N). Returns K."""
     with open(path) as f:
         lines = f.read().splitlines()
-    rows = lines[1:1 + n]
-    k = n // 5
+    rows = iter(lines[1:1 + n])
+    k = -(-n // 5)
     new = [None] * n
-    for i, row in enumerate(rows):
-        new[(i % 5) * k + i // 5] = row
+    for g in range(k):
+        for j in range(g, n, k):
+            new[j] = next(rows)
     with open(out, "w") as f:
         f.write("\n".join([lines[0]] + new) + "\n")
+    return k
 
 
 def field(out, name):

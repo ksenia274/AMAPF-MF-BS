@@ -61,6 +61,8 @@ class BulkSearchTeam
 {
 public:
     long long numOfExpansions = 0;
+    chrono::steady_clock::time_point deadline = chrono::steady_clock::time_point::max();
+    bool timedOut = false; // solveMinMakespan() returned -1 because the deadline passed
 
     // starts and goals are free cell ids of the grid.
     BulkSearchTeam(const Grid &grid, const vector<int> &starts, const vector<int> &goals)
@@ -95,6 +97,7 @@ public:
     {
         numOfExpansions = 0;
         solvedT = -1;
+        timedOut = false;
         for (int s : startCells)
             if (forbiddenIdx[s].count(0))
                 return -1; // an agent is in its start at step 0 by definition
@@ -103,7 +106,11 @@ public:
         partialReset();
         int T = max(minT, 1);
         while (T <= maxT && !solve(T))
+        {
+            if (timedOut)
+                return -1;
             ++T;
+        }
         solvedT = T <= maxT ? T : -1;
         return solvedT;
     }
@@ -557,6 +564,11 @@ private:
                     continue;
                 }
                 numOfExpansions++;
+                if ((numOfExpansions & 1023) == 0 && chrono::steady_clock::now() > deadline)
+                {
+                    timedOut = true;
+                    return false;
+                }
                 // A goal with a vertex constraint at a step >= min_t can't be final: the agent would stay there.
                 if (isGoalCell[currentCell] && timeAssigningGoalCell[currentCell] == INF && res.second.h == maxTimestep &&
                     lastForbiddenAt[currentCell] < min_t)

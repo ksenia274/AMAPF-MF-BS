@@ -3,14 +3,22 @@
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww]
-//            [--tiebreak conflicts|late] [--tie later|earlier] [--diag]
+//            [--tiebreak conflicts|late] [--tie later|earlier] [--mem-limit MB] [--diag]
 // Order of the open list: key, then (conflicts, as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one); --tiebreak late skips the number of conflicting teams.
-// Prints "T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
+// Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
-// current lower bound at a limit; --diag: a second line with the root key, depth, constraints, repeated constraint sets);
+// current lower bound at a limit) and root_conflict_pairs, pruned_unreachable, replan_ms_median/p90/max,
+// net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
+// --diag: a second line with the root key, depth, constraints, repeated constraint sets.
+// --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "flow_team.hpp"
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <psapi.h>
+#endif
 using namespace std;
 using namespace std::chrono;
 
@@ -60,6 +68,11 @@ public:
     int rootKey = -1, maxDepth = 0, maxConstraintsPerTeam = 0;
     long long duplicateConstraintSets = 0; // generated nodes whose constraint sets (per team) were already seen
     map<int, long long> expandedByKey;     // expanded CT nodes per key (cheap, always counted)
+    bool timedOut = false;
+    long long prunedUnreachable = 0; // children dropped by startsStayReachable() without a low-level call
+    int rootConflictPairs = -1; // -1: the root was not finished
+    vector<double> replanMs;
+    int netNodesMax = 0, netEdgesMax = 0;
 
     CBM(const bs::Grid &grid, const vector<int> &starts, const vector<int> &goals, int numTeams)
         : g(grid), teamAgents(numTeams), teamStarts(numTeams), teamGoals(numTeams)
@@ -75,7 +88,7 @@ public:
     // Returns the conflict-free node with the minimal makespan, or nullptr if a limit is hit.
     shared_ptr<CTNode> solve(double timeLimitSec, long long maxNodes)
     {
-        auto start = steady_clock::now();
+        deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
         auto root = make_shared<CTNode>();
         for (unsigned int team = 0; team < teamAgents.size(); ++team)
         {
@@ -85,6 +98,7 @@ public:
             root->plans.push_back(plan);
         }
         evaluate(*root);
+        rootConflictPairs = conflictPairs(*root);
         rootKey = root->key;
         noteDiag(*root);
         bool earlier = tieEarlier, conflicts = tieConflicts;
@@ -99,7 +113,9 @@ public:
         open.push(root);
         while (!open.empty())
         {
-            if (duration<double>(steady_clock::now() - start).count() > timeLimitSec || nodesGenerated >= maxNodes)
+            if (steady_clock::now() > deadline)
+                timedOut = true;
+            if (timedOut || nodesGenerated >= maxNodes)
                 return nullptr;
             auto node = open.top();
             open.pop();
@@ -131,7 +147,14 @@ public:
                             throw logic_error("repeated edge constraint (" + to_string(e.from) + " -> " + to_string(e.to) + ", t " + to_string(e.t) + ") for team " + to_string(team));
                     constraints.edge.push_back(e);
                 }
+                if (!startsStayReachable(team, constraints))
+                {
+                    ++prunedUnreachable;
+                    continue;
+                }
                 auto plan = replan(team, constraints, node->key, node->plans); // T from the parent's key (CBM, section 3.2)
+                if (timedOut)
+                    return nullptr;
                 if (!plan)
                     continue;
                 auto child = make_shared<CTNode>();
@@ -167,6 +190,7 @@ private:
     const bs::Grid &g;
     vector<vector<int>> teamAgents, teamStarts, teamGoals;
     long long nextId = 0;
+    steady_clock::time_point deadline = steady_clock::time_point::max();
     unordered_set<size_t> seenConstraintSets; // 64-bit hashes of the canonical per-team constraint sets (diag)
 
     void noteDiag(const CTNode &node)
@@ -215,13 +239,17 @@ private:
                 solver.setOtherRoutes(others);
             }
             ok = solveTeam(solver, team, plan, minT);
+            if (ok)
+                netNodesMax = max(netNodesMax, solver.netNodes), netEdgesMax = max(netEdgesMax, solver.netEdges);
         }
         if (ok)
         {
             lowLevelSumT += plan.T;
             swapsFixed += removeSwapsInTeam(plan);
         }
-        lowLevelSec += duration<double>(steady_clock::now() - start).count();
+        double sec = duration<double>(steady_clock::now() - start).count();
+        lowLevelSec += sec;
+        replanMs.push_back(sec * 1000);
         return ok ? make_shared<const TeamPlan>(move(plan)) : nullptr;
     }
 
@@ -233,8 +261,96 @@ private:
             solver.addVertexConstraint(c.cell, c.t), last = max(last, c.t);
         for (auto &c : plan.edge)
             solver.addEdgeConstraint(c.from, c.to, c.t), last = max(last, c.t);
+        solver.deadline = deadline;
         plan.T = solver.solveMinMakespan(g.width * g.height + (int)teamStarts[team].size() + last, minT);
+        timedOut = timedOut || solver.timedOut;
         return plan.T != -1 && solver.extractRoutes(plan.routes);
+    }
+
+    // For every start alone: the cells reachable at step t under the team's constraints, t = 1, 2, ...; if one of
+    // these sets becomes empty, the team has no solution for any T. Waiting is never forbidden by an edge
+    // constraint, so |R_{t+1}| >= |R_t| - (vertex constraints at t+1): once |R_t| exceeds the number of vertex
+    // constraints after t, R never becomes empty.
+    bool startsStayReachable(int team, const TeamPlan &plan) const
+    {
+        int last = 0;
+        long long n = g.numCells;
+        unordered_set<long long> vertex, edge;
+        for (auto &c : plan.vertex)
+            vertex.insert(c.t * n + c.cell), last = max(last, c.t);
+        for (auto &c : plan.edge)
+            edge.insert((c.t * n + c.from) * n + c.to), last = max(last, c.t);
+        vector<int> remaining(last + 2, 0); // remaining[t] = vertex constraints at steps > t
+        for (auto &c : plan.vertex)
+            for (int t = 0; t < c.t; ++t)
+                ++remaining[t];
+        vector<int> mark(g.numCells, -1);
+        for (int s : teamStarts[team])
+        {
+            vector<int> reach = {s}, next;
+            for (int t = 0; t <= last && (int)reach.size() <= remaining[t]; ++t)
+            {
+                next.clear();
+                for (int u : reach)
+                {
+                    auto add = [&](int v) {
+                        if (mark[v] != t && !vertex.count((t + 1) * n + v) && (u == v || !edge.count((t * n + u) * n + v)))
+                            mark[v] = t, next.push_back(v);
+                    };
+                    add(u);
+                    for (int v : g.nebors[u])
+                        add(v);
+                }
+                if (next.empty())
+                    return false;
+                swap(reach, next);
+            }
+            fill(mark.begin(), mark.end(), -1);
+        }
+        return true;
+    }
+
+    // Pairs of robots of different teams with at least one vertex or swap conflict.
+    int conflictPairs(const CTNode &node) const
+    {
+        vector<pair<int, int>> agents;
+        for (unsigned int team = 0; team < teamAgents.size(); ++team)
+            for (unsigned int i = 0; i < teamAgents[team].size(); ++i)
+                agents.push_back({team, i});
+        auto pos = [&](unsigned int a, int t) {
+            auto &r = node.plans[agents[a].first]->routes[agents[a].second];
+            return r[min<int>(t, r.size() - 1)];
+        };
+        set<pair<int, int>> pairs;
+        auto note = [&](int a, int b) {
+            if (agents[a].first != agents[b].first)
+                pairs.insert({min(a, b), max(a, b)});
+        };
+        long long n = g.numCells;
+        for (int t = 0; t <= node.key; ++t)
+        {
+            unordered_map<int, vector<int>> at;
+            unordered_map<long long, vector<int>> moves;
+            for (unsigned int a = 0; a < agents.size(); ++a)
+            {
+                at[pos(a, t)].push_back(a);
+                if (t < node.key && pos(a, t) != pos(a, t + 1))
+                    moves[pos(a, t) * n + pos(a, t + 1)].push_back(a);
+            }
+            for (auto &cell : at)
+                for (unsigned int i = 0; i < cell.second.size(); ++i)
+                    for (unsigned int j = i + 1; j < cell.second.size(); ++j)
+                        note(cell.second[i], cell.second[j]);
+            for (auto &move : moves)
+            {
+                auto it = moves.find((move.first % n) * n + move.first / n);
+                if (it != moves.end())
+                    for (int a : move.second)
+                        for (int b : it->second)
+                            note(a, b);
+            }
+        }
+        return pairs.size();
     }
 
     // A swap of two agents of one team is replaced by two waits and the agents exchange the rest of their routes:
@@ -333,13 +449,13 @@ int main(int argc, char *argv[])
 {
     if (argc < 5)
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--tiebreak conflicts|late] [--tie later|earlier] [--diag]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--tiebreak conflicts|late] [--tie later|earlier] [--mem-limit MB] [--diag]" << endl;
         return 1;
     }
     string mapFile = argv[1], scenFile = argv[2], routesFile = "-";
     int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
     double timeLimit = 60;
-    long long maxNodes = LLONG_MAX;
+    long long maxNodes = LLONG_MAX, memLimitMb = 0;
     bool tieEarlier = false, tieConflicts = true, diag = false;
     string low = "bs";
     for (int i = 5; i < argc; ++i)
@@ -359,6 +475,8 @@ int main(int argc, char *argv[])
             tieConflicts = string(argv[++i]) != "late";
         else if (a.rfind("--tiebreak=", 0) == 0)
             tieConflicts = a.substr(11) != "late";
+        else if (a == "--mem-limit" && i + 1 < argc)
+            memLimitMb = atoll(argv[++i]);
         else if (a == "--diag")
             diag = true;
         else
@@ -392,18 +510,35 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    auto start = steady_clock::now();
-    CBM cbm(grid, starts, goals, numTeams);
     if (low != "bs" && low != "flow" && low != "floww")
     {
         cerr << "--low must be bs, flow or floww" << endl;
         return 1;
     }
+#ifdef _WIN32
+    if (memLimitMb > 0)
+    {
+        HANDLE job = CreateJobObjectA(nullptr, nullptr);
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION info = {};
+        info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_PROCESS_MEMORY;
+        info.ProcessMemoryLimit = (SIZE_T)memLimitMb << 20;
+        if (!job || !SetInformationJobObject(job, JobObjectExtendedLimitInformation, &info, sizeof(info)) ||
+            !AssignProcessToJobObject(job, GetCurrentProcess()))
+        {
+            cerr << "couldn't set the memory limit" << endl;
+            return 1;
+        }
+    }
+#endif
+
+    auto start = steady_clock::now();
+    CBM cbm(grid, starts, goals, numTeams);
     cbm.tieEarlier = tieEarlier;
     cbm.tieConflicts = tieConflicts;
     cbm.low = low;
     cbm.diag = diag;
     shared_ptr<CTNode> result;
+    bool outOfMemory = false;
     try
     {
         result = cbm.solve(timeLimit, maxNodes);
@@ -413,20 +548,38 @@ int main(int argc, char *argv[])
         cerr << "internal error: " << e.what() << endl;
         return 4;
     }
+    catch (const bad_alloc &)
+    {
+        outOfMemory = true;
+    }
     double total = duration<double>(steady_clock::now() - start).count();
-    cout << "T=" << (result ? result->key : -1) << " nodes_generated=" << cbm.nodesGenerated
+    string status = result ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : cbm.nodesGenerated >= maxNodes ? "node_limit" : "no_solution";
+    auto &ms = cbm.replanMs;
+    sort(ms.begin(), ms.end());
+    auto quantile = [&](double q) { return ms.empty() ? 0.0 : ms[min<size_t>(ms.size() - 1, (size_t)(q * ms.size()))]; };
+    double peakMb = 0;
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+        peakMb = pmc.PeakWorkingSetSize / 1048576.0;
+#endif
+    cout << "status=" << status << " T=" << (result ? result->key : -1) << " nodes_generated=" << cbm.nodesGenerated
          << " nodes_expanded=" << cbm.nodesExpanded << " lowlevel_calls=" << cbm.lowLevelCalls
          << " lowlevel_ms=" << (long long)(cbm.lowLevelSec * 1000) << " highlevel_ms=" << (long long)((total - cbm.lowLevelSec) * 1000)
          << " total_ms=" << (long long)(total * 1000) << " lowlevel_sum_T=" << cbm.lowLevelSumT << " swaps_fixed=" << cbm.swapsFixed
          << " last_key=" << (cbm.expandedByKey.empty() ? -1 : cbm.expandedByKey.rbegin()->first) << " expanded_by_key=";
     for (auto &kv : cbm.expandedByKey)
         cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;
-    cout << endl;
+    cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " pruned_unreachable=" << cbm.prunedUnreachable
+         << " replan_ms_median=" << quantile(0.5) << " replan_ms_p90=" << quantile(0.9) << " replan_ms_max=" << (ms.empty() ? 0.0 : ms.back())
+         << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb << endl;
     if (diag)
     {
         cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam
              << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << endl;
     }
+    if (outOfMemory)
+        return 5;
     if (!result)
         return 2;
     if (routesFile != "-")

@@ -19,6 +19,8 @@ class FlowTeam
 public:
     long long cost = 0;
     int netNodes = 0, netEdges = 0; // of the last network built
+    chrono::steady_clock::time_point deadline = chrono::steady_clock::time_point::max();
+    bool timedOut = false;
 
     FlowTeam(const Grid &grid, const vector<int> &starts, const vector<int> &goals, bool weighted = false)
         : g(grid), n(grid.numCells), weighted(weighted), startCells(starts), isGoalCell(grid.numCells, 0),
@@ -44,19 +46,26 @@ public:
     int solveMinMakespan(int maxT, int minT = 1)
     {
         solvedT = -1;
+        timedOut = false;
         for (int s : startCells)
             if (forbiddenVertex.count(s))
                 return -1;
         for (int T = max(minT, 1); T <= maxT; ++T)
         {
+            if (late())
+                return -1;
             build(T);
-            if (maxFlow() < (int)startCells.size())
+            int flow = timedOut ? 0 : maxFlow();
+            if (timedOut)
+                return -1;
+            if (flow < (int)startCells.size())
                 continue;
             if (weighted)
             {
                 for (unsigned int e = 0; e < cap.size(); ++e)
                     cap[e] = e % 2 == 0 ? 1 : 0;
-                minCostFlow();
+                if (!minCostFlow())
+                    return -1;
             }
             cost = 0;
             for (unsigned int e = 0; e < cap.size(); e += 2)
@@ -137,6 +146,11 @@ private:
         return d;
     }
 
+    bool late()
+    {
+        return timedOut = timedOut || chrono::steady_clock::now() > deadline;
+    }
+
     int outNode(int t, int cell) const { return outId[(long long)t * n + cell]; }
     int inNode(int t, int cell) const { return t >= 1 ? inId[(long long)t * n + cell] : -1; }
     bool edgeForbidden(int from, int toCell, int t) const { return forbiddenEdge.count(((long long)t * n + from) * n + toCell); }
@@ -198,7 +212,7 @@ private:
         for (int s : startCells)
             if (outNode(0, s) != -1)
                 addEdge(source, outNode(0, s));
-        for (int t = 0; t <= T; ++t)
+        for (int t = 0; t <= T && !late(); ++t)
             for (int v = 0; v < n; ++v)
             {
                 int out = outNode(t, v);
@@ -211,7 +225,7 @@ private:
                 if (t == T && isGoalCell[v] && lastForbiddenAt[v] < T)
                     addEdge(out, sink);
             }
-        for (int t = 0; t < T; ++t)
+        for (int t = 0; t < T && !late(); ++t)
             for (int u = 0; u < n; ++u)
                 for (int v : g.nebors[u])
                 {
@@ -241,7 +255,7 @@ private:
     {
         int flow = 0;
         vector<int> parentEdge(head.size());
-        while (flow < (int)startCells.size())
+        while (flow < (int)startCells.size() && !late())
         {
             fill(parentEdge.begin(), parentEdge.end(), -1);
             parentEdge[source] = -2;
@@ -269,14 +283,16 @@ private:
             --cap[parentEdge[a]], ++cap[parentEdge[a] ^ 1];
     }
 
-    // Successive shortest paths, Dijkstra with potentials (the initial costs are non-negative).
-    void minCostFlow()
+    // Successive shortest paths, Dijkstra with potentials (the initial costs are non-negative); false on the deadline.
+    bool minCostFlow()
     {
         int m = head.size();
         vector<long long> potential(m, 0), dist(m);
         vector<int> parentEdge(m);
         for (unsigned int k = 0; k < startCells.size(); ++k)
         {
+            if (late())
+                return false;
             fill(dist.begin(), dist.end(), LLONG_MAX);
             fill(parentEdge.begin(), parentEdge.end(), -1);
             dist[source] = 0;
@@ -302,6 +318,7 @@ private:
                     potential[a] += dist[a];
             augment(parentEdge);
         }
+        return true;
     }
 };
 } // namespace bs

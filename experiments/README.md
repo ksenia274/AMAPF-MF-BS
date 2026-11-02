@@ -55,9 +55,15 @@ Files:
   conflicts (`--tiebreak late`: skipped), then the later node. Swaps inside a team are replaced by two waits +
   exchange of the route tails.
   `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low ..] [--tiebreak conflicts|late]
-  [--tie later|earlier] [--diag]` prints T and
+  [--tie later|earlier] [--mem-limit MB] [--diag]` prints the status (solved / timeout / node_limit / memory /
+  no_solution), T and
   the counters (nodes generated/expanded, low-level calls, low-level / high-level / total ms, sum of T over the
-  low-level calls, swaps fixed inside teams, the max expanded key and the expanded nodes per key); T=-1 = limit hit. A child constraint that is already in the team's
+  low-level calls, swaps fixed inside teams, the max expanded key and the expanded nodes per key, conflicting robot
+  pairs of different teams in the root, children dropped as unreachable, median / p90 / max time of a replanning,
+  the largest flow network, PeakWorkingSetSize); T=-1 = no solution found. The time limit is also checked inside
+  both low levels. Before a replanning every start of the team is checked alone: the cells reachable at
+  t = 1, 2, ... under the team's constraints; an empty set means no solution for any T, the child is dropped.
+  `--mem-limit`: a job object limits the process memory, bad_alloc gives status=memory. A child constraint that is already in the team's
   set stops the run (internal error). `--diag`: root key, depth, max constraints per team, repeated constraint
   sets (64-bit hashes).
 - `compare_cbm.py CBM_EXE --random N --seed S [--low ..]` - cbm vs `brute_force.py --teams` on random tiny colored instances,
@@ -157,3 +163,8 @@ Flow low level (2026-11-02):
 - `compare_cbm.py cbm.exe --random 1500 --seed 2/3 --max-nodes 20000 --low ..`: 3000 instances each, 0 mismatches,
   0 swaps inside teams; node limit hit: bs 3+7, flow 4+7, floww 2+2.
 - CBM experiment 1 with the three low levels and the two tie-breaks: `cbm_paper_exp1.md`.
+- After the low-level deadline and the reachability check (2026-11-02): `test_flow_team.py --makespan 6000 --seed 11`
+  0 mismatches; `compare_cbm.py` seeds 2/3 for bs, flow, floww: 0 mismatches, node limit hit as before
+  (bs 3+7, flow 4+7, floww 2+2); children dropped as unreachable: bs 610727+499552, flow 637436+512129,
+  floww 659131+538700 (mostly unsolvable instances that run to the node limit). random-32-32-10 scen 12 with
+  `--low flow`: N=45 T=26 in 1.0 s, N=50 T=26 in 1.4 s (valid, one child dropped in each).

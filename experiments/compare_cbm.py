@@ -33,7 +33,7 @@ def main():
     rng = random.Random(a.seed)
     bad = limit = solvable = 0
     nodes = []
-    swaps = 0
+    swaps = pruned = 0
     for i in range(a.random):
         h, w = rng.choice([(2, 3), (3, 3), (2, 4), (3, 4)])
         grid = ["".join("@" if rng.random() < 0.15 else "." for _ in range(w)) for _ in range(h)]
@@ -50,6 +50,7 @@ def main():
                              capture_output=True, text=True).stdout.strip()
         t_cbm = int(out.split("T=")[1].split()[0]) if "T=" in out else None
         swaps += int(out.split("swaps_fixed=")[1].split()[0]) if "swaps_fixed=" in out else 0
+        pruned += int(out.split("pruned_unreachable=")[1].split()[0]) if "pruned_unreachable=" in out else 0
         t_ref = min_makespan(w, h, grid, starts, goals, teams=teams)
         t_ref = max(t_ref, 1) if t_ref != -1 else -1
         problem = None
@@ -73,7 +74,8 @@ def main():
     nodes.sort()
     med = nodes[len(nodes) // 2] if nodes else 0
     print(f"random: {a.random} instances ({solvable} solvable), seed={a.seed}, low={a.low}; "
-          f"CT nodes generated: median {med}, max {max(nodes, default=0)}; swaps inside teams fixed: {swaps}")
+          f"CT nodes generated: median {med}, max {max(nodes, default=0)}; swaps inside teams fixed: {swaps}; "
+          f"children dropped as unreachable: {pruned}")
     print(f"total={a.random} mismatches={bad} limit={limit}")
     sys.exit(1 if bad or limit else 0)
 
