@@ -72,6 +72,9 @@ Files:
   time shares, the smallest instance where bs_team without explicit goal waits was wrong (corridor 1x3).
 - `cbm_paper_exp1.py` - experiment 1 of the CBM paper (teams of 5, random-32-32-10), results in
   `cbm_paper_exp1*.csv` / `cbm_paper_exp1.md`; `--compare NAME=CSV ...` puts runs side by side.
+- `cbm_bench.py OUT.csv --stage 3a` - stage 3: bs / flow / floww / bs-late on MovingAI maps, two team modes, all
+  counters per run, solutions validated; `--summary` table with the makespan check; results `cbm_bench_3a.csv`,
+  `cbm_bench_3a.md`, figures `figures/bench_3a_*.png` (`figures/make_bench_figures.py`).
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.
