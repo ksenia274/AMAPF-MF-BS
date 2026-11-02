@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Repeats experiment 1 of CBM (Ma, Koenig 2016, table 1) with our cbm: teams of 5 consecutive agents.
 
-Usage: cbm_paper_exp1.py OUT.csv [--time-limit SEC] [--scens 20] [--ns 10,15,...] [--low bs]
+Usage: cbm_paper_exp1.py OUT.csv [--time-limit SEC] [--scens 20] [--ns 10,15,...] [--low bs] [--tiebreak late]
        cbm_paper_exp1.py --summary OUT.csv   (markdown table next to the numbers of the paper)
+       cbm_paper_exp1.py --compare NAME=OUT.csv ...   (variants side by side; makespans of common solutions must agree)
 
 Map random-32-32-10, scen random-1..20, the first N agents. cbm puts agent i into team i % K, so the first N rows
 of the .scen are reordered (row 5g+m -> m*K+g, K = N/5) into a temporary file: team g = original agents 5g..5g+4.
@@ -66,12 +67,44 @@ def summary(path):
               f"{unsolved_nodes} | {keys} | {invalid} | {PAPER_RATE[i]} | 1.0 | {PAPER_W_TIME[i]} |")
 
 
+def compare(specs):
+    runs = {}
+    for spec in specs:
+        name, path = spec.split("=", 1)
+        with open(path) as f:
+            runs[name] = {(int(r["N"]), int(r["scen"])): r for r in csv.DictReader(f)}
+    names = list(runs)
+    mean = lambda xs: f"{sum(xs) / len(xs):.2f}" if xs else "-"
+    metrics = [("solved", None), ("mean time, s", lambda r: int(r["total_ms"]) / 1000),
+               ("mean makespan", lambda r: int(r["T"])), ("mean CT nodes expanded", lambda r: int(r["nodes_expanded"])),
+               ("mean replans", lambda r: int(r["lowlevel_calls"]))]
+    print("| N | " + " | ".join(f"{m}: {v}" for m, _ in metrics for v in names) + " |")
+    print("|---|" + "---|" * (len(metrics) * len(names)))
+    mismatches = []
+    for n in sorted({key[0] for key in runs[names[0]]}):
+        keys = sorted(key for key in runs[names[0]] if key[0] == n)
+        cells = []
+        for m, get in metrics:
+            for v in names:
+                ok = [runs[v][key] for key in keys if runs[v][key]["solved"] == "1"]
+                cells.append(f"{len(ok)}/{len(keys)}" if get is None else mean([get(r) for r in ok]))
+        print(f"| {n} | " + " | ".join(cells) + " |")
+        for key in keys:
+            ts = {v: runs[v][key]["T"] for v in names if runs[v][key]["solved"] == "1"}
+            if len(set(ts.values())) > 1:
+                mismatches.append((key, ts))
+    invalid = sum(1 for v in names for r in runs[v].values() if r["solved"] == "1" and r["valid"] != "1")
+    print(f"\nmakespan mismatches on common solutions: {len(mismatches)} {mismatches}; invalid solutions: {invalid}")
+
+
 def main():
     args = sys.argv[1:]
     if args[0] == "--summary":
         return summary(args[1])
+    if args[0] == "--compare":
+        return compare(args[1:])
     out_csv = args[0]
-    opt = {"--time-limit": "60", "--scens": "20", "--ns": "10,15,20,25,30,35,40,45,50", "--low": ""}
+    opt = {"--time-limit": "60", "--scens": "20", "--ns": "10,15,20,25,30,35,40,45,50", "--low": "", "--tiebreak": ""}
     for i in range(1, len(args), 2):
         opt[args[i]] = args[i + 1]
     exe = os.path.join(HERE, "cbm.exe")
@@ -88,8 +121,9 @@ def main():
                 if os.path.exists(routes):
                     os.remove(routes)
                 cmd = [exe, MAP, scen, str(n), str(k), routes, "--time-limit", opt["--time-limit"]]
-                if opt["--low"]:
-                    cmd += ["--low", opt["--low"]]
+                for name in ("--low", "--tiebreak"):
+                    if opt[name]:
+                        cmd += [name, opt[name]]
                 p = subprocess.run(cmd, capture_output=True, text=True)
                 o = p.stdout
                 t = int(field(o, "T") or -1)

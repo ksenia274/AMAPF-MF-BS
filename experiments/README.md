@@ -18,13 +18,25 @@ Files:
   Node (cell, idx): idx = 2t is "in"-copy of layer t, idx = 2t+1 is "out"-copy.
 - `bs_team.hpp` - the same search as a class without globals: `bs::Grid` (map, shared) and
   `bs::BulkSearchTeam` (one team: starts, goals, its own flow); `bs_team.cpp` - CLI with the interface of bs_single
-  plus `bs_team MAP SCEN K [ROUTES|-] [CONSTRAINTS]`.
+  plus `bs_team MAP SCEN K [ROUTES|-] [CONSTRAINTS] [--low bs|flow|floww] [--others ROUTES]`.
   Vertex constraint (v, t): `2t` goes to `blocks[v]` as a cut of the waiting chain (inserted when T > t);
   a goal with a constraint at t >= T can't be final (the agent stays there forever); a constraint at a start at t = 0
   means no solution. With constraints the waits in taken goals are stored explicitly (see the comment in bs_team.hpp):
   the original lets an agent leave its taken goal only at the earliest step, which is not enough with constraints.
   Edge constraint (u -> v, t) = move (u, 2t+1) -> (v, 2t+2): in getAllTimestepCostPairs an even entry y into v is the
   move (u, y-1) -> (v, y); if it is forbidden, the next allowed y+2, y+4, ... inside the same bulk of v is taken.
+- `flow_team.hpp` - `bs::FlowTeam`, the low level of the CBM paper (sections 2.2, 3.2) with the interface of
+  BulkSearchTeam: for T = minT, minT+1, ... the time-expanded network (out_t / in_t per cell, wait, turnstile,
+  edge gadget w, w') is built from scratch and K units are pushed by BFS augmentations; `floww` then runs
+  min-cost flow (successive shortest paths, Dijkstra with potentials) on the first feasible T with the weights of the
+  other teams' routes: (a) +1 on the turnstile of (v, t) per other robot in v at t, (b) +1 on v_out_t -> w of the
+  gadget {u,v} per other robot moving u -> v at t. Two typos of the paper are fixed: w' -> v_in (paper: w -> v_in)
+  and (v_out_t, w) (paper: (v_in_t, w)). Our addition: only nodes (v, t) with dist(start, v) <= t and
+  dist(v, goal) <= T - t. Vertex constraint = no turnstile, edge constraint (a -> b, t) = no a_out_t -> w and no
+  w' -> b_in_{t+1}; a goal is final iff it has no vertex constraint at t >= T (as bs_team).
+- `test_flow_team.py BS_TEAM_EXE --makespan N | --weights N` - FlowTeam vs BulkSearchTeam vs brute force on random
+  tiny instances with constraints (minimal T, valid routes); `--weights`: weight of floww = brute-force minimal
+  penalty among the solutions with this T = penalty of the returned routes.
 - `compare_exe.py EXE_A EXE_B` - regression on the step-1 set: T, expansions and routes must be equal
   (bs_single vs bs_team: 1124 instances, 0 mismatches).
 - `brute_force.py` - reference minimal makespan by BFS over sets of occupied cells (tiny grids only),
@@ -34,22 +46,26 @@ Files:
   with constraints, routes checked by validate.py (bs_team: vertex constraints 8000, edge and mixed 12000 instances, 0 mismatches).
 - `flow_ref.cpp` - independent reference: plain max flow (Dinic) on the full time-expanded network, rebuilt for
   every T from a distance lower bound; no code shared with Bulk Search. `flow_ref MAP SCEN K` prints `T=.. ms=..`.
-- `cbm.cpp` - CBM for colored MAPF with makespan: CBS over teams (agent i in team i % K), low level = BulkSearchTeam.
+- `cbm.cpp` - CBM for colored MAPF with makespan: CBS over teams (agent i in team i % K), low level = BulkSearchTeam
+  (`--low bs`) or FlowTeam (`--low flow`, `--low floww`; floww weights = routes of the other teams in the node, at the
+  root the teams planned before).
   Node: constraints + plan of every team (unchanged plans shared with the parent), key = max team T. Earliest conflict
   between different teams (vertex, then swap; teams that finished earlier stay in their goals); two children with a
   constraint for one team each; the team is replanned with T from the parent's key. Order: key, then fewer teams in
-  conflicts, then the later node. Swaps inside a team are replaced by two waits + exchange of the route tails.
-  `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--tie later|earlier] [--diag]` prints T and
+  conflicts (`--tiebreak late`: skipped), then the later node. Swaps inside a team are replaced by two waits +
+  exchange of the route tails.
+  `cbm MAP SCEN N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low ..] [--tiebreak conflicts|late]
+  [--tie later|earlier] [--diag]` prints T and
   the counters (nodes generated/expanded, low-level calls, low-level / high-level / total ms, sum of T over the
   low-level calls, swaps fixed inside teams, the max expanded key and the expanded nodes per key); T=-1 = limit hit. A child constraint that is already in the team's
   set stops the run (internal error). `--diag`: root key, depth, max constraints per team, repeated constraint
   sets (64-bit hashes).
-- `compare_cbm.py CBM_EXE --random N --seed S` - cbm vs `brute_force.py --teams` on random tiny colored instances,
+- `compare_cbm.py CBM_EXE --random N --seed S [--low ..]` - cbm vs `brute_force.py --teams` on random tiny colored instances,
   routes checked by `validate.py --teams`.
 - `figures/` - slide figures (`make_figures.py`, PNG + CSV): CBM vs N and K on random-32-32-10, low/high-level
   time shares, the smallest instance where bs_team without explicit goal waits was wrong (corridor 1x3).
 - `cbm_paper_exp1.py` - experiment 1 of the CBM paper (teams of 5, random-32-32-10), results in
-  `cbm_paper_exp1.csv` / `cbm_paper_exp1.md`.
+  `cbm_paper_exp1*.csv` / `cbm_paper_exp1.md`; `--compare NAME=CSV ...` puts runs side by side.
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.
@@ -131,3 +147,13 @@ Step 3 diagnostics (2026-10-27):
 - swaps inside teams fixed: 0 in all runs (3000 colored instances, series on random-32-32-10, 64x64 runs).
 - 64x64, N=128, K=4, idle machine: room-64-64-8 T=43, 2797 nodes, 52 s, 17.9 ms and T=43 per low-level call;
   random-64-64-10 T=30, 99 nodes, 1.7 s. The step-3 table above was measured under load (room-64-64-8 then timed out).
+
+Flow low level (2026-11-02):
+- `test_flow_team.py bs_team.exe --makespan 6000 --seed 11`: 6000 instances up to 4x4, 1..4 robots, 0..6 constraints
+  (4016 solvable, 1198 with a goal constraint at T0..T0+2): minimal T of FlowTeam = BulkSearchTeam = brute force,
+  routes valid and respect the constraints, 0 mismatches.
+- `--weights 3000 --seed 12`: 1981 solvable, 1456 with a positive minimal penalty; floww weight = brute-force
+  minimum = penalty of its routes, 0 mismatches (the same test with `--low flow` instead: 161 of 300 mismatch).
+- `compare_cbm.py cbm.exe --random 1500 --seed 2/3 --max-nodes 20000 --low ..`: 3000 instances each, 0 mismatches,
+  0 swaps inside teams; node limit hit: bs 3+7, flow 4+7, floww 2+2.
+- CBM experiment 1 with the three low levels and the two tie-breaks: `cbm_paper_exp1.md`.

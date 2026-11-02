@@ -1,12 +1,16 @@
-// CBM (Ma, Koenig 2016) for colored MAPF with makespan, low level = Bulk Search (bs_team.hpp).
+// CBM (Ma, Koenig 2016) for colored MAPF with makespan, low level = Bulk Search (bs_team.hpp, --low bs) or
+// max-flow / min-cost flow with the weights of section 3.2 (flow_team.hpp, --low flow / floww).
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
-// Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--tie later|earlier] [--diag]
+// Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww]
+//            [--tiebreak conflicts|late] [--tie later|earlier] [--diag]
+// Order of the open list: key, then (conflicts, as in the CBM paper) fewer teams in conflicts, then the later node
+// (--tie earlier: the earlier one); --tiebreak late skips the number of conflicting teams.
 // Prints "T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
 // current lower bound at a limit; --diag: a second line with the root key, depth, constraints, repeated constraint sets);
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
-#include "bs_team.hpp"
+#include "flow_team.hpp"
 using namespace std;
 using namespace std::chrono;
 
@@ -49,7 +53,9 @@ public:
     long long lowLevelSumT = 0; // sum of T over successful low-level calls (for the mean T of a call)
     long long swapsFixed = 0;   // swaps inside a team replaced by two waits
     double lowLevelSec = 0;
-    bool tieEarlier = false; // among nodes with equal key and conflicting teams: the earlier node first
+    bool tieEarlier = false;
+    bool tieConflicts = true;
+    string low = "bs";
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
     int rootKey = -1, maxDepth = 0, maxConstraintsPerTeam = 0;
     long long duplicateConstraintSets = 0; // generated nodes whose constraint sets (per team) were already seen
@@ -73,7 +79,7 @@ public:
         auto root = make_shared<CTNode>();
         for (unsigned int team = 0; team < teamAgents.size(); ++team)
         {
-            auto plan = replan(team, TeamPlan(), 1);
+            auto plan = replan(team, TeamPlan(), 1, root->plans);
             if (!plan)
                 return nullptr;
             root->plans.push_back(plan);
@@ -81,13 +87,13 @@ public:
         evaluate(*root);
         rootKey = root->key;
         noteDiag(*root);
-        bool earlier = tieEarlier;
-        auto worse = [earlier](const shared_ptr<CTNode> &a, const shared_ptr<CTNode> &b) {
+        bool earlier = tieEarlier, conflicts = tieConflicts;
+        auto worse = [earlier, conflicts](const shared_ptr<CTNode> &a, const shared_ptr<CTNode> &b) {
             if (a->key != b->key)
                 return a->key > b->key;
-            if (a->conflictingTeams != b->conflictingTeams)
+            if (conflicts && a->conflictingTeams != b->conflictingTeams)
                 return a->conflictingTeams > b->conflictingTeams;
-            return earlier ? a->id > b->id : a->id < b->id; // default: the later node first (depth-first)
+            return earlier ? a->id > b->id : a->id < b->id;
         };
         priority_queue<shared_ptr<CTNode>, vector<shared_ptr<CTNode>>, decltype(worse)> open(worse);
         open.push(root);
@@ -125,7 +131,7 @@ public:
                             throw logic_error("repeated edge constraint (" + to_string(e.from) + " -> " + to_string(e.to) + ", t " + to_string(e.t) + ") for team " + to_string(team));
                     constraints.edge.push_back(e);
                 }
-                auto plan = replan(team, constraints, node->key); // T from the parent's key (CBM, section 3.2)
+                auto plan = replan(team, constraints, node->key, node->plans); // T from the parent's key (CBM, section 3.2)
                 if (!plan)
                     continue;
                 auto child = make_shared<CTNode>();
@@ -186,18 +192,30 @@ private:
             ++duplicateConstraintSets;
     }
 
-    shared_ptr<const TeamPlan> replan(int team, TeamPlan plan, int minT)
+    // floww: the weights come from the routes of the other teams in `plans` (at the root: the teams planned so far).
+    shared_ptr<const TeamPlan> replan(int team, TeamPlan plan, int minT, const vector<shared_ptr<const TeamPlan>> &plans)
     {
         auto start = steady_clock::now();
         ++lowLevelCalls;
-        bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
-        int last = 0;
-        for (auto &c : plan.vertex)
-            solver.addVertexConstraint(c.cell, c.t), last = max(last, c.t);
-        for (auto &c : plan.edge)
-            solver.addEdgeConstraint(c.from, c.to, c.t), last = max(last, c.t);
-        plan.T = solver.solveMinMakespan(g.width * g.height + (int)teamStarts[team].size() + last, minT);
-        bool ok = plan.T != -1 && solver.extractRoutes(plan.routes);
+        bool ok;
+        if (low == "bs")
+        {
+            bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
+            ok = solveTeam(solver, team, plan, minT);
+        }
+        else
+        {
+            bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], low == "floww");
+            if (low == "floww")
+            {
+                vector<vector<int>> others;
+                for (unsigned int other = 0; other < plans.size(); ++other)
+                    if ((int)other != team)
+                        others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
+                solver.setOtherRoutes(others);
+            }
+            ok = solveTeam(solver, team, plan, minT);
+        }
         if (ok)
         {
             lowLevelSumT += plan.T;
@@ -207,8 +225,21 @@ private:
         return ok ? make_shared<const TeamPlan>(move(plan)) : nullptr;
     }
 
+    template <class Solver>
+    bool solveTeam(Solver &solver, int team, TeamPlan &plan, int minT)
+    {
+        int last = 0;
+        for (auto &c : plan.vertex)
+            solver.addVertexConstraint(c.cell, c.t), last = max(last, c.t);
+        for (auto &c : plan.edge)
+            solver.addEdgeConstraint(c.from, c.to, c.t), last = max(last, c.t);
+        plan.T = solver.solveMinMakespan(g.width * g.height + (int)teamStarts[team].size() + last, minT);
+        return plan.T != -1 && solver.extractRoutes(plan.routes);
+    }
+
     // A swap of two agents of one team is replaced by two waits and the agents exchange the rest of their routes:
-    // the cells occupied at every step stay the same, so no new conflicts appear (never observed with Bulk Search).
+    // the cells occupied at every step stay the same, so no new conflicts appear (never observed with Bulk Search;
+    // impossible with flow: the gadget lets one robot through an edge per step).
     static int removeSwapsInTeam(TeamPlan &plan)
     {
         int fixed = 0;
@@ -302,14 +333,15 @@ int main(int argc, char *argv[])
 {
     if (argc < 5)
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--tie later|earlier] [--diag]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--tiebreak conflicts|late] [--tie later|earlier] [--diag]" << endl;
         return 1;
     }
     string mapFile = argv[1], scenFile = argv[2], routesFile = "-";
     int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX;
-    bool tieEarlier = false, diag = false;
+    bool tieEarlier = false, tieConflicts = true, diag = false;
+    string low = "bs";
     for (int i = 5; i < argc; ++i)
     {
         string a = argv[i];
@@ -319,6 +351,14 @@ int main(int argc, char *argv[])
             maxNodes = atoll(argv[++i]);
         else if (a == "--tie" && i + 1 < argc)
             tieEarlier = string(argv[++i]) == "earlier";
+        else if (a == "--low" && i + 1 < argc)
+            low = argv[++i];
+        else if (a.rfind("--low=", 0) == 0)
+            low = a.substr(6);
+        else if (a == "--tiebreak" && i + 1 < argc)
+            tieConflicts = string(argv[++i]) != "late";
+        else if (a.rfind("--tiebreak=", 0) == 0)
+            tieConflicts = a.substr(11) != "late";
         else if (a == "--diag")
             diag = true;
         else
@@ -354,7 +394,14 @@ int main(int argc, char *argv[])
 
     auto start = steady_clock::now();
     CBM cbm(grid, starts, goals, numTeams);
+    if (low != "bs" && low != "flow" && low != "floww")
+    {
+        cerr << "--low must be bs, flow or floww" << endl;
+        return 1;
+    }
     cbm.tieEarlier = tieEarlier;
+    cbm.tieConflicts = tieConflicts;
+    cbm.low = low;
     cbm.diag = diag;
     shared_ptr<CTNode> result;
     try

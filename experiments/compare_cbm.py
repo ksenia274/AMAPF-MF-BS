@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare cbm.exe with brute_force.py (colored) on random tiny instances.
 
-Usage: compare_cbm.py CBM_EXE [--random N] [--seed S] [--max-nodes M]
+Usage: compare_cbm.py CBM_EXE [--random N] [--seed S] [--max-nodes M] [--low bs|flow|floww]
 Instance: grid up to 3x4 with random obstacles, 2..4 agents, 2..3 teams (agent i in team i % K).
 Compared: T of cbm with max(T_brute, 1); routes checked by validate.py with --teams. If brute force says
 there is no solution, cbm must stop at the node limit (T=-1); cbm hitting the limit on a solvable
@@ -26,6 +26,7 @@ def main():
     ap.add_argument("--random", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--max-nodes", type=int, default=5000)
+    ap.add_argument("--low", default="bs")
     a = ap.parse_args()
     exe = os.path.abspath(a.exe)
     work = tempfile.mkdtemp(prefix="compare_cbm_")
@@ -45,7 +46,7 @@ def main():
         routes_path = os.path.join(work, "g.routes")
         if os.path.exists(routes_path):
             os.remove(routes_path)
-        out = subprocess.run([exe, mp, sc, str(n), str(k), routes_path, "--max-nodes", str(a.max_nodes)],
+        out = subprocess.run([exe, mp, sc, str(n), str(k), routes_path, "--max-nodes", str(a.max_nodes), "--low", a.low],
                              capture_output=True, text=True).stdout.strip()
         t_cbm = int(out.split("T=")[1].split()[0]) if "T=" in out else None
         swaps += int(out.split("swaps_fixed=")[1].split()[0]) if "swaps_fixed=" in out else 0
@@ -71,7 +72,7 @@ def main():
             print(f"MISMATCH #{i} grid={grid} starts={starts} goals={goals} K={k}: {problem}")
     nodes.sort()
     med = nodes[len(nodes) // 2] if nodes else 0
-    print(f"random: {a.random} instances ({solvable} solvable), seed={a.seed}; "
+    print(f"random: {a.random} instances ({solvable} solvable), seed={a.seed}, low={a.low}; "
           f"CT nodes generated: median {med}, max {max(nodes, default=0)}; swaps inside teams fixed: {swaps}")
     print(f"total={a.random} mismatches={bad} limit={limit}")
     sys.exit(1 if bad or limit else 0)

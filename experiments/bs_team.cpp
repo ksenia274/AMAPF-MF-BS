@@ -1,23 +1,39 @@
-// One team = all K agents of the .scen, solved by bs::BulkSearchTeam (bs_team.hpp).
-// Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS]
-//   -> prints optimal makespan T, expansions, ms (same as bs_single)
+// One team = all K agents of the .scen, solved by bs::BulkSearchTeam (bs_team.hpp) or bs::FlowTeam (flow_team.hpp).
+// Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|flow|floww] [--others ROUTES]
+//   -> prints optimal makespan T, expansions (bs) or the weight of the flow (flow, floww), ms
+// --others: routes of the robots of other teams (format of ROUTES) for the weights of floww.
 // ROUTES: first line "T K", then K lines "x,y x,y ..." (T+1 positions), agent i = row i of .scen.
 // CONSTRAINTS (same format as brute_force.py, '#' starts a comment):
 //   v x y t            the team may not be in (x,y) at step t
 //   e x1 y1 x2 y2 t    the team may not move (x1,y1) -> (x2,y2) between steps t and t+1
-#include "bs_team.hpp"
+#include "flow_team.hpp"
 using namespace std;
 using namespace std::chrono;
 
+template <class Team>
+int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args);
+
 int main(int argc, char *argv[])
 {
-    if (argc < 4)
+    vector<string> args;
+    string low = "bs", othersFile;
+    for (int i = 1; i < argc; ++i)
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS]" << endl;
+        string a = argv[i];
+        if (a == "--low" && i + 1 < argc)
+            low = argv[++i];
+        else if (a == "--others" && i + 1 < argc)
+            othersFile = argv[++i];
+        else
+            args.push_back(a);
+    }
+    if (args.size() < 3 || (low != "bs" && low != "flow" && low != "floww"))
+    {
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|flow|floww] [--others ROUTES]" << endl;
         return 1;
     }
-    string mapFile = argv[1], scenFile = argv[2];
-    int k = atoi(argv[3]);
+    string mapFile = args[0], scenFile = args[1];
+    int k = stoi(args[2]);
     bs::Grid grid;
     if (!grid.load(mapFile))
     {
@@ -46,14 +62,44 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    bs::BulkSearchTeam team(grid, starts, goals);
-    int lastConstraint = 0;
-    if (argc > 5)
+    if (low == "bs")
     {
-        ifstream constraintsIn(argv[5]);
+        bs::BulkSearchTeam team(grid, starts, goals);
+        return run(team, grid, k, args);
+    }
+    bs::FlowTeam team(grid, starts, goals, low == "floww");
+    if (!othersFile.empty())
+    {
+        ifstream othersIn(othersFile);
+        int T, m;
+        string pos;
+        vector<vector<int>> others;
+        othersIn >> T >> m;
+        for (int i = 0; i < m; ++i)
+        {
+            others.emplace_back();
+            for (int t = 0; t <= T && othersIn >> pos; ++t)
+            {
+                int x, y;
+                sscanf(pos.c_str(), "%d,%d", &x, &y);
+                others.back().push_back(grid.id(x, y));
+            }
+        }
+        team.setOtherRoutes(others);
+    }
+    return run(team, grid, k, args);
+}
+
+template <class Team>
+int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args)
+{
+    int lastConstraint = 0;
+    if (args.size() > 4)
+    {
+        ifstream constraintsIn(args[4]);
         if (!constraintsIn.good())
         {
-            cerr << "Couldn't open the file " << argv[5] << endl;
+            cerr << "Couldn't open the file " << args[4] << endl;
             return 1;
         }
         string line;
@@ -95,18 +141,21 @@ int main(int argc, char *argv[])
     auto stop = high_resolution_clock::now();
     if (T == -1)
     {
-        cout << "T=-1 (no solution up to T=" << maxT << ") expansions=" << team.numOfExpansions << endl;
+        cout << "T=-1 (no solution up to T=" << maxT << ")" << endl;
         return 2;
     }
-    cout << "T=" << T << " expansions=" << team.numOfExpansions
-         << " ms=" << duration_cast<milliseconds>(stop - start).count() << endl;
+    if constexpr (is_same_v<Team, bs::BulkSearchTeam>)
+        cout << "T=" << T << " expansions=" << team.numOfExpansions;
+    else
+        cout << "T=" << T << " cost=" << team.cost << " net_nodes=" << team.netNodes << " net_edges=" << team.netEdges;
+    cout << " ms=" << duration_cast<milliseconds>(stop - start).count() << endl;
 
-    if (argc > 4 && string(argv[4]) != "-")
+    if (args.size() > 3 && args[3] != "-")
     {
         vector<vector<int>> routes;
         if (!team.extractRoutes(routes))
             return 3;
-        ofstream out(argv[4]);
+        ofstream out(args[3]);
         out << T << " " << k << "\n";
         for (auto &route : routes)
         {
