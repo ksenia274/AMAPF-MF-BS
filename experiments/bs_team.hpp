@@ -5,6 +5,7 @@
 // The map (Grid) is shared by all teams; one BulkSearchTeam = one team = its own flow.
 #pragma once
 #include <bits/stdc++.h>
+#include <x86intrin.h>
 
 namespace bs
 {
@@ -57,12 +58,35 @@ struct Grid
     int y(int cell) const { return cellPos[cell] / width; }
 };
 
+// Lower bound of the makespan of a team: every robot needs at least its distance to the nearest goal of the team.
+inline int teamLowerBound(const Grid &g, const vector<int> &starts, const vector<int> &goals)
+{
+    vector<int> d(g.numCells, INF);
+    queue<int> q;
+    for (int c : goals)
+        if (d[c] == INF)
+            d[c] = 0, q.push(c);
+    while (!q.empty())
+    {
+        int c = q.front();
+        q.pop();
+        for (int nb : g.nebors[c])
+            if (d[nb] == INF)
+                d[nb] = d[c] + 1, q.push(nb);
+    }
+    int lb = 0;
+    for (int s : starts)
+        lb = max(lb, d[s]);
+    return lb;
+}
+
 class BulkSearchTeam
 {
 public:
     long long numOfExpansions = 0;
     chrono::steady_clock::time_point deadline = chrono::steady_clock::time_point::max();
     bool timedOut = false; // solveMinMakespan() returned -1 because the deadline passed
+    unsigned long long penaltyCycles = 0; // rdtsc cycles spent on the penalties (setOtherRoutes, lookups)
 
     // starts and goals are free cell ids of the grid.
     BulkSearchTeam(const Grid &grid, const vector<int> &starts, const vector<int> &goals)
@@ -88,6 +112,30 @@ public:
     {
         explicitGoalWaits = true;
         forbiddenMoves[(long long)from * n + to].insert(t);
+    }
+
+    // bspen (variant 1): OPEN is ordered by the accumulated penalty, then by the key of Bulk Search. The penalties
+    // are those of floww: entering cell v at step t costs the number of other robots in v at t plus the number of
+    // other robots moving v -> u while we move u -> v. Waits inside a bulk and cancelled edges cost nothing.
+    // Any augmenting path gives the same T, so only the choice of the paths changes.
+    void setOtherRoutes(const vector<vector<int>> &routes)
+    {
+        unsigned long long start = __rdtsc();
+        penalized = true;
+        otherHorizon = 0;
+        for (auto &r : routes)
+            otherHorizon = max(otherHorizon, (int)r.size());
+        otherLast.assign(n, 0);
+        for (auto &r : routes)
+        {
+            ++otherLast[r.back()];
+            for (int t = 1; t < otherHorizon; ++t)
+                ++otherAt[(long long)t * n + r[min<int>(t, r.size() - 1)]];
+            for (int t = 0; t + 1 < (int)r.size(); ++t)
+                if (r[t] != r[t + 1])
+                    ++otherMoves[((long long)t * n + r[t]) * n + r[t + 1]];
+        }
+        penaltyCycles += __rdtsc() - start;
     }
 
     // Minimal makespan T >= minT (as the original main: T = minT, minT+1, ..., the flow is kept between T);
@@ -191,10 +239,11 @@ private:
         int parent, cellID;
         TimestepCostPair timeStepCostPair;
         int key; // timeStep + heuristic[cellID] at the moment of the push
+        int pen; // bspen: accumulated penalty, 0 otherwise
     };
     struct NodeCmp
     { // inversed to inverse the default priority_queue (as operator< of the original)
-        bool operator()(const Node &a, const Node &b) const { return a.key > b.key; }
+        bool operator()(const Node &a, const Node &b) const { return a.pen != b.pen ? a.pen > b.pen : a.key > b.key; }
     };
 
     const Grid &g;
@@ -227,7 +276,31 @@ private:
     vector<Node> nodes;
     priority_queue<Node, vector<Node>, NodeCmp> q;
 
-    void push(TimestepCostPair p, int parent, int cellID) { q.push(Node{parent, cellID, p, p.timeStep + heuristic[cellID]}); }
+    bool penalized = false;
+    int otherHorizon = 0;
+    vector<int> otherLast;                           // other robots per cell after the end of their routes
+    unordered_map<long long, int> otherAt, otherMoves; // t*n+cell; (t*n+from)*n+to
+
+    void push(TimestepCostPair p, int parent, int cellID, int pen = 0) { q.push(Node{parent, cellID, p, p.timeStep + heuristic[cellID], pen}); }
+
+    // Penalty of the move from -> to between steps t-1 and t.
+    int penaltyOfEntry(int from, int to, int t)
+    {
+        unsigned long long start = __rdtsc();
+        int p = 0;
+        if (t >= otherHorizon)
+            p = otherLast[to];
+        else
+        {
+            auto it = otherAt.find((long long)t * n + to);
+            p = it == otherAt.end() ? 0 : it->second;
+        }
+        auto it = otherMoves.find(((long long)(t - 1) * n + to) * n + from);
+        if (it != otherMoves.end())
+            p += it->second;
+        penaltyCycles += __rdtsc() - start;
+        return p;
+    }
 
     pair<bool, Interval> checkTimestepAndGetUnvisitedSafeInterval(TimestepCostPair timeStepCostPair, int cellID)
     {
@@ -582,14 +655,14 @@ private:
                 // special edge: inverse of wait action.
                 if (isThereAnEdge(currentCell, currentCell, currentInterval.l - 1) || currentInterval.l - 1 >= timeAssigningGoalCell[currentCell])
                 {
-                    push(TimestepCostPair(currentInterval.l - 1, false), nodeID, currentCell);
+                    push(TimestepCostPair(currentInterval.l - 1, false), nodeID, currentCell, tp.pen);
                 }
                 // special edge: infinite node (came from infinite interval and projected to infinite blocked interval).
                 if (tp.timeStepCostPair.blockedToMove)
                 {
                     if (timeStepCostPair.timeStep + 2 <= currentInterval.h)
                     {
-                        push(TimestepCostPair(timeStepCostPair.timeStep + 2, true), tp.parent, currentCell);
+                        push(TimestepCostPair(timeStepCostPair.timeStep + 2, true), tp.parent, currentCell, tp.pen);
                     }
                 }
                 else
@@ -601,7 +674,8 @@ private:
                         for (auto it : result)
                         {
                             if (checkTimestep(it, neborCell))
-                                push(it, nodeID, neborCell);
+                                push(it, nodeID, neborCell,
+                                     penalized && it.timeStep % 2 == 0 ? tp.pen + penaltyOfEntry(currentCell, neborCell, it.timeStep / 2) : tp.pen);
                         }
                     }
                 }

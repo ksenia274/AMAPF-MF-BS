@@ -1,7 +1,9 @@
 // One team = all K agents of the .scen, solved by bs::BulkSearchTeam (bs_team.hpp) or bs::FlowTeam (flow_team.hpp).
-// Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|flow|floww] [--others ROUTES]
-//   -> prints optimal makespan T, expansions (bs) or the weight of the flow (flow, floww), ms
-// --others: routes of the robots of other teams (format of ROUTES) for the weights of floww.
+// Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|flow|floww] [--others ROUTES]
+//                [--t-start 1|lb]
+//   -> prints optimal makespan T, expansions (bs, bspen) or the weight of the flow (flow, floww), ms
+// --others: routes of the robots of other teams (format of ROUTES) for the weights of floww / bspen.
+// --t-start lb: T starts from bs::teamLowerBound instead of 1.
 // ROUTES: first line "T K", then K lines "x,y x,y ..." (T+1 positions), agent i = row i of .scen.
 // CONSTRAINTS (same format as brute_force.py, '#' starts a comment):
 //   v x y t            the team may not be in (x,y) at step t
@@ -11,12 +13,12 @@ using namespace std;
 using namespace std::chrono;
 
 template <class Team>
-int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args);
+int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args, int minT);
 
 int main(int argc, char *argv[])
 {
     vector<string> args;
-    string low = "bs", othersFile;
+    string low = "bs", othersFile, tStart = "1";
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
@@ -24,12 +26,14 @@ int main(int argc, char *argv[])
             low = argv[++i];
         else if (a == "--others" && i + 1 < argc)
             othersFile = argv[++i];
+        else if (a == "--t-start" && i + 1 < argc)
+            tStart = argv[++i];
         else
             args.push_back(a);
     }
-    if (args.size() < 3 || (low != "bs" && low != "flow" && low != "floww"))
+    if (args.size() < 3 || (low != "bs" && low != "bspen" && low != "flow" && low != "floww") || (tStart != "1" && tStart != "lb"))
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|flow|floww] [--others ROUTES]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|flow|floww] [--others ROUTES] [--t-start 1|lb]" << endl;
         return 1;
     }
     string mapFile = args[0], scenFile = args[1];
@@ -62,18 +66,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (low == "bs")
-    {
-        bs::BulkSearchTeam team(grid, starts, goals);
-        return run(team, grid, k, args);
-    }
-    bs::FlowTeam team(grid, starts, goals, low == "floww");
+    int minT = tStart == "lb" ? max(1, bs::teamLowerBound(grid, starts, goals)) : 1;
+    vector<vector<int>> others;
     if (!othersFile.empty())
     {
         ifstream othersIn(othersFile);
         int T, m;
         string pos;
-        vector<vector<int>> others;
         othersIn >> T >> m;
         for (int i = 0; i < m; ++i)
         {
@@ -85,13 +84,22 @@ int main(int argc, char *argv[])
                 others.back().push_back(grid.id(x, y));
             }
         }
-        team.setOtherRoutes(others);
     }
-    return run(team, grid, k, args);
+    if (low == "bs" || low == "bspen")
+    {
+        bs::BulkSearchTeam team(grid, starts, goals);
+        if (low == "bspen" && !others.empty())
+            team.setOtherRoutes(others);
+        return run(team, grid, k, args, minT);
+    }
+    bs::FlowTeam team(grid, starts, goals, low == "floww");
+    if (!others.empty())
+        team.setOtherRoutes(others);
+    return run(team, grid, k, args, minT);
 }
 
 template <class Team>
-int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args)
+int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args, int minT)
 {
     int lastConstraint = 0;
     if (args.size() > 4)
@@ -131,7 +139,7 @@ int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args)
     int T;
     try
     {
-        T = team.solveMinMakespan(maxT);
+        T = team.solveMinMakespan(maxT, minT);
     }
     catch (const logic_error &e)
     {

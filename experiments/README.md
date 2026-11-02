@@ -77,8 +77,10 @@ Files:
   `cbm_bench_3a.md`, figures `figures/bench_3a_*.png` (`figures/make_bench_figures.py`).
 - `make_empty_maps.py` - our own empty-128-128 / empty-256-256 maps with random scens (not in the MovingAI set) into
   `maps/`; `cbm_bench.py` takes a map from `maps/` if it is there.
-- `replan_scaling.py OUT.csv` - time of one low-level call (`cbm --first-replan`: the first team in the root) for
-  bs / flow / floww on the maps of stage 3, median of 3; results `replan_scaling.csv`, stage 3b in `cbm_bench_3b.md`.
+- `replan_scaling.py OUT.csv` - time of one low-level call in the root (`cbm --root-only first|last`, `--t-start 1|lb`)
+  for bs / flow / floww on the maps of stage 3, with the time of a call that starts at the final T, and the g5 root;
+  results `replan_scaling_3c.csv` (`replan_scaling.csv`: the earlier version, first team, T from 1), tables in
+  `cbm_bench_3b.md`.
 - `make_colored_yaml.py` - MovingAI map+scen -> colored MAPF YAML for cbs_ta
   (agent i goes to team i % K; potentialGoals = all goals of the team).
 - `t/` - 1x5 corridor (`line*`) and cbs_ta instances `col_N_K.yaml` (random-32-32-10, scen 1) with results `out_N_K.yaml`.

@@ -1,9 +1,11 @@
-// CBM (Ma, Koenig 2016) for colored MAPF with makespan, low level = Bulk Search (bs_team.hpp, --low bs) or
-// max-flow / min-cost flow with the weights of section 3.2 (flow_team.hpp, --low flow / floww).
+// CBM (Ma, Koenig 2016) for colored MAPF with makespan, low level = Bulk Search (bs_team.hpp, --low bs; --low bspen:
+// OPEN ordered by the penalties of floww) or max-flow / min-cost flow with the weights of section 3.2
+// (flow_team.hpp, --low flow / floww).
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
-// Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww]
-//            [--tiebreak conflicts|late] [--tie later|earlier] [--mem-limit MB] [--diag] [--first-replan]
+// Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
+//            [--tiebreak conflicts|late] [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag]
+//            [--root-only first|last]
 // Order of the open list: key, then (conflicts, as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one); --tiebreak late skips the number of conflicting teams.
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
@@ -12,8 +14,11 @@
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
 // --diag: a second line with the root key, depth, constraints, repeated constraint sets.
 // --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
-// --first-replan: only the low-level call of the first team in the root (no weights for floww: no team is planned
-// before it); prints "status=solved|timeout|memory|no_solution T=.. ms=.. net_nodes=.. net_edges=.. peak_mb=..".
+// --t-start lb: the low level starts T from max(minT, bs::teamLowerBound) instead of minT (the answer is the same).
+// --root-only first|last: only the root, teams 0..0 or 0..K-1 planned one by one (each call with its own time
+// limit); for the last planned team prints minT, T, the number of T tried, the time of the call and the time of a
+// fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams.
+// pen_share (bspen): share of the low-level rdtsc cycles spent on the penalties.
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "flow_team.hpp"
 #ifdef _WIN32
@@ -66,6 +71,7 @@ public:
     bool tieEarlier = false;
     bool tieConflicts = true;
     string low = "bs";
+    bool tStartLb = false;
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
     int rootKey = -1, maxDepth = 0, maxConstraintsPerTeam = 0;
     long long duplicateConstraintSets = 0; // generated nodes whose constraint sets (per team) were already seen
@@ -171,11 +177,52 @@ public:
         return nullptr;
     }
 
-    shared_ptr<const TeamPlan> firstReplan(double timeLimitSec)
+    struct RootCall
+    {
+        int team = -1, minT = 0, T = -1;
+        double ms = 0;
+    };
+
+    // Plans teams 0..count-1 of the root one by one, each call with its own time limit; stops at a failure.
+    vector<RootCall> planRoot(int count, double timeLimitSec, vector<shared_ptr<const TeamPlan>> &plans)
+    {
+        vector<RootCall> calls;
+        for (int team = 0; team < count; ++team)
+        {
+            deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
+            auto start = steady_clock::now();
+            auto plan = replan(team, TeamPlan(), 1, plans);
+            calls.push_back({team, startT(team, 1), plan ? plan->T : -1, duration<double>(steady_clock::now() - start).count() * 1000});
+            if (!plan)
+                break;
+            plans.push_back(plan);
+        }
+        return calls;
+    }
+
+    // Time of a fresh low-level call of `team` that starts at T (the other teams in `plans` give the weights).
+    double callAtT(int team, int T, double timeLimitSec, const vector<shared_ptr<const TeamPlan>> &plans)
     {
         deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
-        return replan(0, TeamPlan(), 1, {});
+        bool lb = tStartLb;
+        tStartLb = false;
+        auto start = steady_clock::now();
+        auto plan = replan(team, TeamPlan(), T, plans);
+        tStartLb = lb;
+        return plan && plan->T == T ? duration<double>(steady_clock::now() - start).count() * 1000 : -1;
     }
+
+    int startT(int team, int minT)
+    {
+        if (!tStartLb)
+            return max(minT, 1);
+        if (teamLb.empty())
+            for (unsigned int i = 0; i < teamAgents.size(); ++i)
+                teamLb.push_back(bs::teamLowerBound(g, teamStarts[i], teamGoals[i]));
+        return max({minT, 1, teamLb[team]});
+    }
+
+    double penShare() const { return lowLevelCycles ? (double)penaltyCycles / lowLevelCycles : 0; }
 
     // Routes of all agents in the order of the .scen, padded to the makespan.
     vector<vector<int>> routes(const CTNode &node) const
@@ -199,6 +246,8 @@ private:
     vector<vector<int>> teamAgents, teamStarts, teamGoals;
     long long nextId = 0;
     steady_clock::time_point deadline = steady_clock::time_point::max();
+    vector<int> teamLb;
+    unsigned long long penaltyCycles = 0, lowLevelCycles = 0;
     unordered_set<size_t> seenConstraintSets; // 64-bit hashes of the canonical per-team constraint sets (diag)
 
     void noteDiag(const CTNode &node)
@@ -228,24 +277,28 @@ private:
     shared_ptr<const TeamPlan> replan(int team, TeamPlan plan, int minT, const vector<shared_ptr<const TeamPlan>> &plans)
     {
         auto start = steady_clock::now();
+        unsigned long long startCycles = __rdtsc();
         ++lowLevelCalls;
+        minT = startT(team, minT);
+        vector<vector<int>> others;
+        if (low == "floww" || low == "bspen")
+            for (unsigned int other = 0; other < plans.size(); ++other)
+                if ((int)other != team)
+                    others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
         bool ok;
-        if (low == "bs")
+        if (low == "bs" || low == "bspen")
         {
             bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
+            if (low == "bspen")
+                solver.setOtherRoutes(others);
             ok = solveTeam(solver, team, plan, minT);
+            penaltyCycles += solver.penaltyCycles;
         }
         else
         {
             bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], low == "floww");
             if (low == "floww")
-            {
-                vector<vector<int>> others;
-                for (unsigned int other = 0; other < plans.size(); ++other)
-                    if ((int)other != team)
-                        others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
                 solver.setOtherRoutes(others);
-            }
             ok = solveTeam(solver, team, plan, minT);
             if (ok)
                 netNodesMax = max(netNodesMax, solver.netNodes), netEdgesMax = max(netEdgesMax, solver.netEdges);
@@ -256,6 +309,7 @@ private:
             swapsFixed += removeSwapsInTeam(plan);
         }
         double sec = duration<double>(steady_clock::now() - start).count();
+        lowLevelCycles += __rdtsc() - startCycles;
         lowLevelSec += sec;
         replanMs.push_back(sec * 1000);
         return ok ? make_shared<const TeamPlan>(move(plan)) : nullptr;
@@ -464,8 +518,8 @@ int main(int argc, char *argv[])
     int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
-    bool tieEarlier = false, tieConflicts = true, diag = false, firstOnly = false;
-    string low = "bs";
+    bool tieEarlier = false, tieConflicts = true, diag = false;
+    string low = "bs", rootOnly, tStart = "1";
     for (int i = 5; i < argc; ++i)
     {
         string a = argv[i];
@@ -485,8 +539,10 @@ int main(int argc, char *argv[])
             tieConflicts = a.substr(11) != "late";
         else if (a == "--mem-limit" && i + 1 < argc)
             memLimitMb = atoll(argv[++i]);
-        else if (a == "--first-replan")
-            firstOnly = true;
+        else if (a == "--root-only" && i + 1 < argc)
+            rootOnly = argv[++i];
+        else if (a == "--t-start" && i + 1 < argc)
+            tStart = argv[++i];
         else if (a == "--diag")
             diag = true;
         else
@@ -520,9 +576,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (low != "bs" && low != "flow" && low != "floww")
+    if ((low != "bs" && low != "bspen" && low != "flow" && low != "floww") || (tStart != "1" && tStart != "lb") ||
+        (!rootOnly.empty() && rootOnly != "first" && rootOnly != "last"))
     {
-        cerr << "--low must be bs, flow or floww" << endl;
+        cerr << "--low must be bs, bspen, flow or floww, --t-start 1 or lb, --root-only first or last" << endl;
         return 1;
     }
 #ifdef _WIN32
@@ -546,6 +603,7 @@ int main(int argc, char *argv[])
     cbm.tieEarlier = tieEarlier;
     cbm.tieConflicts = tieConflicts;
     cbm.low = low;
+    cbm.tStartLb = tStart == "lb";
     cbm.diag = diag;
     auto peakMb = []() {
         double mb = 0;
@@ -556,23 +614,40 @@ int main(int argc, char *argv[])
 #endif
         return mb;
     };
-    if (firstOnly)
+    if (!rootOnly.empty())
     {
-        shared_ptr<const TeamPlan> plan;
+        vector<shared_ptr<const TeamPlan>> plans;
+        vector<CBM::RootCall> calls;
+        double finalMs = -1;
         bool outOfMemory = false;
         try
         {
-            plan = cbm.firstReplan(timeLimit);
+            calls = cbm.planRoot(rootOnly == "first" ? 1 : numTeams, timeLimit, plans);
+            if (calls.back().T != -1)
+            {
+                plans.pop_back();
+                cbm.netNodesMax = cbm.netEdgesMax = 0;
+                finalMs = cbm.callAtT(calls.back().team, calls.back().T, timeLimit, plans);
+            }
         }
         catch (const bad_alloc &)
         {
             outOfMemory = true;
         }
-        double ms = duration<double>(steady_clock::now() - start).count() * 1000;
-        cout << "status=" << (plan ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : "no_solution")
-             << " T=" << (plan ? plan->T : -1) << fixed << setprecision(3) << " ms=" << ms << " net_nodes=" << cbm.netNodesMax
-             << " net_edges=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
-        return plan ? 0 : outOfMemory ? 5 : 2;
+        bool ok = !calls.empty() && calls.back().T != -1;
+        vector<int> ts;
+        double rootMs = 0;
+        for (auto &c : calls)
+            rootMs += c.ms, ts.push_back(c.T);
+        sort(ts.begin(), ts.end());
+        CBM::RootCall none;
+        auto &c = calls.empty() ? none : calls.back();
+        cout << "status=" << (ok ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : "no_solution") << " team=" << c.team
+             << " K=" << numTeams << " minT=" << c.minT << " T=" << c.T << " tried_T=" << (ok ? c.T - c.minT + 1 : -1) << fixed << setprecision(3)
+             << " ms=" << c.ms << " final_t_ms=" << finalMs << " net_nodes=" << cbm.netNodesMax << " net_edges=" << cbm.netEdgesMax
+             << " root_ms=" << rootMs << " teams_planned=" << calls.size() << " team_T_median=" << (ts.empty() ? -1 : ts[ts.size() / 2])
+             << " team_T_max=" << (ts.empty() ? -1 : ts.back()) << setprecision(1) << " peak_mb=" << peakMb() << endl;
+        return ok ? 0 : outOfMemory ? 5 : 2;
     }
     shared_ptr<CTNode> result;
     bool outOfMemory = false;
@@ -603,7 +678,7 @@ int main(int argc, char *argv[])
         cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;
     cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " pruned_unreachable=" << cbm.prunedUnreachable
          << " replan_ms_median=" << quantile(0.5) << " replan_ms_p90=" << quantile(0.9) << " replan_ms_max=" << (ms.empty() ? 0.0 : ms.back())
-         << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
+         << " pen_share=" << cbm.penShare() << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
     if (diag)
     {
         cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam

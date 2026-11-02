@@ -138,3 +138,70 @@ Repetitions agree within ~1% except random-64-64-10 flow (2075 / 3312 / 1836 ms)
 
 makespan mismatches on instances solved by several variants: 0 {}
 invalid solutions: 0
+
+## Stage 3c: fairness of the one-replanning measurement (2026-11-03)
+
+`python replan_scaling.py replan_scaling_3c.csv` (`cbm --root-only first|last --t-start 1|lb`), scen 1, mode k4,
+600 s / 8000 MB per call, median of 3 (not repeated after timeout / memory or a call over 60 s). "final" = a fresh
+call that starts at the final T (bs: one solve at T; flow: one network and one max-flow; floww: one network, max-flow
+and min-cost flow); "total" = the call as cbm makes it. lb = max over the robots of the BFS distance to the nearest
+goal of the team (map only); `test_flow_team.py --makespan 6000 --seed 11 --lows bs,bspen,flow,floww --t-start lb`:
+0 mismatches. For the last team of the root the teams before it are planned by the same low level (floww: real weights).
+
+### first team of the root, --t-start 1
+
+| map | N | minT | T | number of T | bs final / total | flow final / total | floww final / total | network nodes / edges (final T) |
+|---|---|---|---|---|---|---|---|---|
+| empty-32-32 | 64 | 1 | 15 | 15 | 2.3 ms / 6.2 ms | 6.2 ms / 20.4 ms | 55.0 ms / 65.1 ms | 33374 / 62292 |
+| random-32-32-10 | 64 | 1 | 13 | 13 | 1.4 ms / 4.7 ms | 4.9 ms / 15.0 ms | 31.8 ms / 40.9 ms | 21548 / 39014 |
+| room-32-32-4 | 64 | 1 | 20 | 20 | 1.9 ms / 6.4 ms | 6.1 ms / 28.1 ms | 39.9 ms / 62.2 ms | 25938 / 46579 |
+| maze-32-32-2 | 64 | 1 | 39 | 39 | 3.2 ms / 10.9 ms | 17.0 ms / 154.1 ms | 160.7 ms / 288.6 ms | 79360 / 147904 |
+| random-64-64-10 | 128 | 1 | 30 | 30 | 18.2 ms / 65.0 ms | 274.3 ms / 1.9 s | 2.0 s / 3.5 s | 318876 / 609483 |
+| room-64-64-8 | 128 | 1 | 32 | 32 | 9.5 ms / 39.9 ms | 158.4 ms / 1.0 s | 1.3 s / 2.2 s | 246784 / 469037 |
+| warehouse-10-20-10-2-1 | 128 | 1 | 43 | 43 | 10.5 ms / 79.4 ms | 500.0 ms / 4.9 s | 3.8 s / 8.2 s | 578936 / 1086709 |
+| empty-128-128 | 128 | 1 | 50 | 50 | 53.7 ms / 279.8 ms | 2.9 s / 28.8 s | 17.7 s / 43.7 s | 2177424 / 4276345 |
+| Berlin_1_256 | 128 | 1 | 104 | 104 | 209.9 ms / 1.4 s | 20.8 s / 435.7 s | 107.6 s / 524.4 s | 10431040 / 20565445 |
+| empty-256-256 | 128 | 1 | 95 | 95 | 240.2 ms / 1.7 s | 26.7 s / 457.8 s | 153.0 s / 586.6 s | 14641482 / 28970860 |
+
+### first team of the root, --t-start lb
+
+| map | N | minT | T | number of T | bs final / total | flow final / total | floww final / total | network nodes / edges (final T) |
+|---|---|---|---|---|---|---|---|---|
+| empty-32-32 | 64 | 10 | 15 | 6 | 3.8 ms / 5.5 ms | 6.2 ms / 18.2 ms | 51.7 ms / 64.9 ms | 33374 / 62292 |
+| random-32-32-10 | 64 | 8 | 13 | 6 | 1.4 ms / 4.0 ms | 4.7 ms / 13.7 ms | 31.7 ms / 40.1 ms | 21548 / 39014 |
+| room-32-32-4 | 64 | 10 | 20 | 11 | 1.9 ms / 4.5 ms | 6.2 ms / 27.3 ms | 39.7 ms / 59.5 ms | 25938 / 46579 |
+| maze-32-32-2 | 64 | 25 | 39 | 15 | 3.1 ms / 8.7 ms | 15.5 ms / 121.1 ms | 155.5 ms / 261.2 ms | 79360 / 147904 |
+| random-64-64-10 | 128 | 20 | 30 | 11 | 18.2 ms / 45.4 ms | 269.5 ms / 1.6 s | 1.9 s / 3.3 s | 318876 / 609483 |
+| room-64-64-8 | 128 | 23 | 32 | 10 | 9.8 ms / 23.1 ms | 156.7 ms / 865.8 ms | 1.3 s / 2.0 s | 246784 / 469037 |
+| warehouse-10-20-10-2-1 | 128 | 26 | 43 | 18 | 10.6 ms / 48.4 ms | 498.4 ms / 4.6 s | 3.8 s / 7.9 s | 578936 / 1086709 |
+| empty-128-128 | 128 | 32 | 50 | 19 | 50.8 ms / 171.4 ms | 2.8 s / 26.7 s | 17.7 s / 41.4 s | 2177424 / 4276345 |
+| Berlin_1_256 | 128 | 104 | 104 | 1 | 236.7 ms / 252.1 ms | 21.0 s / 21.1 s | 107.6 s / 107.4 s | 10431040 / 20565445 |
+| empty-256-256 | 128 | 89 | 95 | 7 | 235.1 ms / 300.5 ms | 26.6 s / 157.8 s | 161.3 s / 285.8 s | 14641482 / 28970860 |
+
+### last team of the root, --t-start lb
+
+| map | N | minT | T | number of T | bs final / total | flow final / total | floww final / total | network nodes / edges (final T) |
+|---|---|---|---|---|---|---|---|---|
+| empty-32-32 | 64 | 11 | 15 | 5 | 2.7 ms / 5.1 ms | 7.0 ms / 19.9 ms | 49.9 ms / 62.5 ms | 31712 / 59120 |
+| random-32-32-10 | 64 | 11 | 14 | 4 | 1.7 ms / 3.0 ms | 5.4 ms / 14.6 ms | 41.0 ms / 50.5 ms | 26004 / 47755 |
+| room-32-32-4 | 64 | 13 | 21 | 9 | 1.8 ms / 3.5 ms | 6.5 ms / 27.7 ms | 48.1 ms / 73.3 ms | 29758 / 53718 |
+| maze-32-32-2 | 64 | 39 | 60 | 22 | 3.1 ms / 8.4 ms | 39.8 ms / 437.9 ms | 356.7 ms / 784.1 ms | 140068 / 262872 |
+| random-64-64-10 | 128 | 20 | 21 | 2 | 11.5 ms / 15.8 ms | 77.3 ms / 124.1 ms | 755.5 ms / 810.4 ms | 156040 / 291903 |
+| room-64-64-8 | 128 | 18 | 43 | 26 | 11.8 ms / 64.1 ms | 379.4 ms / 4.0 s | 2.8 s / 6.6 s | 431840 / 828309 |
+| warehouse-10-20-10-2-1 | 128 | 40 | 60 | 21 | 13.2 ms / 60.5 ms | 1.3 s / 16.2 s | 8.7 s / 23.7 s | 1112454 / 2117545 |
+| empty-128-128 | 128 | 32 | 53 | 22 | 45.7 ms / 397.9 ms | 3.5 s / 32.8 s | 19.6 s / 49.3 s | 2346572 / 4610212 |
+| Berlin_1_256 | 128 | 108 | 126 | 19 | 145.5 ms / 398.9 ms | 34.2 s / 494.9 s | - / 602.6 s (timeout) | 17078840 / 33747229 |
+| empty-256-256 | 128 | 76 | 110 | 35 | 569.2 ms / 2.5 s | - / 600.8 s (timeout) | - / 600.9 s (timeout) | 14641482 / 28970860 |
+
+### Root of mode g5 (teams of 5), N = 128, scen 1, bs
+
+| map | K | --t-start | root time | team T median / max |
+|---|---|---|---|---|
+| Berlin_1_256 | 26 | 1 | 63.7 s | 193 / 264 |
+| Berlin_1_256 | 26 | lb | 26.9 s | 193 / 264 |
+| empty-256-256 | 26 | 1 | 72.2 s | 151 / 223 |
+| empty-256-256 | 26 | lb | 31.1 s | 151 / 223 |
+
+Last team, k4: Berlin floww and empty-256 flow / floww hit the 600 s limit; the final-T call was not made there.
+In 3b (60 s) the g5 root on Berlin / empty-256 at N = 128 took 64 s / 72 s with --t-start 1: those runs timed out
+while still building the root.
