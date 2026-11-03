@@ -1,0 +1,7 @@
+map,N,mode,scen,t_start,time_limit,status,T,total_ms,nodes_expanded,lowlevel_calls,root_key,root_conflict_pairs,max_depth,repeated_constraint_sets
+maze-32-32-2,64,k4,1,1,60,solved,60,33510,2257,4518,60,35,610,0
+maze-32-32-2,64,k4,1,lb,60,timeout,-1,60019,5068,10140,60,33,375,0
+maze-32-32-2,40,g5,2,1,60,solved,96,1037,174,356,96,43,44,0
+maze-32-32-2,40,g5,2,lb,60,timeout,-1,60026,12009,24026,96,38,116,0
+room-64-64-8,128,g5,1,1,600,timeout,-1,600071,32702,65430,95,181,366,54
+room-64-64-8,128,g5,3,1,600,timeout,-1,600063,26716,53458,102,185,260,125

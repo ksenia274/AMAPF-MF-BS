@@ -4,7 +4,7 @@
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
-//            [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag]
+//            [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag] [--pen-gap S]
 //            [--root-only first|last]
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one).
@@ -12,7 +12,13 @@
 // lowlevel_sum_T=.. swaps_fixed=.. last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
 // current lower bound at a limit) and root_conflict_pairs, pruned_unreachable, replan_ms_median/p90/max,
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
-// --diag: a second line with the root key, depth, constraints, repeated constraint sets.
+// --diag: a second line with the root key, depth, constraints, repeated constraint sets and the number of free
+// neighbours of the cells of the first 20 conflicts of the root (swap: the smaller of the two cells).
+// --pen-gap S (bspen, diagnostics only, implies --diag): after every replanning of the root and every S-th other
+// one floww is run with the same constraints
+// and routes of the other teams from the T of bspen; the diag line gets the penalty of the bspen routes (weights of
+// floww) minus the floww minimum, over all replannings and over those of the root. The floww time is not counted
+// against the time limit.
 // --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
 // --t-start lb (default): the low level starts T from max(minT, bs::teamLowerBound); --t-start 1: from minT
 // (the answer is the same).
@@ -81,6 +87,15 @@ public:
     int rootConflictPairs = -1; // -1: the root was not finished
     vector<double> replanMs;
     int netNodesMax = 0, netEdgesMax = 0;
+    int penGap = 0;
+    struct PenCheck
+    {
+        bool root;
+        long long own, best;
+    };
+    vector<PenCheck> penChecks;
+    long long penCheckFailed = 0;
+    vector<int> rootConflictDegrees;
 
     CBM(const bs::Grid &grid, const vector<int> &starts, const vector<int> &goals, int numTeams)
         : g(grid), teamAgents(numTeams), teamStarts(numTeams), teamGoals(numTeams)
@@ -98,6 +113,7 @@ public:
     {
         deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
         auto root = make_shared<CTNode>();
+        inRoot = true;
         for (unsigned int team = 0; team < teamAgents.size(); ++team)
         {
             auto plan = replan(team, TeamPlan(), 1, root->plans);
@@ -105,8 +121,11 @@ public:
                 return nullptr;
             root->plans.push_back(plan);
         }
+        inRoot = false;
         evaluate(*root);
         rootConflictPairs = conflictPairs(*root);
+        if (diag)
+            rootConflictDegrees = firstConflictDegrees(*root, 20);
         rootKey = root->key;
         noteDiag(*root);
         bool earlier = tieEarlier;
@@ -249,6 +268,7 @@ private:
     vector<int> teamLb;
     unsigned long long penaltyCycles = 0, lowLevelCycles = 0;
     unordered_set<size_t> seenConstraintSets; // 64-bit hashes of the canonical per-team constraint sets (diag)
+    bool inRoot = false;
 
     void noteDiag(const CTNode &node)
     {
@@ -312,7 +332,97 @@ private:
         lowLevelCycles += __rdtsc() - startCycles;
         lowLevelSec += sec;
         replanMs.push_back(sec * 1000);
+        if (penGap && ok && (inRoot || lowLevelCalls % penGap == 0))
+            checkPenalty(team, plan, others);
         return ok ? make_shared<const TeamPlan>(move(plan)) : nullptr;
+    }
+
+    void checkPenalty(int team, const TeamPlan &plan, const vector<vector<int>> &others)
+    {
+        auto start = steady_clock::now();
+        bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], true);
+        solver.setOtherRoutes(others);
+        int last = 0;
+        for (auto &c : plan.vertex)
+            solver.addVertexConstraint(c.cell, c.t), last = max(last, c.t);
+        for (auto &c : plan.edge)
+            solver.addEdgeConstraint(c.from, c.to, c.t), last = max(last, c.t);
+        solver.deadline = start + seconds(600);
+        int T = solver.solveMinMakespan(g.width * g.height + (int)teamStarts[team].size() + last, plan.T);
+        if (T == plan.T)
+            penChecks.push_back({inRoot, routesPenalty(plan.routes, others, T), solver.cost});
+        else
+            ++penCheckFailed;
+        deadline += steady_clock::now() - start;
+    }
+
+    // Penalty of `routes` with the weights of floww (flow_team.hpp): (a) per other robot in the same cell at t >= 1,
+    // (b) per other robot moving v -> u while ours moves u -> v.
+    long long routesPenalty(const vector<vector<int>> &routes, const vector<vector<int>> &others, int T) const
+    {
+        long long n = g.numCells, p = 0;
+        auto at = [](const vector<int> &r, int t) { return r[min<int>(t, r.size() - 1)]; };
+        unordered_map<long long, int> occupied, moved;
+        for (auto &r : others)
+            for (int t = 0; t <= T; ++t)
+            {
+                if (t >= 1)
+                    ++occupied[t * n + at(r, t)];
+                if (t < T && at(r, t) != at(r, t + 1))
+                    ++moved[(t * n + at(r, t)) * n + at(r, t + 1)];
+            }
+        auto weight = [](const unordered_map<long long, int> &m, long long key) {
+            auto it = m.find(key);
+            return it == m.end() ? 0 : it->second;
+        };
+        for (auto &r : routes)
+            for (int t = 0; t <= T; ++t)
+            {
+                if (t >= 1)
+                    p += weight(occupied, t * n + at(r, t));
+                if (t < T && at(r, t) != at(r, t + 1))
+                    p += weight(moved, (t * n + at(r, t + 1)) * n + at(r, t));
+            }
+        return p;
+    }
+
+    // Free neighbours of the cells of the first `count` conflicts in time order (one per cell or swapped edge and step).
+    vector<int> firstConflictDegrees(const CTNode &node, unsigned int count) const
+    {
+        vector<int> result;
+        long long n = g.numCells;
+        for (int t = 0; t <= node.key && result.size() < count; ++t)
+        {
+            map<int, set<int>> teamsAt;
+            map<long long, set<int>> teamsMoving;
+            for (unsigned int team = 0; team < teamAgents.size(); ++team)
+                for (auto &r : node.plans[team]->routes)
+                {
+                    int u = r[min<int>(t, r.size() - 1)], v = r[min<int>(t + 1, r.size() - 1)];
+                    teamsAt[u].insert(team);
+                    if (t < node.key && u != v)
+                        teamsMoving[u * n + v].insert(team);
+                }
+            for (auto &cell : teamsAt)
+                if (cell.second.size() > 1 && result.size() < count)
+                    result.push_back(g.nebors[cell.first].size());
+            for (auto &mv : teamsMoving)
+            {
+                int u = mv.first / n, v = mv.first % n;
+                if (u > v || result.size() >= count)
+                    continue;
+                auto it = teamsMoving.find(v * n + u);
+                if (it == teamsMoving.end())
+                    continue;
+                bool differ = false;
+                for (int a : mv.second)
+                    for (int b : it->second)
+                        differ = differ || a != b;
+                if (differ)
+                    result.push_back(min(g.nebors[u].size(), g.nebors[v].size()));
+            }
+        }
+        return result;
     }
 
     template <class Solver>
@@ -519,6 +629,7 @@ int main(int argc, char *argv[])
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
     bool tieEarlier = false, diag = false;
+    int penGap = 0;
     string low = "bs", rootOnly, tStart = "lb";
     for (int i = 5; i < argc; ++i)
     {
@@ -541,6 +652,8 @@ int main(int argc, char *argv[])
             tStart = argv[++i];
         else if (a == "--diag")
             diag = true;
+        else if (a == "--pen-gap" && i + 1 < argc)
+            penGap = max(1, atoi(argv[++i])), diag = true;
         else
             routesFile = a;
     }
@@ -600,6 +713,7 @@ int main(int argc, char *argv[])
     cbm.low = low;
     cbm.tStartLb = tStart == "lb";
     cbm.diag = diag;
+    cbm.penGap = low == "bspen" ? penGap : 0;
     auto peakMb = []() {
         double mb = 0;
 #ifdef _WIN32
@@ -677,7 +791,29 @@ int main(int argc, char *argv[])
     if (diag)
     {
         cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam
-             << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << endl;
+             << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << " root_conflict_degrees=";
+        for (unsigned int i = 0; i < cbm.rootConflictDegrees.size(); ++i)
+            cout << (i ? "," : "") << cbm.rootConflictDegrees[i];
+        if (cbm.penGap)
+        {
+            for (int rootOnly = 0; rootOnly < 2; ++rootOnly)
+            {
+                long long checks = 0, positive = 0, gapMax = 0, gapMin = LLONG_MAX, ownSum = 0, bestSum = 0;
+                for (auto &c : cbm.penChecks)
+                    if (!rootOnly || c.root)
+                    {
+                        ++checks, ownSum += c.own, bestSum += c.best, positive += c.own > c.best;
+                        gapMax = max(gapMax, c.own - c.best), gapMin = min(gapMin, c.own - c.best);
+                    }
+                string pre = rootOnly ? " root_" : " ";
+                double k = max(checks, 1LL);
+                cout << fixed << setprecision(3) << pre << "pen_checks=" << checks << pre << "pen_gap_mean=" << (ownSum - bestSum) / k
+                     << pre << "pen_gap_max=" << gapMax << pre << "pen_gap_min=" << (checks ? gapMin : 0) << pre << "pen_gap_share=" << positive / k
+                     << pre << "pen_own_mean=" << ownSum / k << pre << "pen_min_mean=" << bestSum / k;
+            }
+            cout << " pen_check_failed=" << cbm.penCheckFailed;
+        }
+        cout << endl;
     }
     if (outOfMemory)
         return 5;
