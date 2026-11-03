@@ -16,7 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-COLORS = {"bs": "#2a78d6", "bspen": "#e87ba4", "flow": "#eb6834", "bs-late": "#eda100", "floww": "#1baf7a"}
+COLORS = {"bs": "#2a78d6", "bspen": "#e87ba4", "flow": "#eb6834", "floww": "#1baf7a"}
 MODES = {"k4": "K = 4 teams", "g5": "teams of 5"}
 
 

@@ -4,10 +4,10 @@
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
-//            [--tiebreak conflicts|late] [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag]
+//            [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag]
 //            [--root-only first|last]
-// Order of the open list: key, then (conflicts, as in the CBM paper) fewer teams in conflicts, then the later node
-// (--tie earlier: the earlier one); --tiebreak late skips the number of conflicting teams.
+// Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
+// (--tie earlier: the earlier one).
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
 // current lower bound at a limit) and root_conflict_pairs, pruned_unreachable, replan_ms_median/p90/max,
@@ -69,7 +69,6 @@ public:
     long long swapsFixed = 0;   // swaps inside a team replaced by two waits
     double lowLevelSec = 0;
     bool tieEarlier = false;
-    bool tieConflicts = true;
     string low = "bs";
     bool tStartLb = false;
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
@@ -109,11 +108,11 @@ public:
         rootConflictPairs = conflictPairs(*root);
         rootKey = root->key;
         noteDiag(*root);
-        bool earlier = tieEarlier, conflicts = tieConflicts;
-        auto worse = [earlier, conflicts](const shared_ptr<CTNode> &a, const shared_ptr<CTNode> &b) {
+        bool earlier = tieEarlier;
+        auto worse = [earlier](const shared_ptr<CTNode> &a, const shared_ptr<CTNode> &b) {
             if (a->key != b->key)
                 return a->key > b->key;
-            if (conflicts && a->conflictingTeams != b->conflictingTeams)
+            if (a->conflictingTeams != b->conflictingTeams)
                 return a->conflictingTeams > b->conflictingTeams;
             return earlier ? a->id > b->id : a->id < b->id;
         };
@@ -511,14 +510,14 @@ int main(int argc, char *argv[])
 {
     if (argc < 5)
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--tiebreak conflicts|late] [--tie later|earlier] [--mem-limit MB] [--diag]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--tie later|earlier] [--mem-limit MB] [--diag]" << endl;
         return 1;
     }
     string mapFile = argv[1], scenFile = argv[2], routesFile = "-";
     int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
-    bool tieEarlier = false, tieConflicts = true, diag = false;
+    bool tieEarlier = false, diag = false;
     string low = "bs", rootOnly, tStart = "1";
     for (int i = 5; i < argc; ++i)
     {
@@ -533,10 +532,6 @@ int main(int argc, char *argv[])
             low = argv[++i];
         else if (a.rfind("--low=", 0) == 0)
             low = a.substr(6);
-        else if (a == "--tiebreak" && i + 1 < argc)
-            tieConflicts = string(argv[++i]) != "late";
-        else if (a.rfind("--tiebreak=", 0) == 0)
-            tieConflicts = a.substr(11) != "late";
         else if (a == "--mem-limit" && i + 1 < argc)
             memLimitMb = atoll(argv[++i]);
         else if (a == "--root-only" && i + 1 < argc)
@@ -601,7 +596,6 @@ int main(int argc, char *argv[])
     auto start = steady_clock::now();
     CBM cbm(grid, starts, goals, numTeams);
     cbm.tieEarlier = tieEarlier;
-    cbm.tieConflicts = tieConflicts;
     cbm.low = low;
     cbm.tStartLb = tStart == "lb";
     cbm.diag = diag;

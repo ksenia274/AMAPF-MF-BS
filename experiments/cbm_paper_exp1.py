@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repeats experiment 1 of CBM (Ma, Koenig 2016, table 1) with our cbm: teams of 5 consecutive agents.
 
-Usage: cbm_paper_exp1.py OUT.csv [--time-limit SEC] [--scens 20] [--ns 10,15,...] [--low bs] [--tiebreak late]
+Usage: cbm_paper_exp1.py OUT.csv [--time-limit SEC] [--scens 20] [--ns 10,15,...] [--low bs]
        cbm_paper_exp1.py --summary OUT.csv   (markdown table next to the numbers of the paper)
        cbm_paper_exp1.py --compare NAME=OUT.csv ...   (variants side by side; makespans of common solutions must agree)
 
@@ -108,7 +108,7 @@ def main():
     if args[0] == "--compare":
         return compare(args[1:])
     out_csv = args[0]
-    opt = {"--time-limit": "60", "--scens": "20", "--ns": "10,15,20,25,30,35,40,45,50", "--low": "", "--tiebreak": ""}
+    opt = {"--time-limit": "60", "--scens": "20", "--ns": "10,15,20,25,30,35,40,45,50", "--low": ""}
     for i in range(1, len(args), 2):
         opt[args[i]] = args[i + 1]
     exe = os.path.join(HERE, "cbm.exe")
@@ -125,9 +125,8 @@ def main():
                 if os.path.exists(routes):
                     os.remove(routes)
                 cmd = [exe, MAP, scen, str(n), str(k), routes, "--time-limit", opt["--time-limit"]]
-                for name in ("--low", "--tiebreak"):
-                    if opt[name]:
-                        cmd += [name, opt[name]]
+                if opt["--low"]:
+                    cmd += ["--low", opt["--low"]]
                 p = subprocess.run(cmd, capture_output=True, text=True)
                 o = p.stdout
                 t = int(field(o, "T") or -1)

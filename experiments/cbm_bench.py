@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Stage 3: CBM with the low levels bs, flow, floww and the tie-breaks conflicts / late on MovingAI maps.
+"""Stage 3: CBM with the low levels bs, flow, floww, bspen on MovingAI maps.
 
 Usage: cbm_bench.py OUT.csv [--stage 3a|3b|5.1] [--scens 1,2,3] [--time-limit 60] [--mem-limit 8000] [--variants a,b]
        cbm_bench.py --summary OUT.csv          (markdown table; makespan check over the variants)
 Instance: random scen s of the map, the first N agents. Modes: k4 - K = 4 teams, agent i in team i % 4;
 g5 - K = ceil(N/5) teams of consecutive agents (5 each, the last ones 4 if 5 does not divide N).
-Stage 5.1 = the maps of 3a and 3b, variants bs, bs-late, bspen, floww; floww only on the maps of 3a.
+Stage 5.1 = the maps of 3a and 3b, variants bs, bspen, floww; floww only on the maps of 3a.
 Runs are sequential; every solution is checked by validate.py --teams K. A run that does not finish within the time
 limit + 120 s is killed (status killed).
 """
@@ -29,7 +29,7 @@ STAGES = {
     "smoke": [("empty-32-32", [20]), ("room-64-64-8", [64])],
 }
 STAGES["5.1"] = STAGES["3a"] + STAGES["3b"]
-STAGE_VARIANTS = {"5.1": "bs,bs-late,bspen,floww"}
+STAGE_VARIANTS = {"5.1": "bs,bspen,floww"}
 OWN_MAPS = os.path.join(HERE, "maps")
 
 
@@ -40,8 +40,7 @@ def map_and_scen(name, s):
     return (os.path.join(DATA, "mapf-map", name + ".map"),
             os.path.join(DATA, "mapf-scen-random", "scen-random", f"{name}-random-{s}.scen"))
 VARIANTS = {"bs": ["--low", "bs"], "flow": ["--low", "flow"], "floww": ["--low", "floww"],
-            "bs-late": ["--low", "bs", "--tiebreak", "late"], "bspen": ["--low", "bspen"],
-            "bspen-late": ["--low", "bspen", "--tiebreak", "late"]}
+            "bspen": ["--low", "bspen"]}
 OUT_FIELDS = ["status", "T", "nodes_generated", "nodes_expanded", "lowlevel_calls", "lowlevel_ms", "total_ms",
               "root_conflict_pairs", "pruned_unreachable", "replan_ms_median", "replan_ms_p90", "replan_ms_max",
               "pen_share", "net_nodes_max", "net_edges_max", "peak_mb", "last_key"]
@@ -58,7 +57,7 @@ def run(args):
     opt = {"--stage": "3a", "--scens": "1,2,3", "--time-limit": "60", "--mem-limit": "8000"}
     for i in range(1, len(args), 2):
         opt[args[i]] = args[i + 1]
-    variants = opt.get("--variants", STAGE_VARIANTS.get(opt["--stage"], "bs,flow,floww,bs-late")).split(",")
+    variants = opt.get("--variants", STAGE_VARIANTS.get(opt["--stage"], "bs,flow,floww")).split(",")
     maps_3a = {name for name, _ in STAGES["3a"]}
     exe = os.path.join(HERE, "cbm.exe")
     tmp = tempfile.mkdtemp()
