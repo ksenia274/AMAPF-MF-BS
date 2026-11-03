@@ -71,3 +71,26 @@ makespan mismatches on common solutions: 0 []; invalid solutions: 0
 
 N=50 scen 16, 300 s, `--diag`: conflicts - unsolved, 95291 expanded, all at key 26 = root key, depth 138,
 7250 repeated constraint sets; late - T=26 (valid), 0.4 s, 139 expanded (all at key 26), depth 139, 0 repeated sets.
+
+## Low level: bspen (2026-11-03)
+
+Same 180 instances, same high level, 60 s, sequential: `cbm_paper_exp1.py cbm_paper_exp1_bspen.csv --low bspen`
+(Bulk Search, OPEN ordered by the penalties of floww, then by the key of Bulk Search). Means over the instances
+solved by that variant; the bs, flow, floww columns are the runs above.
+
+| N | solved: bs | solved: flow | solved: floww | solved: bspen | mean time, s: bs | mean time, s: flow | mean time, s: floww | mean time, s: bspen | mean makespan: bs | mean makespan: flow | mean makespan: floww | mean makespan: bspen | mean CT nodes expanded: bs | mean CT nodes expanded: flow | mean CT nodes expanded: floww | mean CT nodes expanded: bspen | mean replans: bs | mean replans: flow | mean replans: floww | mean replans: bspen |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 10 | 20/20 | 20/20 | 20/20 | 20/20 | 0.01 | 0.04 | 0.07 | 0.02 | 25.40 | 25.40 | 25.40 | 25.40 | 1.05 | 1.15 | 0.10 | 0.30 | 4.10 | 4.30 | 2.20 | 2.60 |
+| 15 | 20/20 | 20/20 | 20/20 | 20/20 | 0.02 | 0.07 | 0.09 | 0.02 | 26.40 | 26.40 | 26.40 | 26.40 | 1.80 | 2.50 | 0.25 | 0.75 | 6.60 | 8.00 | 3.50 | 4.50 |
+| 20 | 20/20 | 20/20 | 20/20 | 20/20 | 0.04 | 0.17 | 0.19 | 0.06 | 27.45 | 27.45 | 27.45 | 27.45 | 4.75 | 9.30 | 0.65 | 1.40 | 13.50 | 22.60 | 5.30 | 6.80 |
+| 25 | 20/20 | 20/20 | 20/20 | 20/20 | 0.06 | 0.25 | 0.16 | 0.05 | 28.00 | 28.00 | 28.00 | 28.00 | 9.95 | 13.95 | 0.75 | 1.85 | 24.90 | 32.90 | 6.50 | 8.70 |
+| 30 | 20/20 | 20/20 | 20/20 | 20/20 | 0.07 | 1.87 | 0.20 | 0.06 | 28.80 | 28.80 | 28.80 | 28.80 | 14.45 | 110.15 | 0.80 | 2.60 | 34.90 | 226.30 | 7.60 | 11.20 |
+| 35 | 20/20 | 20/20 | 20/20 | 20/20 | 0.10 | 1.15 | 0.24 | 0.06 | 28.80 | 28.80 | 28.80 | 28.80 | 20.45 | 69.20 | 1.05 | 3.65 | 47.90 | 145.40 | 9.10 | 14.30 |
+| 40 | 20/20 | 20/20 | 20/20 | 20/20 | 0.14 | 5.21 | 0.30 | 0.07 | 29.00 | 29.00 | 29.00 | 29.00 | 31.25 | 319.85 | 1.35 | 3.90 | 70.50 | 647.70 | 10.70 | 15.80 |
+| 45 | 20/20 | 19/20 | 20/20 | 20/20 | 0.18 | 6.20 | 0.34 | 0.08 | 29.05 | 29.21 | 29.05 | 29.05 | 45.40 | 407.84 | 1.70 | 4.40 | 99.80 | 824.68 | 12.40 | 17.80 |
+| 50 | 19/20 | 18/20 | 20/20 | 20/20 | 0.29 | 5.03 | 0.39 | 0.12 | 29.26 | 28.67 | 29.10 | 29.10 | 82.11 | 335.17 | 2.05 | 5.55 | 174.21 | 680.33 | 14.10 | 21.10 |
+
+makespan mismatches on common solutions: 0 []; invalid solutions: 0
+
+bs vs bspen: 179 common solved instances, makespan mismatches 0. bspen solved all 180, including N=50 scen 16
+(the plateau of bs above); whole run 27 s.
