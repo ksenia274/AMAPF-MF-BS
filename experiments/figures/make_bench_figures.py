@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Bar charts of cbm_bench.py results: median replanning time and share of solved instances per map.
 
-Usage: make_bench_figures.py BENCH.csv OUT_PREFIX [--solved-only]   -> OUT_PREFIX_replan.png, OUT_PREFIX_solved.png
+Usage: make_bench_figures.py BENCH.csv OUT_PREFIX [--solved-only] [--replans]
+  -> OUT_PREFIX_replan.png, OUT_PREFIX_solved.png; --replans: OUT_PREFIX_replans.png instead of _replan.png
+  (median number of replannings per instance, over the instances of the map and mode solved by every variant)
 One panel per team mode (k4, g5); bars = variants; the value is written on every bar.
 Median replanning time of a map = median over its runs of the per-run median.
 """
@@ -14,7 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-COLORS = {"bs": "#2a78d6", "flow": "#eb6834", "floww": "#1baf7a", "bs-late": "#eda100"}
+COLORS = {"bs": "#2a78d6", "bspen": "#e87ba4", "flow": "#eb6834", "bs-late": "#eda100", "floww": "#1baf7a"}
 MODES = {"k4": "K = 4 teams", "g5": "teams of 5"}
 
 
@@ -63,7 +65,23 @@ def main():
     def solved(rs):
         return sum(r["status"] == "solved" for r in rs) / len(rs) if rs else None
 
-    if "--solved-only" not in sys.argv:
+    def replans(rs):
+        if not rs:
+            return None
+        key = (rs[0]["map"], rs[0]["mode"])
+        variants = {r["variant"] for r in rows if (r["map"], r["mode"]) == key}
+        solved = {}
+        for r in rows:
+            if (r["map"], r["mode"]) == key and r["status"] == "solved":
+                solved.setdefault((r["N"], r["scen"]), set()).add(r["variant"])
+        common = {inst for inst, vs in solved.items() if vs == variants}
+        xs = [float(r["lowlevel_calls"]) for r in rs if (r["N"], r["scen"]) in common]
+        return statistics.median(xs) if xs else None
+
+    if "--replans" in sys.argv:
+        bars(rows, replans, "replannings", "Median replannings per instance (instances solved by every variant)",
+             lambda y: f"{y:.0f}", prefix + "_replans.png", False)
+    elif "--solved-only" not in sys.argv:
         bars(rows, replan, "ms", "Median time of one replanning (all N of the map)",
              lambda y: f"{y:.1f}" if y < 100 else f"{y:.0f}", prefix + "_replan.png", False)
     bars(rows, solved, "share solved", "Share of instances solved in 60 s (all N of the map)",

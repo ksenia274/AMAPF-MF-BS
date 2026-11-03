@@ -75,6 +75,9 @@ Files:
 - `cbm_bench.py OUT.csv --stage 3a` - stage 3: bs / flow / floww / bs-late on MovingAI maps, two team modes, all
   counters per run, solutions validated; `--summary` table with the makespan check; results `cbm_bench_3a.csv`,
   `cbm_bench_3a.md`, figures `figures/bench_3a_*.png` (`figures/make_bench_figures.py`).
+- `cbm_bench.py OUT.csv --stage 5.1` - step 5.1: bs / bs-late / bspen (`cbm --low bspen`: Bulk Search with OPEN
+  ordered by the penalties of floww) / floww on the instances of 3a and 3b; results `cbm_bench_5_1.csv`,
+  `cbm_bench_5_1.md`, figures `figures/bench_5_1_*.png`.
 - `make_empty_maps.py` - our own empty-128-128 / empty-256-256 maps with random scens (not in the MovingAI set) into
   `maps/`; `cbm_bench.py` takes a map from `maps/` if it is there.
 - `replan_scaling.py OUT.csv` - time of one low-level call in the root (`cbm --root-only first|last`, `--t-start 1|lb`)
