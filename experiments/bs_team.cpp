@@ -3,7 +3,7 @@
 //                [--t-start 1|lb]
 //   -> prints optimal makespan T, expansions (bs, bspen) or the weight of the flow (flow, floww), ms
 // --others: routes of the robots of other teams (format of ROUTES) for the weights of floww / bspen.
-// --t-start lb: T starts from bs::teamLowerBound instead of 1.
+// --t-start lb (default): T starts from bs::teamLowerBound; --t-start 1: from 1.
 // ROUTES: first line "T K", then K lines "x,y x,y ..." (T+1 positions), agent i = row i of .scen.
 // CONSTRAINTS (same format as brute_force.py, '#' starts a comment):
 //   v x y t            the team may not be in (x,y) at step t
@@ -18,7 +18,7 @@ int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args, int
 int main(int argc, char *argv[])
 {
     vector<string> args;
-    string low = "bs", othersFile, tStart = "1";
+    string low = "bs", othersFile, tStart = "lb";
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];

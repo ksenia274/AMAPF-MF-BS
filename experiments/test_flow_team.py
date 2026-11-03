@@ -112,7 +112,7 @@ def main():
     ap.add_argument("--weights", type=int, default=0)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--lows", default="bs,flow")
-    ap.add_argument("--t-start", default="1")
+    ap.add_argument("--t-start", default="lb")
     ap.add_argument("--low", default="floww")
     a = ap.parse_args()
     exe = os.path.abspath(a.exe)

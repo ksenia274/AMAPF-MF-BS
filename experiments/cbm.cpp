@@ -14,7 +14,8 @@
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
 // --diag: a second line with the root key, depth, constraints, repeated constraint sets.
 // --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
-// --t-start lb: the low level starts T from max(minT, bs::teamLowerBound) instead of minT (the answer is the same).
+// --t-start lb (default): the low level starts T from max(minT, bs::teamLowerBound); --t-start 1: from minT
+// (the answer is the same).
 // --root-only first|last: only the root, teams 0..0 or 0..K-1 planned one by one (each call with its own time
 // limit); for the last planned team prints minT, T, the number of T tried, the time of the call and the time of a
 // fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams.
@@ -70,7 +71,7 @@ public:
     double lowLevelSec = 0;
     bool tieEarlier = false;
     string low = "bs";
-    bool tStartLb = false;
+    bool tStartLb = true;
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
     int rootKey = -1, maxDepth = 0, maxConstraintsPerTeam = 0;
     long long duplicateConstraintSets = 0; // generated nodes whose constraint sets (per team) were already seen
@@ -518,7 +519,7 @@ int main(int argc, char *argv[])
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
     bool tieEarlier = false, diag = false;
-    string low = "bs", rootOnly, tStart = "1";
+    string low = "bs", rootOnly, tStart = "lb";
     for (int i = 5; i < argc; ++i)
     {
         string a = argv[i];
