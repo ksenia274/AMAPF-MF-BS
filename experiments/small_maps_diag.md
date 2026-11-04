@@ -130,3 +130,115 @@ Pooled by map (share of conflicts, in brackets their number):
 - A likely source of the gap: bspen charges a penalty only on entering a cell (waits inside a bulk are free), while
   floww charges every step in a cell occupied by another robot, waits included; and the order is greedy over the
   augmenting paths, not a min-cost flow.
+
+# Continuation (2026-11-04)
+
+## Старт T
+
+### Measured
+
+`cbm_bench_cactus.py cbm_bench_cactus_tstart1.csv --maps maze-32-32-2,room-32-32-4 --variants bs,bspen --t-start 1`:
+the instances of the cactus run (scen 1-10, N 20/40/60/80, teams of 5, 60 s, 8000 MB, the same stopping rule),
+T of the low level from 1 instead of the lower bound. Start lb: cbm_bench_cactus.csv. 160 runs, 0.6 h.
+
+| map | variant | solved, start lb | solved, start 1 | only lb | only 1 |
+|---|---|---|---|---|---|
+| maze-32-32-2 | bs | 17/40 | 17/40 | 0: - | 0: - |
+| maze-32-32-2 | bspen | 19/40 | 19/40 | 2: N60 s1, N60 s8 | 2: N40 s2, N40 s9 |
+| room-32-32-4 | bs | 20/40 | 18/40 | 3: N40 s5, N40 s8, N60 s1 | 1: N60 s2 |
+| room-32-32-4 | bspen | 32/40 | 33/40 | 1: N80 s10 | 2: N80 s7, N80 s9 |
+
+Makespan equal on all 82 runs solved with both starts; invalid solutions 0; no memory or killed. Every
+instance solved with only one start was a timeout (not timeout_skipped) with the other start.
+
+### Interpretation
+
+- The start of T does not explain bspen < floww: the totals differ by at most 2 per map and variant, in both
+  directions. The flips of single instances (up to 3 of 40 per variant) are the same sensitivity to the routes
+  seen in "1-2" above, not a systematic effect.
+
+## Откуда лишний штраф
+
+### Measured
+
+`small_maps_root.py small_maps_root.csv`; root only (`--max-nodes 1`), T from the lower bound. Penalty with the
+weights of floww of every team against the teams planned before it (the routes the low level saw), summed over
+the teams: wait = steps t >= 1 that stay in a cell where another robot is at t (ours entered earlier), enter =
+steps t >= 1 into a cell with another robot, swap = opposite moves. Check: the bspen sum equals root pen mean x
+root checks of `--pen-gap` (table 3) on all 16; root conflict pairs equal table 4.
+
+| instance | group | bspen wait | bspen enter | bspen swap | bspen total | floww wait | floww enter | floww swap | floww total | pairs bspen / floww |
+|---|---|---|---|---|---|---|---|---|---|---|
+| room-32-32-4 40 g5 s3 | floww_only | 4 | 6 | 5 | 15 | 1 | 6 | 5 | 12 | 15 / 12 |
+| maze-32-32-2 64 k4 s2 | floww_only | 21 | 34 | 8 | 63 | 1 | 10 | 1 | 12 | 70 / 26 |
+| maze-32-32-2 64 g5 s2 | floww_only | 46 | 90 | 22 | 158 | 3 | 57 | 14 | 74 | 153 / 73 |
+| maze-32-32-2 64 g5 s3 | floww_only | 22 | 46 | 14 | 82 | 0 | 45 | 10 | 55 | 84 / 56 |
+| room-64-64-8 128 g5 s1 | floww_only | 33 | 169 | 48 | 250 | 1 | 108 | 23 | 132 | 164 / 77 |
+| room-64-64-8 128 g5 s3 | floww_only | 16 | 148 | 47 | 211 | 2 | 79 | 27 | 108 | 158 / 88 |
+| room-32-32-4 40 g5 s1 | both | 0 | 8 | 5 | 13 | 0 | 6 | 2 | 8 | 14 / 8 |
+| room-32-32-4 40 g5 s2 | both | 6 | 8 | 1 | 15 | 0 | 3 | 2 | 5 | 20 / 7 |
+| maze-32-32-2 64 k4 s1 | both | 6 | 21 | 9 | 36 | 1 | 7 | 1 | 9 | 33 / 9 |
+| maze-32-32-2 64 k4 s3 | both | 11 | 7 | 5 | 23 | 0 | 3 | 5 | 8 | 23 / 8 |
+| maze-32-32-2 64 g5 s1 | both | 29 | 63 | 21 | 113 | 1 | 38 | 11 | 50 | 122 / 61 |
+| maze-32-32-2 40 g5 s1 | both | 6 | 36 | 12 | 54 | 0 | 22 | 7 | 29 | 49 / 23 |
+| maze-32-32-2 40 g5 s2 | both | 21 | 12 | 4 | 37 | 0 | 7 | 3 | 10 | 38 / 13 |
+| room-64-64-8 64 g5 s1 | both | 4 | 30 | 6 | 40 | 0 | 13 | 4 | 17 | 29 / 17 |
+| room-64-64-8 64 g5 s3 | both | 3 | 41 | 8 | 52 | 0 | 37 | 5 | 42 | 26 / 19 |
+| room-64-64-8 128 g5 s2 | both | 8 | 102 | 41 | 151 | 1 | 37 | 21 | 59 | 120 / 60 |
+| **sum floww_only** | | 142 | 493 | 144 | 779 | 8 | 305 | 80 | 393 | |
+| **sum both** | | 94 | 328 | 112 | 534 | 3 | 173 | 61 | 237 | |
+| **sum all** | | 236 | 821 | 256 | 1313 | 11 | 478 | 141 | 630 | |
+
+Excess of bspen over floww, all 16: wait 225, enter 343, swap 115 (of 683: 0.33, 0.50, 0.17).
+
+### Interpretation
+
+- The wait part is almost absent in floww (11 over 16 instances) and is 236 in bspen: Bulk Search charges
+  the penalty only on entering a bulk, so staying in a cell that another robot reaches later is free for it.
+  That is 33% of the excess. The rest is entries (50%) and swaps (17%): the
+  greedy order over augmenting paths does not reach the minimum even for the penalties it does see.
+- By map (share of the excess wait / enter / swap): maze-32-32-2 0.49 / 0.38 / 0.13 (wait the largest part in 5
+  of 8 instances), room-32-32-4 0.50 / 0.39 / 0.11 (small numbers), room-64-64-8 0.17 / 0.62 / 0.20 (entries
+  dominate in all 5).
+
+## Корень от floww
+
+### Measured
+
+`cbm --low bspen --root-low floww`: the K calls of the root by floww, every other replanning by bspen; same
+script, 60 s, T from the lower bound. Base = plain bspen in the same run (60 s). Replans include the K calls of
+the root; time includes the floww root.
+
+| instance | group | base | base: s | base: expanded | base: replans | root floww | s | expanded | generated | replans | root pairs |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| room-32-32-4 40 g5 s3 | floww_only | timeout | 60.0 | 22711 | 45430 | solved | 0.2 | 23 | 47 | 54 | 12 |
+| maze-32-32-2 64 k4 s2 | floww_only | timeout | 60.0 | 2395 | 4793 | timeout | 60.0 | 2097 | 4195 | 4198 | 26 |
+| maze-32-32-2 64 g5 s2 | floww_only | timeout | 60.0 | 8176 | 16364 | timeout | 60.0 | 8681 | 17360 | 17373 | 73 |
+| maze-32-32-2 64 g5 s3 | floww_only | timeout | 60.0 | 9105 | 18034 | timeout | 60.0 | 9274 | 18549 | 18561 | 56 |
+| room-64-64-8 128 g5 s1 | floww_only | solved | 13.2 | 701 | 1428 | timeout | 60.0 | 2597 | 5193 | 5219 | 77 |
+| room-64-64-8 128 g5 s3 | floww_only | timeout | 60.0 | 2999 | 6024 | solved | 24.2 | 518 | 1037 | 1062 | 88 |
+| room-32-32-4 40 g5 s1 | both | solved | 0.1 | 9 | 26 | solved | 0.3 | 21 | 43 | 50 | 8 |
+| room-32-32-4 40 g5 s2 | both | solved | 0.1 | 23 | 54 | solved | 0.3 | 25 | 51 | 58 | 7 |
+| maze-32-32-2 64 k4 s1 | both | timeout | 60.0 | 5182 | 10367 | solved | 6.8 | 396 | 793 | 796 | 9 |
+| maze-32-32-2 64 k4 s3 | both | solved | 6.4 | 392 | 788 | solved | 3.9 | 31 | 63 | 66 | 8 |
+| maze-32-32-2 64 g5 s1 | both | solved | 2.9 | 400 | 813 | timeout | 60.0 | 7545 | 15089 | 15102 | 61 |
+| maze-32-32-2 40 g5 s1 | both | solved | 0.5 | 54 | 116 | solved | 2.8 | 92 | 185 | 192 | 23 |
+| maze-32-32-2 40 g5 s2 | both | timeout | 60.0 | 11795 | 23597 | solved | 1.8 | 65 | 131 | 138 | 13 |
+| room-64-64-8 64 g5 s1 | both | solved | 0.7 | 17 | 47 | solved | 9.0 | 21 | 43 | 55 | 17 |
+| room-64-64-8 64 g5 s3 | both | solved | 0.6 | 27 | 67 | timeout | 60.0 | 3302 | 6603 | 6616 | 19 |
+| room-64-64-8 128 g5 s2 | both | solved | 3.3 | 155 | 336 | solved | 15.8 | 291 | 583 | 608 | 60 |
+| **solved floww_only** | | 1/6 | | | | 2/6 | | | | | |
+| **solved both** | | 8/10 | | | | 8/10 | | | | | |
+
+Makespan of every solved run equals floww: True. Root conflict pairs with --root-low floww equal those of floww
+in all 16 (same root).
+
+### Interpretation
+
+- A floww root does not fix the six problem instances: 2 of 6 solved (room-32-32-4 40 s3, room-64-64-8 128 s3)
+  instead of 1 (room-64-64-8 128 s1, now lost); the three maze-32-32-2 instances stay unsolved with about the same
+  number of nodes as the base. Over all 16: 10 vs 9, with flips in both directions (group both: gains maze 64
+  k4 s1 and 40 g5 s2, loses maze 64 g5 s1 and room-64-64-8 64 s3).
+- So the root with half the conflicts is not enough: after the first replannings bspen again leaves routes with
+  more penalty than floww (table 3: gap > 0 in most replannings, not only the root). The difference is in every
+  replanning, and on maze about half of it is the wait part, which bspen does not see at all.

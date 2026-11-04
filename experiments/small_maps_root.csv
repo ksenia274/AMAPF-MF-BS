@@ -1,0 +1,17 @@
+map,N,mode,K,scen,group,floww_T,bspen_root_pen_wait,bspen_root_pen_enter,bspen_root_pen_swap,floww_root_pen_wait,floww_root_pen_enter,floww_root_pen_swap,bspen_root_pairs,floww_root_pairs,base_status,base_T,base_total_ms,base_nodes_generated,base_nodes_expanded,base_lowlevel_calls,base_root_conflict_pairs,base_root_key,base_max_depth,rootfloww_status,rootfloww_T,rootfloww_total_ms,rootfloww_nodes_generated,rootfloww_nodes_expanded,rootfloww_lowlevel_calls,rootfloww_root_conflict_pairs,rootfloww_root_key,rootfloww_max_depth
+room-32-32-4,40,g5,8,3,floww_only,28,4,6,5,1,6,5,15,12,timeout,-1,60033,45423,22711,45430,15,28,76,solved,28,155,47,23,54,12,28,23
+maze-32-32-2,64,k4,4,2,floww_only,70,21,34,8,1,10,1,70,26,timeout,-1,60014,4789,2395,4793,70,70,2011,timeout,-1,60013,4195,2097,4198,26,70,1564
+maze-32-32-2,64,g5,13,2,floww_only,96,46,90,22,3,57,14,153,73,timeout,-1,60019,16351,8176,16364,153,96,569,timeout,-1,60019,17360,8681,17373,73,96,275
+maze-32-32-2,64,g5,13,3,floww_only,114,22,46,14,0,45,10,84,56,timeout,-1,60021,18021,9105,18034,84,114,359,timeout,-1,60020,18549,9274,18561,56,114,216
+room-64-64-8,128,g5,26,1,floww_only,95,33,169,48,1,108,23,164,77,solved,95,13165,1403,701,1428,164,95,225,timeout,-1,60006,5193,2597,5219,77,95,231
+room-64-64-8,128,g5,26,3,floww_only,102,16,148,47,2,79,27,158,88,timeout,-1,60006,5998,2999,6024,158,102,232,solved,102,24248,1037,518,1062,88,102,143
+room-32-32-4,40,g5,8,1,both,37,0,8,5,0,6,2,14,8,solved,37,52,19,9,26,14,37,9,solved,37,266,43,21,50,8,37,21
+room-32-32-4,40,g5,8,2,both,44,6,8,1,0,3,2,20,7,solved,44,104,47,23,54,20,44,23,solved,44,314,51,25,58,7,44,24
+maze-32-32-2,64,k4,4,1,both,60,6,21,9,1,7,1,33,9,timeout,-1,60019,10363,5182,10367,33,60,375,solved,60,6782,793,396,796,9,60,278
+maze-32-32-2,64,k4,4,3,both,83,11,7,5,0,3,5,23,8,solved,83,6361,785,392,788,23,83,392,solved,83,3900,63,31,66,8,83,31
+maze-32-32-2,64,g5,13,1,both,107,29,63,21,1,38,11,122,61,solved,107,2875,801,400,813,122,107,362,timeout,-1,60016,15089,7545,15102,61,107,489
+maze-32-32-2,40,g5,8,1,both,107,6,36,12,0,22,7,49,23,solved,107,469,109,54,116,49,107,46,solved,107,2769,185,92,192,23,107,91
+maze-32-32-2,40,g5,8,2,both,96,21,12,4,0,7,3,38,13,timeout,-1,60024,23589,11795,23597,38,96,116,solved,96,1790,131,65,138,13,96,46
+room-64-64-8,64,g5,13,1,both,95,4,30,6,0,13,4,29,17,solved,95,714,35,17,47,29,95,17,solved,95,8954,43,21,55,17,95,21
+room-64-64-8,64,g5,13,3,both,102,3,41,8,0,37,5,26,19,solved,102,585,55,27,67,26,102,26,timeout,-1,60006,6603,3302,6616,19,102,43
+room-64-64-8,128,g5,26,2,both,85,8,102,41,1,37,21,120,60,solved,85,3296,311,155,336,120,85,145,solved,85,15834,583,291,608,60,85,182

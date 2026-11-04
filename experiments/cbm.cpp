@@ -5,7 +5,7 @@
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
 //            [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag] [--pen-gap S]
-//            [--root-only first|last]
+//            [--root-only first|last] [--root-low bs|bspen|flow|floww]
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one).
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
@@ -22,6 +22,10 @@
 // --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
 // --t-start lb (default): the low level starts T from max(minT, bs::teamLowerBound); --t-start 1: from minT
 // (the answer is the same).
+// --root-low: the root is planned by this low level, all other replannings by --low.
+// --diag also prints root_pen_wait/enter/swap: the penalty (weights of floww) of the root routes of every team
+// against the teams planned before it, summed over the teams: wait = steps t >= 1 that stay in a cell with other
+// robots, enter = steps t >= 1 that enter such a cell (both weight (a)), swap = opposite moves (weight (b)).
 // --root-only first|last: only the root, teams 0..0 or 0..K-1 planned one by one (each call with its own time
 // limit); for the last planned team prints minT, T, the number of T tried, the time of the call and the time of a
 // fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams.
@@ -96,6 +100,8 @@ public:
     vector<PenCheck> penChecks;
     long long penCheckFailed = 0;
     vector<int> rootConflictDegrees;
+    array<long long, 3> rootPenParts{};
+    string rootLow;
 
     CBM(const bs::Grid &grid, const vector<int> &starts, const vector<int> &goals, int numTeams)
         : g(grid), teamAgents(numTeams), teamStarts(numTeams), teamGoals(numTeams)
@@ -301,23 +307,24 @@ private:
         ++lowLevelCalls;
         minT = startT(team, minT);
         vector<vector<int>> others;
-        if (low == "floww" || low == "bspen")
+        const string &lv = inRoot && !rootLow.empty() ? rootLow : low;
+        if (lv == "floww" || lv == "bspen" || (diag && inRoot))
             for (unsigned int other = 0; other < plans.size(); ++other)
                 if ((int)other != team)
                     others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
         bool ok;
-        if (low == "bs" || low == "bspen")
+        if (lv == "bs" || lv == "bspen")
         {
             bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
-            if (low == "bspen")
+            if (lv == "bspen")
                 solver.setOtherRoutes(others);
             ok = solveTeam(solver, team, plan, minT);
             penaltyCycles += solver.penaltyCycles;
         }
         else
         {
-            bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], low == "floww");
-            if (low == "floww")
+            bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], lv == "floww");
+            if (lv == "floww")
                 solver.setOtherRoutes(others);
             ok = solveTeam(solver, team, plan, minT);
             if (ok)
@@ -332,6 +339,12 @@ private:
         lowLevelCycles += __rdtsc() - startCycles;
         lowLevelSec += sec;
         replanMs.push_back(sec * 1000);
+        if (diag && inRoot && ok)
+        {
+            auto parts = penaltyParts(plan.routes, others, plan.T);
+            for (int i = 0; i < 3; ++i)
+                rootPenParts[i] += parts[i];
+        }
         if (penGap && ok && (inRoot || lowLevelCalls % penGap == 0))
             checkPenalty(team, plan, others);
         return ok ? make_shared<const TeamPlan>(move(plan)) : nullptr;
@@ -360,7 +373,15 @@ private:
     // (b) per other robot moving v -> u while ours moves u -> v.
     long long routesPenalty(const vector<vector<int>> &routes, const vector<vector<int>> &others, int T) const
     {
-        long long n = g.numCells, p = 0;
+        auto p = penaltyParts(routes, others, T);
+        return p[0] + p[1] + p[2];
+    }
+
+    // The penalty split into {(a) on a wait, (a) on entering the cell, (b)}.
+    array<long long, 3> penaltyParts(const vector<vector<int>> &routes, const vector<vector<int>> &others, int T) const
+    {
+        long long n = g.numCells;
+        array<long long, 3> p{};
         auto at = [](const vector<int> &r, int t) { return r[min<int>(t, r.size() - 1)]; };
         unordered_map<long long, int> occupied, moved;
         for (auto &r : others)
@@ -379,9 +400,9 @@ private:
             for (int t = 0; t <= T; ++t)
             {
                 if (t >= 1)
-                    p += weight(occupied, t * n + at(r, t));
+                    p[at(r, t) == at(r, t - 1) ? 0 : 1] += weight(occupied, t * n + at(r, t));
                 if (t < T && at(r, t) != at(r, t + 1))
-                    p += weight(moved, (t * n + at(r, t + 1)) * n + at(r, t));
+                    p[2] += weight(moved, (t * n + at(r, t + 1)) * n + at(r, t));
             }
         return p;
     }
@@ -630,7 +651,7 @@ int main(int argc, char *argv[])
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
     bool tieEarlier = false, diag = false;
     int penGap = 0;
-    string low = "bs", rootOnly, tStart = "lb";
+    string low = "bs", rootOnly, tStart = "lb", rootLow;
     for (int i = 5; i < argc; ++i)
     {
         string a = argv[i];
@@ -648,6 +669,8 @@ int main(int argc, char *argv[])
             memLimitMb = atoll(argv[++i]);
         else if (a == "--root-only" && i + 1 < argc)
             rootOnly = argv[++i];
+        else if (a == "--root-low" && i + 1 < argc)
+            rootLow = argv[++i];
         else if (a == "--t-start" && i + 1 < argc)
             tStart = argv[++i];
         else if (a == "--diag")
@@ -685,10 +708,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if ((low != "bs" && low != "bspen" && low != "flow" && low != "floww") || (tStart != "1" && tStart != "lb") ||
+    auto isLow = [](const string &x) { return x == "bs" || x == "bspen" || x == "flow" || x == "floww"; };
+    if (!isLow(low) || (!rootLow.empty() && !isLow(rootLow)) || (tStart != "1" && tStart != "lb") ||
         (!rootOnly.empty() && rootOnly != "first" && rootOnly != "last"))
     {
-        cerr << "--low must be bs, bspen, flow or floww, --t-start 1 or lb, --root-only first or last" << endl;
+        cerr << "--low and --root-low must be bs, bspen, flow or floww, --t-start 1 or lb, --root-only first or last" << endl;
         return 1;
     }
 #ifdef _WIN32
@@ -711,6 +735,7 @@ int main(int argc, char *argv[])
     CBM cbm(grid, starts, goals, numTeams);
     cbm.tieEarlier = tieEarlier;
     cbm.low = low;
+    cbm.rootLow = rootLow;
     cbm.tStartLb = tStart == "lb";
     cbm.diag = diag;
     cbm.penGap = low == "bspen" ? penGap : 0;
@@ -794,6 +819,8 @@ int main(int argc, char *argv[])
              << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << " root_conflict_degrees=";
         for (unsigned int i = 0; i < cbm.rootConflictDegrees.size(); ++i)
             cout << (i ? "," : "") << cbm.rootConflictDegrees[i];
+        cout << " root_pen_wait=" << cbm.rootPenParts[0] << " root_pen_enter=" << cbm.rootPenParts[1]
+             << " root_pen_swap=" << cbm.rootPenParts[2];
         if (cbm.penGap)
         {
             for (int rootOnly = 0; rootOnly < 2; ++rootOnly)

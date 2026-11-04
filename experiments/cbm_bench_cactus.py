@@ -2,6 +2,7 @@
 """CBM on MovingAI maps for cactus plots: teams of 5, random scen 1..10, low levels bs, bspen, flow, floww.
 
 Usage: cbm_bench_cactus.py OUT.csv [--resume] [--scens 1-10] [--time-limit 60] [--mem-limit 8000]
+                           [--maps M1,M2,..] [--variants V1,V2,..] [--t-start lb|1]
        cbm_bench_cactus.py --summary OUT.csv     (markdown table; makespan check over the variants)
 Instance: random scen s of the map, the first N agents, K = ceil(N/5) teams of consecutive agents (as cbm_bench g5).
 Stopping rule of the Bulk Search paper: within a scen N grows; once a variant does not solve an instance, the larger
@@ -38,7 +39,8 @@ def ns_of(name):
 
 def run(args):
     out_csv = args[0]
-    opt = {"--scens": "1-10", "--time-limit": "60", "--mem-limit": "8000"}
+    opt = {"--scens": "1-10", "--time-limit": "60", "--mem-limit": "8000", "--maps": ",".join(SMALL + LARGE),
+           "--variants": ",".join(VARIANTS), "--t-start": "lb"}
     i = 1
     while i < len(args):
         if args[i] == "--resume":
@@ -61,7 +63,7 @@ def run(args):
         w.writeheader()
         w.writerows(kept)
         f.flush()
-        for name in SMALL + LARGE:
+        for name in opt["--maps"].split(","):
             group = "small" if name in SMALL else "large"
             for s in range(lo, hi + 1):
                 failed = set()
@@ -69,7 +71,7 @@ def run(args):
                     mp, src = map_and_scen(name, s)
                     scen = os.path.join(tmp, "g.scen")
                     k = grouped_scen(src, n, scen)
-                    for variant in VARIANTS:
+                    for variant in opt["--variants"].split(","):
                         key = (name, str(n), str(s), variant)
                         if key in done:
                             if done[key] != "solved":
@@ -83,7 +85,7 @@ def run(args):
                             if os.path.exists(routes):
                                 os.remove(routes)
                             cmd = [exe, mp, scen, str(n), str(k), routes, "--low", variant, "--time-limit",
-                                   opt["--time-limit"], "--mem-limit", opt["--mem-limit"]]
+                                   opt["--time-limit"], "--mem-limit", opt["--mem-limit"], "--t-start", opt["--t-start"]]
                             start = time.perf_counter()
                             try:
                                 p = subprocess.run(cmd, capture_output=True, text=True, timeout=limit + 120)
