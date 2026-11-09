@@ -9,7 +9,7 @@
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one).
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
-// lowlevel_sum_T=.. swaps_fixed=.. last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
+// lowlevel_sum_T=.. swaps_fixed=.. lowlevel_expansions=.. (Bulk Search variants) last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
 // current lower bound at a limit) and root_conflict_pairs, pruned_unreachable, replan_ms_median/p90/max,
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
 // --diag: a second line with the root key, depth, constraints, repeated constraint sets and the number of free
@@ -81,6 +81,7 @@ public:
     long long nodesGenerated = 0, nodesExpanded = 0, lowLevelCalls = 0;
     long long lowLevelSumT = 0; // sum of T over successful low-level calls (for the mean T of a call)
     long long swapsFixed = 0;   // swaps inside a team replaced by two waits
+    long long lowLevelExpansions = 0; // Bulk Search variants: expansions summed over the low-level calls
     double lowLevelSec = 0;
     bool tieEarlier = false;
     string low = "bs";
@@ -332,6 +333,7 @@ private:
                 solver.setCut(cutAll);
             ok = solveTeam(solver, team, plan, minT);
             penaltyCycles += solver.penaltyCycles;
+            lowLevelExpansions += solver.numOfExpansions;
         }
         else
         {
@@ -876,7 +878,7 @@ int main(int argc, char *argv[])
     cout << "status=" << status << " T=" << (result ? result->key : -1) << " nodes_generated=" << cbm.nodesGenerated
          << " nodes_expanded=" << cbm.nodesExpanded << " lowlevel_calls=" << cbm.lowLevelCalls
          << " lowlevel_ms=" << (long long)(cbm.lowLevelSec * 1000) << " highlevel_ms=" << (long long)((total - cbm.lowLevelSec) * 1000)
-         << " total_ms=" << (long long)(total * 1000) << " lowlevel_sum_T=" << cbm.lowLevelSumT << " swaps_fixed=" << cbm.swapsFixed
+         << " total_ms=" << (long long)(total * 1000) << " lowlevel_sum_T=" << cbm.lowLevelSumT << " swaps_fixed=" << cbm.swapsFixed << " lowlevel_expansions=" << cbm.lowLevelExpansions
          << " last_key=" << (cbm.expandedByKey.empty() ? -1 : cbm.expandedByKey.rbegin()->first) << " expanded_by_key=";
     for (auto &kv : cbm.expandedByKey)
         cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;

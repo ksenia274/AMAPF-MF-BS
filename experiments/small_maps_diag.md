@@ -353,9 +353,163 @@ Deviations / fixes found by the checks:
   and `--low bs` (the 16 instances, 3000 CT nodes, all fields except timings): 16 / 16 equal for both;
   `compare_exe.py OLD NEW --quick` (bs_team, bs: T, expansions, routes): 14 / 14 equal.
 
+Unsolved in `--weights 1000`: 336 of 1000 instances are unsolvable at any T (brute force reaches a fixpoint of its
+layers, T = -1; no time or T limit in the brute force or in bs_team): 115 a start on a vertex constraint at t = 0,
+40 starts and goals in different components, 181 because of the other constraints. Every low level returned T = -1
+on exactly these 336 (0 mismatches), so the 664 are all solvable instances, not a limit.
+
+### Known approximations of bscut
+
+- (a) A piece is expanded once, at its first extraction; a later, cheaper path into its already visited beginning
+  is not expanded (as in Bulk Search, only the unvisited prefix of an earlier entry is).
+- (b) Negative costs of cancelling are not counted: cancelling a move or a wait of the own flow (a reverse
+  residual edge) costs 0, not minus the penalty it removes; only entries and waits across soft cuts cost.
+- (c) Swaps of two robots of one team on an edge are replaced by two waits (removeSwaps). Measured (replay of
+  `--weights 1000`, seed 1, with a bs_team build that can skip the replacement): bscut penal 13 swaps in 13
+  instances, bscut all 44 in 37, bspen 0; the penalty of the routes with and without the replacement is equal on
+  all of them (never higher, never lower). In CBM (`compare_cbm.py --random 3000`) the replacement worked 43 238
+  times for bscut penal and 348 360 for bscut all (0 for bs, bspen); not measured for the penalty there, by
+  construction it can not grow (same cells at every step, only moves removed).
+
 ### Interpretation
 
 - Both modes keep the minimal T and valid routes. On small instances bscut reaches the minimal penalty more often
-  than bspen (0.83-0.84 vs 0.74) and halves the mean excess; `all` and `penal` hardly differ there, i.e. on these
-  instances the bulks hide little beyond the penalized steps. Whether this carries over to the 16 instances is
-  stage 3.
+  than bspen (0.83-0.84 vs 0.74) and halves the mean excess.
+- `all` has no bulks at all and still leaves 16% of the instances above the minimum, so the rest of the excess
+  comes not from the bulks but from the greedy search of one path at a time (approximations (a), (b)). `penal`
+  (0.834) closes almost everything cutting can give (`all` 0.839).
+
+## Stage 3: bscut in CBM on the 16 instances (2026-11-10)
+
+`small_maps_cut.py small_maps_cut.csv`: the 16 instances of `small_maps_diag.csv`, variants bspen, bscut
+(`--cut penal`), bscut all (`--cut all`), floww; T from the lower bound, `--time-limit 60 --mem-limit 8000`,
+sequentially. Per variant one run with `--diag` (status, nodes, replans, time, root) and, for the BS variants, one
+run with `--pen-gap S` (S as in `small_maps_diag.csv`, the floww time is not counted). Root penalty = root_pen_wait
++ root_pen_enter + root_pen_swap of `--diag`. Expansions per replan = `lowlevel_expansions / lowlevel_calls`
+(the new cbm field, the sum of the Bulk Search expansions of all replans; floww has none).
+
+### Measured
+
+Summary (medians over the 16 instances; pen-gap columns are means over the instances):
+
+| variant | solved | CT expanded | replans | ms | root pairs | replan ms median | exp. per replan (sum / sum) | pen-gap share | pen-gap mean excess |
+|---|---|---|---|---|---|---|---|---|---|
+| bspen | 9/16 | 550.5 | 1120.5 | 10148 | 43.5 | 4.1555 | 3129 | 0.770 | 3.683 |
+| bscut | 16/16 | 6.5 | 23.5 | 737.5 | 33 | 16.611 | 26972 | 0.280 | 1.324 |
+| bscut_all | 13/16 | 6.5 | 23.5 | 8637 | 34.5 | 335.156 | 499888 | 0.319 | 1.476 |
+| floww | 16/16 | 5 | 20.5 | 5398 | 21 | 305.543 | — | — | — |
+
+Share of the root penalty gap closed, (pen_bspen − pen_mode) / (pen_bspen − pen_floww):
+
+| map | N | mode | scen | bspen | bscut penal | bscut all | floww | closed penal | closed all |
+|---|---|---|---|---|---|---|---|---|---|
+| room-32-32-4 | 40 | g5 | 3 | 15 | 14 | 14 | 12 | 0.33 | 0.33 |
+| maze-32-32-2 | 64 | k4 | 2 | 63 | 42 | 41 | 12 | 0.41 | 0.43 |
+| maze-32-32-2 | 64 | g5 | 2 | 158 | 120 | 110 | 74 | 0.45 | 0.57 |
+| maze-32-32-2 | 64 | g5 | 3 | 82 | 67 | 65 | 55 | 0.56 | 0.63 |
+| room-64-64-8 | 128 | g5 | 1 | 250 | 138 | 180 | 132 | 0.95 | 0.59 |
+| room-64-64-8 | 128 | g5 | 3 | 211 | 145 | 143 | 108 | 0.64 | 0.66 |
+| room-32-32-4 | 40 | g5 | 1 | 13 | 10 | 7 | 8 | 0.60 | 1.20 |
+| room-32-32-4 | 40 | g5 | 2 | 15 | 9 | 9 | 5 | 0.60 | 0.60 |
+| maze-32-32-2 | 64 | k4 | 1 | 36 | 22 | 31 | 9 | 0.52 | 0.19 |
+| maze-32-32-2 | 64 | k4 | 3 | 23 | 17 | 15 | 8 | 0.40 | 0.53 |
+| maze-32-32-2 | 64 | g5 | 1 | 113 | 64 | 75 | 50 | 0.78 | 0.60 |
+| maze-32-32-2 | 40 | g5 | 1 | 54 | 33 | 39 | 29 | 0.84 | 0.60 |
+| maze-32-32-2 | 40 | g5 | 2 | 37 | 27 | 28 | 10 | 0.37 | 0.33 |
+| room-64-64-8 | 64 | g5 | 1 | 40 | 19 | 29 | 17 | 0.91 | 0.48 |
+| room-64-64-8 | 64 | g5 | 3 | 52 | 45 | 42 | 42 | 0.70 | 1.00 |
+| room-64-64-8 | 128 | g5 | 2 | 151 | 115 | 116 | 59 | 0.39 | 0.38 |
+
+- Pooled (sums over the 16: bspen 1313, bscut penal 887, bscut all 944, floww 630): penal closes 0.62 of the gap,
+  all 0.54.
+- Per instance: penal median 0.58 (0.33-0.95), all median 0.58 (0.19-1.20). penal closes more than all on 7
+  instances, less on 7, equal on 2.
+- Closed > 1 (room-32-32-4 N40 scen 1, all 7 < floww 8): the root of each mode is planned against the paths of the
+  other teams from the same mode, so floww is not a lower bound for the root of another mode.
+
+Per instance:
+
+| map | N | mode | scen | variant | status | CT expanded | replans | ms | root pairs | root pen w/e/s = sum | pen-gap share / mean | replan ms median | exp. per replan |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| room-32-32-4 | 40 | g5 | 3 | bspen | timeout | 21769 | 43546 | 60043 | 15 | 4/6/5 = 15 | 0.250 / 0.396 (timeout) | 1.089 | 1484 |
+| room-32-32-4 | 40 | g5 | 3 | bscut | solved | 6 | 20 | 66 | 15 | 2/7/5 = 14 | 0.125 / 0.125 | 2.967 | 2553 |
+| room-32-32-4 | 40 | g5 | 3 | bscut_all | solved | 5 | 18 | 389 | 15 | 1/7/6 = 14 | 0.250 / 0.250 | 19.733 | 23748 |
+| room-32-32-4 | 40 | g5 | 3 | floww | solved | 5 | 18 | 233 | 12 | 1/6/5 = 12 | — | 13.947 | — |
+| maze-32-32-2 | 64 | k4 | 2 | bspen | timeout | 2378 | 4759 | 60014 | 70 | 21/34/8 = 63 | 0.932 / 7.484 (timeout) | 8.915 | 11435 |
+| maze-32-32-2 | 64 | k4 | 2 | bscut | solved | 6 | 16 | 517 | 54 | 9/26/7 = 42 | 0.500 / 6.000 | 30.590 | 19897 |
+| maze-32-32-2 | 64 | k4 | 2 | bscut_all | solved | 3 | 10 | 4641 | 52 | 7/32/2 = 41 | 0.500 / 5.500 | 494.015 | 425772 |
+| maze-32-32-2 | 64 | k4 | 2 | floww | solved | 3 | 10 | 5241 | 26 | 1/10/1 = 12 | — | 478.651 | — |
+| maze-32-32-2 | 64 | g5 | 2 | bspen | timeout | 8272 | 16556 | 60019 | 153 | 46/90/22 = 158 | 0.783 / 4.373 (timeout) | 2.866 | 2567 |
+| maze-32-32-2 | 64 | g5 | 2 | bscut | solved | 12 | 37 | 1354 | 110 | 25/76/19 = 120 | 0.615 / 2.692 | 15.060 | 23232 |
+| maze-32-32-2 | 64 | g5 | 2 | bscut_all | solved | 10 | 33 | 9051 | 107 | 28/64/18 = 110 | 0.615 / 2.692 | 179.774 | 252801 |
+| maze-32-32-2 | 64 | g5 | 2 | floww | solved | 9 | 31 | 4905 | 73 | 3/57/14 = 74 | — | 129.652 | — |
+| maze-32-32-2 | 64 | g5 | 3 | bspen | timeout | 9136 | 18095 | 60020 | 84 | 22/46/14 = 82 | 0.986 / 4.293 (timeout) | 2.460 | 2274 |
+| maze-32-32-2 | 64 | g5 | 3 | bscut | solved | 17 | 47 | 1051 | 63 | 9/50/8 = 67 | 0.154 / 0.769 | 18.293 | 10975 |
+| maze-32-32-2 | 64 | g5 | 3 | bscut_all | solved | 12 | 37 | 8703 | 74 | 10/41/14 = 65 | 0.231 / 0.692 | 245.500 | 203169 |
+| maze-32-32-2 | 64 | g5 | 3 | floww | solved | 16 | 45 | 8373 | 56 | 0/45/10 = 55 | — | 226.868 | — |
+| room-64-64-8 | 128 | g5 | 1 | bspen | solved | 701 | 1428 | 13644 | 164 | 33/169/48 = 250 | 0.903 / 5.069 | 7.608 | 8704 |
+| room-64-64-8 | 128 | g5 | 1 | bscut | solved | 18 | 62 | 4007 | 90 | 6/100/32 = 138 | 0.179 / 0.643 | 25.464 | 43928 |
+| room-64-64-8 | 128 | g5 | 1 | bscut_all | timeout | 13 | 52 | 60007 | 105 | 11/140/29 = 180 | 0.296 / 1.185 (timeout) | 916.037 | 847570 |
+| room-64-64-8 | 128 | g5 | 1 | floww | solved | 18 | 62 | 42208 | 77 | 1/108/23 = 132 | — | 716.269 | — |
+| room-64-64-8 | 128 | g5 | 3 | bspen | timeout | 2863 | 5751 | 60006 | 158 | 16/148/47 = 211 | 0.798 / 3.097 (timeout) | 8.669 | 9864 |
+| room-64-64-8 | 128 | g5 | 3 | bscut | solved | 19 | 64 | 4345 | 110 | 3/103/39 = 145 | 0.370 / 1.037 | 30.835 | 41479 |
+| room-64-64-8 | 128 | g5 | 3 | bscut_all | timeout | 14 | 53 | 60007 | 116 | 8/90/45 = 143 | 0.370 / 1.296 (timeout) | 1019.429 | 799106 |
+| room-64-64-8 | 128 | g5 | 3 | floww | solved | 19 | 64 | 46390 | 88 | 2/79/27 = 108 | — | 802.784 | — |
+| room-32-32-4 | 40 | g5 | 1 | bspen | solved | 9 | 26 | 55 | 14 | 0/8/5 = 13 | 0.538 / 0.731 | 1.441 | 2777 |
+| room-32-32-4 | 40 | g5 | 1 | bscut | solved | 4 | 16 | 82 | 11 | 0/7/3 = 10 | 0.000 / 0.000 | 3.550 | 4676 |
+| room-32-32-4 | 40 | g5 | 1 | bscut_all | solved | 4 | 16 | 754 | 8 | 2/3/2 = 7 | 0.000 / 0.000 | 41.866 | 52118 |
+| room-32-32-4 | 40 | g5 | 1 | floww | solved | 3 | 14 | 360 | 8 | 0/6/2 = 8 | — | 27.490 | — |
+| room-32-32-4 | 40 | g5 | 2 | bspen | solved | 23 | 54 | 108 | 20 | 6/8/1 = 15 | 0.778 / 1.741 | 1.135 | 1763 |
+| room-32-32-4 | 40 | g5 | 2 | bscut | solved | 3 | 14 | 91 | 13 | 2/6/1 = 9 | 0.214 / 0.357 | 4.765 | 5972 |
+| room-32-32-4 | 40 | g5 | 2 | bscut_all | solved | 4 | 16 | 1008 | 15 | 3/5/1 = 9 | 0.188 / 0.375 | 57.998 | 64400 |
+| room-32-32-4 | 40 | g5 | 2 | floww | solved | 3 | 14 | 536 | 7 | 0/3/2 = 5 | — | 44.194 | — |
+| maze-32-32-2 | 64 | k4 | 1 | bspen | timeout | 4866 | 9736 | 60020 | 33 | 6/21/9 = 36 | 0.920 / 4.514 (timeout) | 5.445 | 5445 |
+| maze-32-32-2 | 64 | k4 | 1 | bscut | solved | 3 | 10 | 232 | 20 | 4/14/4 = 22 | 0.500 / 3.250 | 20.406 | 15335 |
+| maze-32-32-2 | 64 | k4 | 1 | bscut_all | solved | 4 | 12 | 4296 | 28 | 6/17/8 = 31 | 0.500 / 4.500 | 422.448 | 328826 |
+| maze-32-32-2 | 64 | k4 | 1 | floww | solved | 5 | 14 | 5555 | 9 | 1/7/1 = 9 | — | 384.217 | — |
+| maze-32-32-2 | 64 | k4 | 3 | bspen | solved | 392 | 788 | 6652 | 23 | 11/7/5 = 23 | 0.801 / 7.043 | 7.937 | 6969 |
+| maze-32-32-2 | 64 | k4 | 3 | bscut | solved | 2 | 8 | 299 | 17 | 3/8/6 = 17 | 0.400 / 1.400 | 27.572 | 25788 |
+| maze-32-32-2 | 64 | k4 | 3 | bscut_all | solved | 2 | 8 | 4548 | 15 | 4/7/4 = 15 | 0.600 / 1.200 | 743.808 | 506954 |
+| maze-32-32-2 | 64 | k4 | 3 | floww | solved | 1 | 6 | 4726 | 8 | 0/3/5 = 8 | — | 634.663 | — |
+| maze-32-32-2 | 64 | g5 | 1 | bspen | solved | 400 | 813 | 2907 | 122 | 29/63/21 = 113 | 0.912 / 8.431 | 2.453 | 2690 |
+| maze-32-32-2 | 64 | g5 | 1 | bscut | solved | 22 | 57 | 1781 | 81 | 13/35/16 = 64 | 0.500 / 1.722 | 15.293 | 18381 |
+| maze-32-32-2 | 64 | g5 | 1 | bscut_all | solved | 12 | 37 | 12520 | 92 | 21/37/17 = 75 | 0.625 / 2.438 | 235.022 | 302450 |
+| maze-32-32-2 | 64 | g5 | 1 | floww | solved | 12 | 37 | 7602 | 61 | 1/38/11 = 50 | — | 185.713 | — |
+| maze-32-32-2 | 40 | g5 | 1 | bspen | solved | 54 | 116 | 481 | 49 | 6/36/12 = 54 | 0.845 / 3.078 | 2.427 | 4397 |
+| maze-32-32-2 | 40 | g5 | 1 | bscut | solved | 7 | 22 | 747 | 38 | 4/22/7 = 33 | 0.273 / 0.773 | 12.697 | 24469 |
+| maze-32-32-2 | 40 | g5 | 1 | bscut_all | solved | 7 | 22 | 8571 | 41 | 8/23/8 = 39 | 0.273 / 1.045 | 247.865 | 358245 |
+| maze-32-32-2 | 40 | g5 | 1 | floww | solved | 5 | 18 | 4219 | 23 | 0/22/7 = 29 | — | 202.433 | — |
+| maze-32-32-2 | 40 | g5 | 2 | bspen | timeout | 11679 | 23366 | 60025 | 38 | 21/12/4 = 37 | 0.740 / 2.693 (timeout) | 2.262 | 2331 |
+| maze-32-32-2 | 40 | g5 | 2 | bscut | solved | 4 | 16 | 414 | 28 | 12/11/4 = 27 | 0.333 / 1.167 | 6.787 | 19479 |
+| maze-32-32-2 | 40 | g5 | 2 | bscut_all | solved | 5 | 18 | 4917 | 28 | 12/12/4 = 28 | 0.308 / 1.000 | 201.116 | 258594 |
+| maze-32-32-2 | 40 | g5 | 2 | floww | solved | 4 | 16 | 2685 | 13 | 0/7/3 = 10 | — | 146.873 | — |
+| room-64-64-8 | 64 | g5 | 1 | bspen | solved | 17 | 47 | 732 | 29 | 4/30/6 = 40 | 0.660 / 1.404 | 7.419 | 21411 |
+| room-64-64-8 | 64 | g5 | 1 | bscut | solved | 7 | 27 | 1238 | 16 | 0/16/3 = 19 | 0.000 / 0.000 | 17.929 | 39116 |
+| room-64-64-8 | 64 | g5 | 1 | bscut_all | solved | 6 | 25 | 31803 | 18 | 1/25/3 = 29 | 0.080 / 0.080 | 915.743 | 952240 |
+| room-64-64-8 | 64 | g5 | 1 | floww | solved | 8 | 29 | 19695 | 17 | 0/13/4 = 17 | — | 598.435 | — |
+| room-64-64-8 | 64 | g5 | 3 | bspen | solved | 27 | 67 | 613 | 26 | 3/41/8 = 52 | 0.672 / 1.687 | 5.982 | 10818 |
+| room-64-64-8 | 64 | g5 | 3 | bscut | solved | 6 | 25 | 728 | 21 | 0/39/6 = 45 | 0.080 / 0.080 | 13.446 | 22772 |
+| room-64-64-8 | 64 | g5 | 3 | bscut_all | solved | 7 | 27 | 26242 | 21 | 0/35/7 = 42 | 0.074 / 0.074 | 1030.790 | 689415 |
+| room-64-64-8 | 64 | g5 | 3 | floww | solved | 5 | 23 | 14087 | 19 | 0/37/5 = 42 | — | 555.004 | — |
+| room-64-64-8 | 128 | g5 | 2 | bspen | solved | 155 | 336 | 3357 | 120 | 8/102/41 = 151 | 0.807 / 2.886 | 6.389 | 9671 |
+| room-64-64-8 | 128 | g5 | 2 | bscut | solved | 21 | 68 | 3874 | 79 | 3/86/26 = 115 | 0.235 / 1.176 | 21.208 | 37716 |
+| room-64-64-8 | 128 | g5 | 2 | bscut_all | timeout | 18 | 61 | 60003 | 82 | 2/89/25 = 116 | 0.188 / 1.281 (timeout) | 718.522 | 646990 |
+| room-64-64-8 | 128 | g5 | 2 | floww | solved | 21 | 68 | 36012 | 60 | 1/37/21 = 59 | — | 560.443 | — |
+
+- bspen: 7 timeouts (CT nodes in the thousands); bscut penal: 0; bscut all: 3, all on room-64-64-8 N128 (replan
+  median 0.7-1.0 s, 13-18 CT nodes in 60 s); floww: 0.
+- CT expanded: bscut penal 2-22, all 2-18, floww 1-21, bspen 9-21769.
+- Replan cost (medians over instances): bspen 4.2 ms, penal 16.6 ms, all 335 ms, floww 306 ms; expansions per
+  replan 3.1 k / 27 k / 500 k.
+- Time: penal is the fastest variant on 11 of 16 instances; all is slower than floww on 13 of 16.
+- pen-gap rows marked (timeout) cover the replans done before the limit.
+
+### Interpretation
+
+- Cutting removes most of the CT blow-up of bspen: with bscut the CT is about as small as with floww, while a replan stays
+  ~20 times cheaper than a floww one. This is the best combination of the four.
+- penal closes about 0.6 of the root penalty gap; all closes no more (0.54 pooled), at a ~20 times higher replan
+  cost. Cutting everywhere does not pay: the cuts around the penalized steps are the ones that matter.
+- The rest of the gap (about 0.4) is not about bulks (all has none): it comes from planning one path at a time
+  greedily against the other teams, consistent with stage 2. Even so the remaining extra penalty does not grow the
+  CT on these 16 instances.
