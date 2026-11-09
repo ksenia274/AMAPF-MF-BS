@@ -242,3 +242,68 @@ in all 16 (same root).
 - So the root with half the conflicts is not enough: after the first replannings bspen again leaves routes with
   more penalty than floww (table 3: gap > 0 in most replannings, not only the root). The difference is in every
   replanning, and on maze about half of it is the wait part, which bspen does not see at all.
+
+# 5.2а
+
+## Stage 1: where the extra entries come from (2026-11-09)
+
+### Measured
+
+`small_maps_entries.py small_maps_entries.csv`: the 16 instances, root only (`--max-nodes 1`), T from the lower
+bound; `root_late` of `cbm --diag` (lateEntries in cbm.cpp). Units: penalty units (other robots in the cell at
+the step), as root_pen_enter / root_pen_wait above. Every team against the teams planned before it.
+
+A stay = maximal run of steps e..x of a robot in one cell v (exit = x, the robot is in another cell at x+1 or
+x = T). "Enter later at t'" = wait in the previous cell u over e..t'-1 instead, then stay in v from t' to x as
+before. Allowed if it adds no penalty (no other robot in u over e..t'-1, no other robot moving v -> u at t'-1)
+and no robot of the own team is in u then.
+
+- Entry penalty at e: **structural** if some t' in (e, x] has no other robot in v and is allowed; otherwise
+  **other**, split into: pass-through (x = e, the robot leaves v at the next step, so no later entry into the
+  same stay exists), no penalty-free step in (e, x], u blocked (a penalty-free t' exists but waiting in u is not
+  allowed).
+- Wait penalty at s (robot in v at s-1 and s, another robot in v at s): **avoidable** if the first penalty-free
+  step f > s of v satisfies f <= x and entering at f is allowed; otherwise: no penalty-free step until the exit,
+  u blocked, or the stay is the start cell (no u).
+
+bspen:
+
+| instance | group | entry pen | structural | other | other: pass-through | other: no free step | other: u blocked | wait pen | avoidable | no free step | u blocked | start cell |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| room-32-32-4 40 g5 s3 | floww_only | 6 | 0 | 6 | 6 | 0 | 0 | 4 | 1 | 1 | 2 | 0 |
+| maze-32-32-2 64 k4 s2 | floww_only | 34 | 0 | 34 | 34 | 0 | 0 | 21 | 1 | 0 | 20 | 0 |
+| maze-32-32-2 64 g5 s2 | floww_only | 90 | 0 | 90 | 89 | 0 | 1 | 46 | 9 | 2 | 35 | 0 |
+| maze-32-32-2 64 g5 s3 | floww_only | 46 | 0 | 46 | 46 | 0 | 0 | 22 | 2 | 0 | 20 | 0 |
+| room-64-64-8 128 g5 s1 | floww_only | 169 | 0 | 169 | 169 | 0 | 0 | 33 | 4 | 2 | 27 | 0 |
+| room-64-64-8 128 g5 s3 | floww_only | 148 | 0 | 148 | 148 | 0 | 0 | 16 | 3 | 0 | 13 | 0 |
+| room-32-32-4 40 g5 s1 | both | 8 | 0 | 8 | 8 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| room-32-32-4 40 g5 s2 | both | 8 | 0 | 8 | 8 | 0 | 0 | 6 | 3 | 0 | 3 | 0 |
+| maze-32-32-2 64 k4 s1 | both | 21 | 0 | 21 | 21 | 0 | 0 | 6 | 0 | 1 | 5 | 0 |
+| maze-32-32-2 64 k4 s3 | both | 7 | 0 | 7 | 7 | 0 | 0 | 11 | 2 | 0 | 9 | 0 |
+| maze-32-32-2 64 g5 s1 | both | 63 | 0 | 63 | 62 | 0 | 1 | 29 | 2 | 1 | 26 | 0 |
+| maze-32-32-2 40 g5 s1 | both | 36 | 0 | 36 | 36 | 0 | 0 | 6 | 0 | 0 | 6 | 0 |
+| maze-32-32-2 40 g5 s2 | both | 12 | 0 | 12 | 12 | 0 | 0 | 21 | 2 | 1 | 18 | 0 |
+| room-64-64-8 64 g5 s1 | both | 30 | 0 | 30 | 30 | 0 | 0 | 4 | 1 | 1 | 2 | 0 |
+| room-64-64-8 64 g5 s3 | both | 41 | 0 | 41 | 41 | 0 | 0 | 3 | 0 | 0 | 3 | 0 |
+| room-64-64-8 128 g5 s2 | both | 102 | 1 | 101 | 101 | 0 | 0 | 8 | 2 | 2 | 4 | 0 |
+| **sum, bspen** | | 821 | 1 | 820 | 818 | 0 | 2 | 236 | 32 | 11 | 193 | 0 |
+| **sum, floww** | | 478 | 0 | 478 | 478 | 0 | 0 | 11 | 0 | 11 | 0 | 0 |
+
+Checks (in the script, all 16, both low levels): structural + other = all entry penalties; the parts of the
+waits add up; the totals equal root_pen_enter / root_pen_wait of cbm (and the table "Откуда лишний штраф").
+Per-instance floww numbers: small_maps_entries.csv.
+
+### Interpretation
+
+- Structural extra entries practically do not exist: 1 of 821 entry penalty units. 818 of 821 (99.6%) are pass-throughs: the
+  robot crosses the cell in one step while another robot is there, so there is no later entry into the same
+  stay at all. The same holds for floww (all 478 are pass-throughs). The excess of bspen in entries (821 vs 478)
+  is therefore not a too-early entry into a bulk it uses anyway, but the choice of which cells to cross and when
+  (a different route or timing), which a later entry into the same stay cannot fix.
+- Waits: 32 of 236 wait penalty units (14%) would disappear by entering at the first free step after the other robot; 193 (82%) not, because
+  waiting in the previous cell instead also costs a penalty or meets the own team. floww has 11 wait penalty
+  units in all, none avoidable this way. So most of the wait excess of bspen is not one late entry either; it
+  comes from routes that wait among other robots, which a search that sees the wait penalty (the cut bulks of
+  stage 2) could avoid by other routes, not only by a later entry.
+- This measures only one counterfactual (delay the entry, keep the rest of the route); it does not bound what
+  bscut can gain.

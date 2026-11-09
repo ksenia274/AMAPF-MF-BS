@@ -25,7 +25,9 @@
 // --root-low: the root is planned by this low level, all other replannings by --low.
 // --diag also prints root_pen_wait/enter/swap: the penalty (weights of floww) of the root routes of every team
 // against the teams planned before it, summed over the teams: wait = steps t >= 1 that stay in a cell with other
-// robots, enter = steps t >= 1 that enter such a cell (both weight (a)), swap = opposite moves (weight (b)).
+// robots, enter = steps t >= 1 that enter such a cell (both weight (a)), swap = opposite moves (weight (b));
+// root_late = enter pen, structural, pass-through, no free step, u blocked, wait pen, avoidable, no free step,
+// u blocked, start stay (lateEntries()).
 // --root-only first|last: only the root, teams 0..0 or 0..K-1 planned one by one (each call with its own time
 // limit); for the last planned team prints minT, T, the number of T tried, the time of the call and the time of a
 // fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams.
@@ -101,6 +103,12 @@ public:
     long long penCheckFailed = 0;
     vector<int> rootConflictDegrees;
     array<long long, 3> rootPenParts{};
+    enum // parts of lateEntries()
+    {
+        EnterPen, EnterStructural, EnterPassThrough, EnterNoFree, EnterBlocked,
+        WaitPen, WaitAvoidable, WaitNoFree, WaitBlocked, WaitStart, LateKinds
+    };
+    array<long long, LateKinds> rootLateEntries{};
     string rootLow;
 
     CBM(const bs::Grid &grid, const vector<int> &starts, const vector<int> &goals, int numTeams)
@@ -344,6 +352,9 @@ private:
             auto parts = penaltyParts(plan.routes, others, plan.T);
             for (int i = 0; i < 3; ++i)
                 rootPenParts[i] += parts[i];
+            auto late = lateEntries(plan.routes, others, plan.T);
+            for (int i = 0; i < LateKinds; ++i)
+                rootLateEntries[i] += late[i];
         }
         if (penGap && ok && (inRoot || lowLevelCalls % penGap == 0))
             checkPenalty(team, plan, others);
@@ -403,6 +414,75 @@ private:
                     p[at(r, t) == at(r, t - 1) ? 0 : 1] += weight(occupied, t * n + at(r, t));
                 if (t < T && at(r, t) != at(r, t + 1))
                     p[2] += weight(moved, (t * n + at(r, t + 1)) * n + at(r, t));
+            }
+        return p;
+    }
+
+    // Penalties (a) of `routes` and whether entering the same stay later would avoid them. Entering at t' instead of
+    // the entry step e means waiting in the previous cell u over e..t'-1; allowed only if that adds no penalty (no
+    // other robot in u, no move v -> u at t'-1) and no agent of the team is in u; the stay from t' to the exit is
+    // unchanged. Entry penalty at e: structural if some t' in (e, exit] is penalty-free and allowed, else pass-through
+    // (the stay is one step), no penalty-free step until the exit, or u blocked. Wait penalty at s: avoidable if the
+    // first penalty-free step after s is before the exit and allowed, else none until the exit, u blocked, or the
+    // stay is the start (no u). Weighted like penaltyParts.
+    array<long long, LateKinds> lateEntries(const vector<vector<int>> &routes, const vector<vector<int>> &others, int T) const
+    {
+        long long n = g.numCells;
+        auto at = [](const vector<int> &r, int t) { return r[min<int>(t, r.size() - 1)]; };
+        unordered_map<long long, int> occupied, moved;
+        unordered_set<long long> own;
+        for (auto &r : others)
+            for (int t = 0; t <= T; ++t)
+            {
+                ++occupied[t * n + at(r, t)];
+                if (t < T && at(r, t) != at(r, t + 1))
+                    ++moved[(t * n + at(r, t)) * n + at(r, t + 1)];
+            }
+        for (auto &r : routes)
+            for (int t = 0; t <= T; ++t)
+                own.insert(t * n + at(r, t));
+        auto weight = [](const unordered_map<long long, int> &m, long long key) {
+            auto it = m.find(key);
+            return it == m.end() ? 0 : it->second;
+        };
+        array<long long, LateKinds> p{};
+        for (auto &r : routes)
+            for (int e = 0, x; e <= T; e = x + 1)
+            {
+                int v = at(r, e);
+                x = e;
+                while (x < T && at(r, x + 1) == v)
+                    ++x;
+                // canEnter[t'] for e < t' <= x: waiting in u over e..t'-1 is allowed and step t' in v is penalty-free
+                vector<char> canEnter(x + 1, 0);
+                if (e > 0)
+                {
+                    int u = at(r, e - 1);
+                    for (int s = e; s < x; ++s)
+                    {
+                        if (weight(occupied, s * n + u) || own.count(s * n + u))
+                            break;
+                        canEnter[s + 1] = !weight(moved, (s * n + v) * n + u) && !weight(occupied, (s + 1) * n + v);
+                    }
+                    long long w = weight(occupied, e * n + v);
+                    p[EnterPen] += w;
+                    bool anyFree = false;
+                    for (int t = e + 1; t <= x; ++t)
+                        anyFree = anyFree || !weight(occupied, t * n + v);
+                    p[find(canEnter.begin(), canEnter.end(), 1) != canEnter.end() ? EnterStructural
+                      : x == e ? EnterPassThrough : !anyFree ? EnterNoFree : EnterBlocked] += w;
+                }
+                for (int s = max(e + 1, 1); s <= x; ++s)
+                {
+                    long long ws = weight(occupied, s * n + v);
+                    if (!ws)
+                        continue;
+                    p[WaitPen] += ws;
+                    int free = s + 1;
+                    while (free <= x && weight(occupied, free * n + v))
+                        ++free;
+                    p[e == 0 ? WaitStart : free > x ? WaitNoFree : canEnter[free] ? WaitAvoidable : WaitBlocked] += ws;
+                }
             }
         return p;
     }
@@ -820,7 +900,9 @@ int main(int argc, char *argv[])
         for (unsigned int i = 0; i < cbm.rootConflictDegrees.size(); ++i)
             cout << (i ? "," : "") << cbm.rootConflictDegrees[i];
         cout << " root_pen_wait=" << cbm.rootPenParts[0] << " root_pen_enter=" << cbm.rootPenParts[1]
-             << " root_pen_swap=" << cbm.rootPenParts[2];
+             << " root_pen_swap=" << cbm.rootPenParts[2] << " root_late=";
+        for (int i = 0; i < CBM::LateKinds; ++i)
+            cout << (i ? "," : "") << cbm.rootLateEntries[i];
         if (cbm.penGap)
         {
             for (int rootOnly = 0; rootOnly < 2; ++rootOnly)

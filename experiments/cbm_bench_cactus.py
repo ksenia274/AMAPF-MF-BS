@@ -3,7 +3,7 @@
 
 Usage: cbm_bench_cactus.py OUT.csv [--resume] [--scens 1-10] [--time-limit 60] [--mem-limit 8000]
                            [--maps M1,M2,..] [--variants V1,V2,..] [--t-start lb|1]
-       cbm_bench_cactus.py --summary OUT.csv     (markdown table; makespan check over the variants)
+       cbm_bench_cactus.py OUT.csv --summary     (markdown table; makespan check over the variants)
 Instance: random scen s of the map, the first N agents, K = ceil(N/5) teams of consecutive agents (as cbm_bench g5).
 Stopping rule of the Bulk Search paper: within a scen N grows; once a variant does not solve an instance, the larger
 N of that scen are not run for it and are written as timeout_skipped. T starts from the lower bound (the default).
@@ -11,6 +11,7 @@ Runs are sequential; every solution is checked by validate.py --teams K; the CSV
 --resume: keeps the rows of OUT.csv and runs only the missing ones (rows with status error, i.e. cbm printed
 nothing, are run again).
 """
+import argparse
 import csv
 import os
 import subprocess
@@ -38,17 +39,8 @@ def ns_of(name):
 
 
 def run(args):
-    out_csv = args[0]
-    opt = {"--scens": "1-10", "--time-limit": "60", "--mem-limit": "8000", "--maps": ",".join(SMALL + LARGE),
-           "--variants": ",".join(VARIANTS), "--t-start": "lb"}
-    i = 1
-    while i < len(args):
-        if args[i] == "--resume":
-            opt["--resume"] = True
-            i += 1
-        else:
-            opt[args[i]] = args[i + 1]
-            i += 2
+    out_csv = args.out_csv
+    opt = {"--" + k.replace("_", "-"): v for k, v in vars(args).items()}
     lo, hi = map(int, opt["--scens"].split("-"))
     kept = []
     if opt.get("--resume") and os.path.exists(out_csv):
@@ -144,7 +136,21 @@ def summary(path):
 
 
 if __name__ == "__main__":
-    if sys.argv[1] == "--summary":
-        summary(sys.argv[2])
+    ap = argparse.ArgumentParser(description="CBM cactus benchmark (see the module docstring)")
+    ap.add_argument("out_csv")
+    ap.add_argument("--summary", action="store_true", help="print the table of OUT_CSV instead of running")
+    ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--scens", default="1-10")
+    ap.add_argument("--time-limit", default="60")
+    ap.add_argument("--mem-limit", default="8000")
+    ap.add_argument("--maps", default=",".join(SMALL + LARGE))
+    ap.add_argument("--variants", default=",".join(VARIANTS))
+    ap.add_argument("--t-start", default="lb", choices=["lb", "1"])
+    a = ap.parse_args()
+    unknown = set(a.maps.split(",")) - set(SMALL + LARGE)
+    if unknown:
+        ap.error(f"unknown maps: {sorted(unknown)}")
+    if a.summary:
+        summary(a.out_csv)
     else:
-        run(sys.argv[1:])
+        run(a)
