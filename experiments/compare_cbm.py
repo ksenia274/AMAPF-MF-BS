@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare cbm.exe with brute_force.py (colored) on random tiny instances.
 
-Usage: compare_cbm.py CBM_EXE [--random N] [--seed S] [--max-nodes M] [--low bs|flow|floww]
+Usage: compare_cbm.py CBM_EXE [--random N] [--seed S] [--max-nodes M] [--low bs|bspen|bscut|bscut:all|flow|floww]
 Instance: grid up to 3x4 with random obstacles, 2..4 agents, 2..3 teams (agent i in team i % K).
 Compared: T of cbm with max(T_brute, 1); routes checked by validate.py with --teams. If brute force says
 there is no solution, cbm must stop at the node limit (T=-1); cbm hitting the limit on a solvable
@@ -17,6 +17,7 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from brute_force import min_makespan  # noqa: E402
 from compare_brute import write_instance  # noqa: E402
+from test_flow_team import low_args  # noqa: E402
 from validate import check, read_routes  # noqa: E402
 
 
@@ -46,7 +47,7 @@ def main():
         routes_path = os.path.join(work, "g.routes")
         if os.path.exists(routes_path):
             os.remove(routes_path)
-        out = subprocess.run([exe, mp, sc, str(n), str(k), routes_path, "--max-nodes", str(a.max_nodes), "--low", a.low],
+        out = subprocess.run([exe, mp, sc, str(n), str(k), routes_path, "--max-nodes", str(a.max_nodes)] + low_args(a.low),
                              capture_output=True, text=True).stdout.strip()
         t_cbm = int(out.split("T=")[1].split()[0]) if "T=" in out else None
         swaps += int(out.split("swaps_fixed=")[1].split()[0]) if "swaps_fixed=" in out else 0

@@ -80,6 +80,24 @@ inline int teamLowerBound(const Grid &g, const vector<int> &starts, const vector
     return lb;
 }
 
+// A swap of two agents of one team is replaced by two waits and the agents exchange the rest of their routes:
+// the cells occupied at every step stay the same, so no new conflicts appear (never observed with Bulk Search and
+// bspen; bscut makes them; impossible with flow: the gadget lets one robot through an edge per step).
+inline int removeSwaps(vector<vector<int>> &r, int T)
+{
+    int fixed = 0;
+    for (int t = 0; t < T; ++t)
+        for (unsigned int a = 0; a < r.size(); ++a)
+            for (unsigned int b = a + 1; b < r.size(); ++b)
+                if (r[a][t] != r[a][t + 1] && r[a][t] == r[b][t + 1] && r[a][t + 1] == r[b][t])
+                {
+                    ++fixed;
+                    for (int s = t + 1; s <= T; ++s)
+                        swap(r[a][s], r[b][s]);
+                }
+    return fixed;
+}
+
 class BulkSearchTeam
 {
 public:
@@ -138,6 +156,13 @@ public:
         penaltyCycles += __rdtsc() - start;
     }
 
+    // bscut (5.2a): as bspen, but the waiting chains are also cut softly (an unused edge stays usable): `all`: at
+    // every step; otherwise around every step t >= 1 at which another robot is in the cell (that step is a piece
+    // of its own). Waiting across a soft cut is an explicit transition that costs the robots in the cell at the new
+    // step, and an entry with an opposite move also gets the earliest entry into the same piece without one.
+    // Soft cuts are not made after a taken goal (that time is occupied by the team anyway).
+    void setCut(bool all) { cutMode = all ? 2 : 1; }
+
     // Minimal makespan T >= minT (as the original main: T = minT, minT+1, ..., the flow is kept between T);
     // -1 if none up to maxT. Solvability is monotone in T (an agent may stay one more step in its goal),
     // so starting from minT gives max(minT, the minimal makespan).
@@ -150,6 +175,16 @@ public:
             if (forbiddenIdx[s].count(0))
                 return -1; // an agent is in its start at step 0 by definition
         sort(vertexConstraints.begin(), vertexConstraints.end());
+        if (cutMode == 1)
+        {
+            softCuts.assign(n, set<int>());
+            for (auto &kv : otherAt)
+            {
+                int t = kv.first / n, cell = kv.first % n;
+                softCuts[cell].insert(2 * t - 1);
+                softCuts[cell].insert(2 * t + 1);
+            }
+        }
         remainingGoals = startCells.size();
         partialReset();
         int T = max(minT, 1);
@@ -280,26 +315,69 @@ private:
     int otherHorizon = 0;
     vector<int> otherLast;                           // other robots per cell after the end of their routes
     unordered_map<long long, int> otherAt, otherMoves; // t*n+cell; (t*n+from)*n+to
+    int cutMode = 0;                                 // 0: no soft cuts (bs, bspen), 1: at the penalized steps, 2: all
+    vector<set<int>> softCuts; // cutMode 1: b = 2t-1 and 2t+1 for the penalized steps t < otherHorizon (as in blocks)
 
     void push(TimestepCostPair p, int parent, int cellID, int pen = 0) { q.push(Node{parent, cellID, p, p.timeStep + heuristic[cellID], pen}); }
 
+    int vertexPenalty(int cell, int t) const
+    {
+        if (t >= otherHorizon)
+            return otherLast[cell];
+        auto it = otherAt.find((long long)t * n + cell);
+        return it == otherAt.end() ? 0 : it->second;
+    }
+    int swapPenalty(int from, int to, int t) const
+    {
+        auto it = otherMoves.find(((long long)(t - 1) * n + to) * n + from);
+        return it == otherMoves.end() ? 0 : it->second;
+    }
     // Penalty of the move from -> to between steps t-1 and t.
     int penaltyOfEntry(int from, int to, int t)
     {
         unsigned long long start = __rdtsc();
-        int p = 0;
-        if (t >= otherHorizon)
-            p = otherLast[to];
-        else
-        {
-            auto it = otherAt.find((long long)t * n + to);
-            p = it == otherAt.end() ? 0 : it->second;
-        }
-        auto it = otherMoves.find(((long long)(t - 1) * n + to) * n + from);
-        if (it != otherMoves.end())
-            p += it->second;
+        int p = vertexPenalty(to, t) + swapPenalty(from, to, t);
         penaltyCycles += __rdtsc() - start;
         return p;
+    }
+    // The smallest soft cut b >= ts of the cell (b odd: the wait edge (cell, b) -> (cell, b+1)), INF if none.
+    int nextSoftCut(int cell, int ts) const
+    {
+        if (!cutMode)
+            return INF;
+        int b = INF;
+        if (cutMode == 2)
+            b = ts | 1;
+        else
+        {
+            auto it = softCuts[cell].lower_bound(ts);
+            if (it != softCuts[cell].end())
+                b = *it;
+            if (penalized && otherLast[cell])
+                b = min(b, max(ts, 2 * otherHorizon - 1) | 1);
+        }
+        return b < min(maxTimestep, timeAssigningGoalCell[cell]) ? b : INF;
+    }
+    // The largest soft cut b < ts of the cell, -1 if none.
+    int prevSoftCut(int cell, int ts) const
+    {
+        if (!cutMode)
+            return -1;
+        int bound = min(ts, timeAssigningGoalCell[cell]), b = -1;
+        if (cutMode == 2 || (penalized && otherLast[cell] && bound - 1 >= 2 * otherHorizon - 1))
+            b = (bound - 1) % 2 ? bound - 1 : bound - 2;
+        if (cutMode == 1)
+        {
+            auto it = softCuts[cell].lower_bound(bound);
+            if (it != softCuts[cell].begin())
+                b = max(b, *prev(it));
+        }
+        return b >= 1 ? b : -1;
+    }
+    int nextHardBlock(int cell, int ts) const
+    {
+        auto it = blocks[cell].lower_bound(ts);
+        return it == blocks[cell].end() ? INF : *it;
     }
 
     pair<bool, Interval> checkTimestepAndGetUnvisitedSafeInterval(TimestepCostPair timeStepCostPair, int cellID)
@@ -314,6 +392,11 @@ private:
         {
             --itr;
             prevBlock = *itr;
+        }
+        if (cutMode)
+        {
+            nxtBlock = min(nxtBlock, nextSoftCut(cellID, timeStepCostPair.timeStep));
+            prevBlock = max(prevBlock, prevSoftCut(cellID, timeStepCostPair.timeStep));
         }
         int nxtVisitedTimestep = maxTimestep + 1;
         auto itrt = visitedTimeSTeps[cellID].upper_bound(TimestepCostPair(timeStepCostPair.timeStep));
@@ -343,6 +426,8 @@ private:
             --itr;
             prevBlock = *itr;
         }
+        if (cutMode)
+            prevBlock = max(prevBlock, prevSoftCut(cellID, timeStepCostPair.timeStep));
         auto itrt = visitedTimeSTeps[cellID].upper_bound(TimestepCostPair(timeStepCostPair.timeStep));
         if (itrt != visitedTimeSTeps[cellID].begin())
         {
@@ -358,18 +443,31 @@ private:
     {
         return edges[destination].count(Edge(source, timeStep));
     }
-    void getAllTimeSteps(int lowestTimeStep, int highestTimeStep, int cellID, vector<pair<int, bool>> &validtimeStepsWithMoveBlocked)
+    // firstMove: the earliest entry by a move from the interval of the source (bscut: a piece after a soft cut b is
+    // entered at max(b+1, firstMove)).
+    void getAllTimeSteps(int lowestTimeStep, int highestTimeStep, int cellID, vector<pair<int, bool>> &validtimeStepsWithMoveBlocked,
+                         int firstMove)
     {
-        for (auto &it : blocks[cellID])
-        {
-            if (lowestTimeStep > highestTimeStep)
-                break;
-            if (it >= lowestTimeStep)
+        if (cutMode)
+            while (lowestTimeStep <= highestTimeStep)
             {
+                int hard = nextHardBlock(cellID, lowestTimeStep), soft = nextSoftCut(cellID, lowestTimeStep);
+                if (hard == INF && soft == INF)
+                    break;
                 validtimeStepsWithMoveBlocked.push_back(make_pair(lowestTimeStep, false));
-                lowestTimeStep = it + 2;
+                lowestTimeStep = hard <= soft ? hard + 2 : max(soft + 1, firstMove);
             }
-        }
+        else
+            for (auto &it : blocks[cellID])
+            {
+                if (lowestTimeStep > highestTimeStep)
+                    break;
+                if (it >= lowestTimeStep)
+                {
+                    validtimeStepsWithMoveBlocked.push_back(make_pair(lowestTimeStep, false));
+                    lowestTimeStep = it + 2;
+                }
+            }
         if (lowestTimeStep <= highestTimeStep)
         { // the last interval of a taken goal is its infinite blocked interval
             validtimeStepsWithMoveBlocked.push_back(make_pair(lowestTimeStep, isGoalCell[cellID] && timeAssigningGoalCell[cellID] < INF));
@@ -418,24 +516,35 @@ private:
         }
         if (highestTimeStep >= lowestTimeStep)
         {
-            getAllTimeSteps(lowestTimeStep, highestTimeStep, cellDestination, timeStepsWithMoveBlocked);
+            int firstMove = it.l % 2 ? (isThereAnEdge(cellSource, cellDestination, it.l) ? it.l + 3 : it.l + 1) : it.l + 2;
+            getAllTimeSteps(lowestTimeStep, highestTimeStep, cellDestination, timeStepsWithMoveBlocked, firstMove);
         }
         auto forbidden = forbiddenMoves.empty() ? forbiddenMoves.end() : forbiddenMoves.find((long long)cellSource * n + cellDestination);
+        auto isForbidden = [&](int ts) { return forbidden != forbiddenMoves.end() && forbidden->second.count(ts / 2 - 1); };
         for (auto t : timeStepsWithMoveBlocked)
         {
             // An even entry y is the move (cellSource, y-1) -> (cellDestination, y) (odd ones cancel a move
             // cellDestination -> cellSource). If it is forbidden, take the next allowed move into the same bulk of
             // cellDestination: up to its first cut and up to the last move the bulk of cellSource allows.
+            auto pieceEnd = [&](int ts) { return min({highestTimeStep, nextHardBlock(cellDestination, ts), nextSoftCut(cellDestination, ts)}); };
             if (forbidden != forbiddenMoves.end() && t.first % 2 == 0)
             {
-                auto cut = blocks[cellDestination].lower_bound(t.first);
-                int last = min(highestTimeStep, cut == blocks[cellDestination].end() ? INF : *cut);
-                while (t.first <= last && forbidden->second.count(t.first / 2 - 1))
+                int last = pieceEnd(t.first);
+                while (t.first <= last && isForbidden(t.first))
                     t.first += 2;
                 if (t.first > last)
                     continue;
             }
             result.push_back(TimestepCostPair(t.first, t.second));
+            // bscut: the vertex penalty is the same in the whole piece, so the earliest entry without an opposite
+            // move is the only other candidate (as the detour of forbidden moves above, but soft)
+            if (cutMode && penalized && t.first % 2 == 0 && swapPenalty(cellSource, cellDestination, t.first / 2))
+                for (int ts = t.first + 2, last = pieceEnd(t.first); ts <= last; ts += 2)
+                    if (!isForbidden(ts) && !swapPenalty(cellSource, cellDestination, ts / 2))
+                    {
+                        result.push_back(TimestepCostPair(ts, t.second));
+                        break;
+                    }
         }
     }
     void addPathEdges(vector<Node> &nodes, int sinkNodeID)
@@ -652,6 +761,11 @@ private:
                 visitedTimeSTeps[currentCell].insert(timeStepCostPair);
                 const vector<int> &nebs = g.nebors[currentCell];
                 Interval currentInterval = res.second;
+                // bscut: waiting across the soft cut that ends the piece
+                if (cutMode && !tp.timeStepCostPair.blockedToMove && nextSoftCut(currentCell, currentInterval.h) == currentInterval.h &&
+                    !blocks[currentCell].count(currentInterval.h))
+                    push(TimestepCostPair(currentInterval.h + 1), nodeID, currentCell,
+                         penalized ? tp.pen + vertexPenalty(currentCell, (currentInterval.h + 1) / 2) : tp.pen);
                 // special edge: inverse of wait action.
                 if (isThereAnEdge(currentCell, currentCell, currentInterval.l - 1) || currentInterval.l - 1 >= timeAssigningGoalCell[currentCell])
                 {

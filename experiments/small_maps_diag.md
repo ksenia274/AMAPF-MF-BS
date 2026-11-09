@@ -295,15 +295,67 @@ Per-instance floww numbers: small_maps_entries.csv.
 
 ### Interpretation
 
-- Structural extra entries practically do not exist: 1 of 821 entry penalty units. 818 of 821 (99.6%) are pass-throughs: the
-  robot crosses the cell in one step while another robot is there, so there is no later entry into the same
-  stay at all. The same holds for floww (all 478 are pass-throughs). The excess of bspen in entries (821 vs 478)
-  is therefore not a too-early entry into a bulk it uses anyway, but the choice of which cells to cross and when
-  (a different route or timing), which a later entry into the same stay cannot fix.
-- Waits: 32 of 236 wait penalty units (14%) would disappear by entering at the first free step after the other robot; 193 (82%) not, because
-  waiting in the previous cell instead also costs a penalty or meets the own team. floww has 11 wait penalty
-  units in all, none avoidable this way. So most of the wait excess of bspen is not one late entry either; it
-  comes from routes that wait among other robots, which a search that sees the wait penalty (the cut bulks of
-  stage 2) could avoid by other routes, not only by a later entry.
-- This measures only one counterfactual (delay the entry, keep the rest of the route); it does not bound what
-  bscut can gain.
+- A late entry without a shift of the tail removes 1 of 821 entry penalty units and 14% of the extra waits (32
+  of 236 wait penalty units); alternatives with a shift were not checked.
+- By the definition (entry later into the same stay, same exit) a pass-through (e = x) has an empty (e, x], so the
+  818 pass-throughs are "other" by definition, not because a later crossing was checked and found impossible.
+  Waiting in u and crossing v later with the rest of the route shifted was not checked, so these numbers do not
+  say how much bscut can change the entries.
+
+## Stage 2: low level bscut (2026-11-10)
+
+`--low bscut [--cut penal|all]` in cbm and bs_team (bs_team.hpp, `setCut`). bs and bspen are unchanged (see the
+regression below).
+
+- Same penalties as floww / bspen: (cell, step) with a robot of another team; an opposite move u -> v at t while
+  another robot moves v -> u at t.
+- Soft cuts of the waiting chains: `penal` (default) around every step t >= 1 with another robot in the cell (each
+  such step is a piece of its own, the steps between them one piece); `all` at every step. A soft cut leaves the
+  edge usable; hard blocks (flow, vertex constraints) stay as in Bulk Search. No soft cuts after a taken goal (that
+  time is occupied by the team anyway) and none at the last step of the horizon.
+- Pieces of one cell follow each other without a block; waiting across a soft cut is an explicit transition
+  (wait into the next piece) that costs the robots in the cell at the new step.
+- Entry into a piece of a neighbour: the earliest one, and, if it has an opposite move, also the earliest one in
+  the same piece without (the detour of forbiddenMoves, soft). With `all` a piece is one step, so the second entry
+  never exists there; the later pieces get their own earliest entry.
+- OPEN as bspen: accumulated penalty, then the key of Bulk Search. A piece is expanded at its first extraction; as
+  in Bulk Search, an earlier entry into a partly visited piece expands only its unvisited prefix (needed for the
+  minimal T; no node is expanded twice). No (step, penalty) pairs.
+- addPathEdges unchanged: a forward step inside one cell (the transition) is filled as a wait chain.
+
+Deviations / fixes found by the checks:
+- After a soft cut b the next piece is entered at max(b+1, first move from the source interval); b+1 alone gave
+  an entry at the step of the source node (no move), and the flow broke.
+- bscut (mostly `all`) gives swaps of two robots of one team on an edge (a valid flow without the edge gadget).
+  As in cbm (removeSwapsInTeam) they are replaced by two waits; the function moved to bs_team.hpp (removeSwaps)
+  and bs_team uses it too (prints the number on stderr). Same T, same cells per step, no new moves, so constraints
+  and penalties can only stay or drop. bs and bspen made none in the tests below.
+
+### Measured
+
+| check | bs | bspen | bscut penal | bscut all |
+|---|---|---|---|---|
+| 2.1: minimal T = brute force, 1000 instances (`test_flow_team.py --makespan 1000`), validator | 0 / 1000 | 0 / 1000 | 0 / 1000 | 0 / 1000 |
+| 2.2: with other robots (`--weights 1000`): T = brute force, validator, penalty >= minimum | | 0 / 1000 | 0 / 1000 | 0 / 1000 |
+| penalty = minimum (floww), share of the 664 solved | | 0.742 | 0.834 | 0.839 |
+| mean excess over the minimum (max) | | 0.684 (10) | 0.364 (9) | 0.352 (9) |
+| 2.3: CBM vs brute force, 3000 instances: wrong | 0 | 0 | 0 | 0 |
+| 2.3: node limit 5000 hit on a solvable instance | 14 | 12 | 10 | 9 |
+
+- `--makespan` has no other robots, so `penal` cuts nothing there; the T of `penal` with cuts is checked by
+  `--weights` (T = brute force there too) and by CBM (others = the other teams).
+- floww `--weights 1000`: 0 mismatches (cost = penalty of its routes = brute minimum), as before.
+- Node limit: CBM stops at 5000 CT nodes without an answer (not a wrong answer); the same instances for bs and
+  bspen with the old cbm.exe.
+- Regression against the exe of 2d4b024 (built from HEAD): `test_flow_team.py --makespan 1000 --lows bs,bspen` and
+  `--weights 1000 --low bspen`: same summary lines; `compare_cbm.py --random 3000` for bs and bspen: same output
+  (same limit instances, same CT node median / max, same pruned children); `compare_cbm_exe.py OLD NEW --low bspen`
+  and `--low bs` (the 16 instances, 3000 CT nodes, all fields except timings): 16 / 16 equal for both;
+  `compare_exe.py OLD NEW --quick` (bs_team, bs: T, expansions, routes): 14 / 14 equal.
+
+### Interpretation
+
+- Both modes keep the minimal T and valid routes. On small instances bscut reaches the minimal penalty more often
+  than bspen (0.83-0.84 vs 0.74) and halves the mean excess; `all` and `penal` hardly differ there, i.e. on these
+  instances the bulks hide little beyond the penalized steps. Whether this carries over to the 16 instances is
+  stage 3.

@@ -5,7 +5,7 @@
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
 //            [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag] [--pen-gap S]
-//            [--root-only first|last] [--root-low bs|bspen|flow|floww]
+//            [--root-only first|last] [--root-low bs|bspen|bscut|flow|floww] [--cut penal|all]
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one).
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
@@ -14,7 +14,7 @@
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
 // --diag: a second line with the root key, depth, constraints, repeated constraint sets and the number of free
 // neighbours of the cells of the first 20 conflicts of the root (swap: the smaller of the two cells).
-// --pen-gap S (bspen, diagnostics only, implies --diag): after every replanning of the root and every S-th other
+// --pen-gap S (bspen, bscut; diagnostics only, implies --diag): after every replanning of the root and every S-th other
 // one floww is run with the same constraints
 // and routes of the other teams from the T of bspen; the diag line gets the penalty of the bspen routes (weights of
 // floww) minus the floww minimum, over all replannings and over those of the root. The floww time is not counted
@@ -23,6 +23,7 @@
 // --t-start lb (default): the low level starts T from max(minT, bs::teamLowerBound); --t-start 1: from minT
 // (the answer is the same).
 // --root-low: the root is planned by this low level, all other replannings by --low.
+// --low bscut: bspen with soft cuts of the waiting chains (bs_team.hpp, setCut), --cut penal (default) or all.
 // --diag also prints root_pen_wait/enter/swap: the penalty (weights of floww) of the root routes of every team
 // against the teams planned before it, summed over the teams: wait = steps t >= 1 that stay in a cell with other
 // robots, enter = steps t >= 1 that enter such a cell (both weight (a)), swap = opposite moves (weight (b));
@@ -31,7 +32,7 @@
 // --root-only first|last: only the root, teams 0..0 or 0..K-1 planned one by one (each call with its own time
 // limit); for the last planned team prints minT, T, the number of T tried, the time of the call and the time of a
 // fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams.
-// pen_share (bspen): share of the low-level rdtsc cycles spent on the penalties.
+// pen_share (bspen, bscut): share of the low-level rdtsc cycles spent on the penalties.
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "flow_team.hpp"
 #ifdef _WIN32
@@ -110,6 +111,7 @@ public:
     };
     array<long long, LateKinds> rootLateEntries{};
     string rootLow;
+    bool cutAll = false;
 
     CBM(const bs::Grid &grid, const vector<int> &starts, const vector<int> &goals, int numTeams)
         : g(grid), teamAgents(numTeams), teamStarts(numTeams), teamGoals(numTeams)
@@ -316,16 +318,18 @@ private:
         minT = startT(team, minT);
         vector<vector<int>> others;
         const string &lv = inRoot && !rootLow.empty() ? rootLow : low;
-        if (lv == "floww" || lv == "bspen" || (diag && inRoot))
+        if (lv == "floww" || lv == "bspen" || lv == "bscut" || (diag && inRoot))
             for (unsigned int other = 0; other < plans.size(); ++other)
                 if ((int)other != team)
                     others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
         bool ok;
-        if (lv == "bs" || lv == "bspen")
+        if (lv == "bs" || lv == "bspen" || lv == "bscut")
         {
             bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
-            if (lv == "bspen")
+            if (lv != "bs")
                 solver.setOtherRoutes(others);
+            if (lv == "bscut")
+                solver.setCut(cutAll);
             ok = solveTeam(solver, team, plan, minT);
             penaltyCycles += solver.penaltyCycles;
         }
@@ -626,24 +630,7 @@ private:
         return pairs.size();
     }
 
-    // A swap of two agents of one team is replaced by two waits and the agents exchange the rest of their routes:
-    // the cells occupied at every step stay the same, so no new conflicts appear (never observed with Bulk Search;
-    // impossible with flow: the gadget lets one robot through an edge per step).
-    static int removeSwapsInTeam(TeamPlan &plan)
-    {
-        int fixed = 0;
-        auto &r = plan.routes;
-        for (int t = 0; t < plan.T; ++t)
-            for (unsigned int a = 0; a < r.size(); ++a)
-                for (unsigned int b = a + 1; b < r.size(); ++b)
-                    if (r[a][t] != r[a][t + 1] && r[a][t] == r[b][t + 1] && r[a][t + 1] == r[b][t])
-                    {
-                        ++fixed;
-                        for (int s = t + 1; s <= plan.T; ++s)
-                            swap(r[a][s], r[b][s]);
-                    }
-        return fixed;
-    }
+    static int removeSwapsInTeam(TeamPlan &plan) { return bs::removeSwaps(plan.routes, plan.T); }
 
     // Finds the earliest conflict between agents of different teams (agents stay in their goals after their
     // team's T) and counts the teams involved in conflicts.
@@ -731,7 +718,7 @@ int main(int argc, char *argv[])
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
     bool tieEarlier = false, diag = false;
     int penGap = 0;
-    string low = "bs", rootOnly, tStart = "lb", rootLow;
+    string low = "bs", rootOnly, tStart = "lb", rootLow, cut = "penal";
     for (int i = 5; i < argc; ++i)
     {
         string a = argv[i];
@@ -749,6 +736,8 @@ int main(int argc, char *argv[])
             memLimitMb = atoll(argv[++i]);
         else if (a == "--root-only" && i + 1 < argc)
             rootOnly = argv[++i];
+        else if (a == "--cut" && i + 1 < argc)
+            cut = argv[++i];
         else if (a == "--root-low" && i + 1 < argc)
             rootLow = argv[++i];
         else if (a == "--t-start" && i + 1 < argc)
@@ -788,11 +777,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    auto isLow = [](const string &x) { return x == "bs" || x == "bspen" || x == "flow" || x == "floww"; };
-    if (!isLow(low) || (!rootLow.empty() && !isLow(rootLow)) || (tStart != "1" && tStart != "lb") ||
+    auto isLow = [](const string &x) { return x == "bs" || x == "bspen" || x == "bscut" || x == "flow" || x == "floww"; };
+    if (!isLow(low) || (!rootLow.empty() && !isLow(rootLow)) || (tStart != "1" && tStart != "lb") || (cut != "penal" && cut != "all") ||
         (!rootOnly.empty() && rootOnly != "first" && rootOnly != "last"))
     {
-        cerr << "--low and --root-low must be bs, bspen, flow or floww, --t-start 1 or lb, --root-only first or last" << endl;
+        cerr << "--low and --root-low must be bs, bspen, bscut, flow or floww, --t-start 1 or lb, --cut penal or all, --root-only first or last" << endl;
         return 1;
     }
 #ifdef _WIN32
@@ -816,9 +805,10 @@ int main(int argc, char *argv[])
     cbm.tieEarlier = tieEarlier;
     cbm.low = low;
     cbm.rootLow = rootLow;
+    cbm.cutAll = cut == "all";
     cbm.tStartLb = tStart == "lb";
     cbm.diag = diag;
-    cbm.penGap = low == "bspen" ? penGap : 0;
+    cbm.penGap = low == "bspen" || low == "bscut" ? penGap : 0;
     auto peakMb = []() {
         double mb = 0;
 #ifdef _WIN32

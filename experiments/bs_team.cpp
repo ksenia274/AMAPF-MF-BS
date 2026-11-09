@@ -1,8 +1,9 @@
 // One team = all K agents of the .scen, solved by bs::BulkSearchTeam (bs_team.hpp) or bs::FlowTeam (flow_team.hpp).
-// Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|flow|floww] [--others ROUTES]
-//                [--t-start 1|lb]
-//   -> prints optimal makespan T, expansions (bs, bspen) or the weight of the flow (flow, floww), ms
-// --others: routes of the robots of other teams (format of ROUTES) for the weights of floww / bspen.
+// Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|bscut|flow|floww] [--others ROUTES]
+//                [--t-start 1|lb] [--cut penal|all]
+//   -> prints optimal makespan T, expansions (bs, bspen, bscut) or the weight of the flow (flow, floww), ms
+// --cut (bscut): soft cuts of the waiting chains at the penalized steps (default) or at every step.
+// --others: routes of the robots of other teams (format of ROUTES) for the weights of floww / bspen / bscut.
 // --t-start lb (default): T starts from bs::teamLowerBound; --t-start 1: from 1.
 // ROUTES: first line "T K", then K lines "x,y x,y ..." (T+1 positions), agent i = row i of .scen.
 // CONSTRAINTS (same format as brute_force.py, '#' starts a comment):
@@ -18,7 +19,7 @@ int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args, int
 int main(int argc, char *argv[])
 {
     vector<string> args;
-    string low = "bs", othersFile, tStart = "lb";
+    string low = "bs", othersFile, tStart = "lb", cut = "penal";
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
@@ -28,12 +29,15 @@ int main(int argc, char *argv[])
             othersFile = argv[++i];
         else if (a == "--t-start" && i + 1 < argc)
             tStart = argv[++i];
+        else if (a == "--cut" && i + 1 < argc)
+            cut = argv[++i];
         else
             args.push_back(a);
     }
-    if (args.size() < 3 || (low != "bs" && low != "bspen" && low != "flow" && low != "floww") || (tStart != "1" && tStart != "lb"))
+    if (args.size() < 3 || (low != "bs" && low != "bspen" && low != "bscut" && low != "flow" && low != "floww") ||
+        (tStart != "1" && tStart != "lb") || (cut != "penal" && cut != "all"))
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|flow|floww] [--others ROUTES] [--t-start 1|lb]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|bscut|flow|floww] [--others ROUTES] [--t-start 1|lb] [--cut penal|all]" << endl;
         return 1;
     }
     string mapFile = args[0], scenFile = args[1];
@@ -85,11 +89,13 @@ int main(int argc, char *argv[])
             }
         }
     }
-    if (low == "bs" || low == "bspen")
+    if (low == "bs" || low == "bspen" || low == "bscut")
     {
         bs::BulkSearchTeam team(grid, starts, goals);
-        if (low == "bspen" && !others.empty())
+        if (low != "bs" && !others.empty())
             team.setOtherRoutes(others);
+        if (low == "bscut")
+            team.setCut(cut == "all");
         return run(team, grid, k, args, minT);
     }
     bs::FlowTeam team(grid, starts, goals, low == "floww");
@@ -163,6 +169,9 @@ int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args, int
         vector<vector<int>> routes;
         if (!team.extractRoutes(routes))
             return 3;
+        int fixed = bs::removeSwaps(routes, T);
+        if (fixed)
+            cerr << "swaps inside the team replaced by waits: " << fixed << endl;
         ofstream out(args[3]);
         out << T << " " << k << "\n";
         for (auto &route : routes)

@@ -3,9 +3,10 @@
 
 Usage: test_flow_team.py BS_TEAM_EXE --makespan N [--seed S] [--lows bs,flow] [--t-start 1|lb]
            (2.1: minimal T of the low levels = brute force)
-       test_flow_team.py BS_TEAM_EXE --weights N [--seed S] [--low floww|bspen]
-           (2.2: floww weight = brute-force minimum; bspen: T must agree, the excess of its penalty over the
-           minimum is only reported)
+       test_flow_team.py BS_TEAM_EXE --weights N [--seed S] [--low floww|bspen|bscut|bscut:all]
+           (2.2: floww weight = brute-force minimum; bspen, bscut: T must agree, the penalty must not be below the
+           minimum, the excess is only reported)
+A low level "bscut:all" is run as --low bscut --cut all.
 Instance: grid up to 4x4 with random obstacles, 1..4 robots, 0..6 random vertex/edge constraints at steps 0..6;
 in 30% of the instances one of them is a vertex constraint on a goal at T0..T0+2 (T0 = optimum without it).
 --weights: 1..3 robots of other teams walk randomly; the penalty of a team solution is (a) the number of
@@ -55,6 +56,11 @@ def random_instance(rng):
             vertex.add((rng.choice(goals), max(t0, 1) + rng.randint(0, 2)))
             after = True
     return w, h, grid, free, starts, goals, vertex, edge, after
+
+
+def low_args(low):
+    name, _, cut = low.partition(":")
+    return ["--low", name] + (["--cut", cut] if cut else [])
 
 
 def run(exe, args):
@@ -135,7 +141,7 @@ def main():
             for low in a.lows.split(","):
                 if os.path.exists(routes_path):
                     os.remove(routes_path)
-                t, _, out = run(exe, [mp, sc, k, routes_path, cs, "--low", low, "--t-start", a.t_start])
+                t, _, out = run(exe, [mp, sc, k, routes_path, cs, "--t-start", a.t_start] + low_args(low))
                 if t != t_ref:
                     problems.append(f"{low}: {out} brute T={t_ref}")
                 elif t != -1:
@@ -158,7 +164,7 @@ def main():
                 f.writelines(" ".join(f"{x},{y}" for x, y in r) + "\n" for r in others)
             if os.path.exists(routes_path):
                 os.remove(routes_path)
-            t, cost, out = run(exe, [mp, sc, k, routes_path, cs, "--low", a.low, "--others", others_path])
+            t, cost, out = run(exe, [mp, sc, k, routes_path, cs, "--others", others_path] + low_args(a.low))
             if t != t_ref:
                 problems.append(f"{a.low}: {out} brute T={t_ref}")
             elif t != -1:
@@ -169,8 +175,10 @@ def main():
                 penalized += bool(best)
                 if errors:
                     problems.append(f"{a.low}: invalid routes {errors}")
-                if a.low == "bspen":
+                if a.low != "floww":
                     excess.append(own - best)
+                    if own < best:
+                        problems.append(f"{a.low}: penalty {own} below the brute minimum {best}; others={others}")
                 elif not (cost == own == best):
                     problems.append(f"floww cost={cost}, penalty of its routes={own}, brute minimum={best}; "
                                     f"others={others}")
@@ -181,7 +189,7 @@ def main():
     print(f"{'makespan' if a.makespan else 'weights'}: {n} instances ({solvable} solvable, "
           f"{goal_after} with a goal constraint at T0..T0+2{f', {penalized} with a positive minimal penalty' if a.weights else ''}), seed={a.seed}")
     if excess:
-        print(f"bspen penalty over the minimum on {len(excess)} solved instances: equal {excess.count(0)} "
+        print(f"{a.low} penalty over the minimum on {len(excess)} solved instances: equal {excess.count(0)} "
               f"({excess.count(0) / len(excess):.3f}), mean excess {sum(excess) / len(excess):.3f}, max {max(excess)}; "
               f"among the {sum(1 for e in excess if e)} with excess: mean {sum(excess) / max(1, sum(1 for e in excess if e)):.2f}")
     print(f"total={n} mismatches={bad}")
