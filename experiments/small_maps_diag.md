@@ -642,10 +642,17 @@ Large maps, solved of 10 per N:
 ### Interpretation
 
 - On small maps and warehouse bscut solves everything that any other variant solves (239/240 and 40/40), more
-  than floww, with replans ~10-20 times cheaper than floww: it keeps the small CT of floww at the cost of Bulk
+  than floww, with replans ~20 times cheaper than floww (stage 3): it keeps the small CT of floww at the cost of Bulk
   Search.
-- On the city maps bscut loses to bs and bspen (39/120 vs 64 and 76): the CT is already tiny there for all BS
-  variants (a few nodes), so the time is the root, and a bscut replan costs 2-10 times a bspen one (part 1: soft
+- On the city maps bscut loses to bs and bspen (43/120 vs 65 and 76): the CT is already tiny there for all BS
+  variants (a few nodes), so the time is the root, and the median bscut replan costs 1.7-8.6 times the bspen one (part 1: soft
   cuts double the pieces of the network on Berlin). Every city timeout of bscut is in the root.
 - So bscut pays off where the CT blows up (dense maps, many teams) and costs where it does not (large sparse maps,
   long T). The 60 s limit on cities measures the root cost, not the search.
+
+## Part 3: cactus plots with bscut (2026-11-10)
+
+`figures/make_cactus.py cbm_bench_cactus.csv`: all `figures/cactus_*.png/.pdf` rebuilt with a fifth line bscut
+("Bulk Search с резкой", #2E8B57, solid); bs (no penalties) dashed; titles without "решено N из M"; one y scale on
+every plot (0..40 per map, 0..240 small, 0..160 large); the legend is replaced by labels at the right ends of the
+lines with the number of solved instances, moved apart vertically (and kept below the top) when they coincide.

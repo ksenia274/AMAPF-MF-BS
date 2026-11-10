@@ -2,9 +2,11 @@
 """Cactus plots of cbm_bench_cactus.py: solved instances by time, one line per low level.
 
 Usage: make_cactus.py BENCH.csv [OUT_DIR]   (OUT_DIR defaults to the folder of this script)
-  -> cactus_<map>.png/.pdf for every map, cactus_grid_small, cactus_grid_large (maps in cells, one legend),
+  -> cactus_<map>.png/.pdf for every map, cactus_grid_small, cactus_grid_large (maps in cells),
      cactus_small, cactus_large (all instances of the group).
-Time = total_ms of cbm of the solved runs; times below 0.01 s are drawn at 0.01 s.
+Time = total_ms of cbm of the solved runs; times below 0.01 s are drawn at 0.01 s. Every line is labelled at its
+right end with the number of solved instances (no legend); y runs to the number of instances (40 per map, 240 / 160
+for the groups) on every plot.
 """
 import csv
 import os
@@ -14,14 +16,14 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
 
-VARIANTS = ["bs", "bspen", "flow", "floww"]
-LABELS = {"bs": "Bulk Search", "bspen": "Bulk Search со штрафами", "flow": "Поток без штрафов",
+VARIANTS = ["bs", "bspen", "bscut", "flow", "floww"]
+LABELS = {"bs": "Bulk Search", "bspen": "Bulk Search со штрафами", "bscut": "Bulk Search с резкой", "flow": "Поток без штрафов",
           "floww": "Поток со штрафами"}
-COLORS = {"bs": "#6FA0DC", "bspen": "#3B6BA5", "flow": "#C9822B", "floww": "#B03A5B"}
+COLORS = {"bs": "#6FA0DC", "bspen": "#3B6BA5", "bscut": "#2E8B57", "flow": "#C9822B", "floww": "#B03A5B"}
 SMALL = ["empty-32-32", "random-32-32-10", "room-32-32-4", "maze-32-32-2", "random-64-64-10", "room-64-64-8"]
 LARGE = ["warehouse-10-20-10-2-1", "Berlin_1_256", "Paris_1_256", "Boston_0_256"]
+DASHED = {"bs"}
 T_MIN, T_MAX = 0.01, 60
 TICKS = [0.01, 0.1, 1, 10, 60]
 
@@ -38,10 +40,6 @@ def instances(rows):
     return len({(r["map"], r["N"], r["scen"]) for r in rows})
 
 
-def best(rows):
-    return max(len(times(rows, v)) for v in VARIANTS)
-
-
 def style(ax):
     ax.set_xscale("log")
     ax.set_xlim(T_MIN, T_MAX)
@@ -54,30 +52,33 @@ def style(ax):
     ax.spines[["top", "right"]].set_visible(False)
     ax.set_xlabel("время, с")
     ax.set_ylabel("решено задач")
-    ax.yaxis.get_major_locator().set_params(integer=True)
 
 
-def draw(ax, rows, end_labels):
-    top = max(best(rows), 1)
+def draw(ax, rows, top, fontsize=11):
     ends = []
     for v in VARIANTS:
+        if not any(r["variant"] == v for r in rows):
+            continue
         ts = times(rows, v)
         xs = [T_MIN] + ts + [T_MAX]
         ys = [0] + list(range(1, len(ts) + 1)) + [len(ts)]
-        ax.step(xs, ys, where="post", color=COLORS[v], linewidth=2, label=LABELS[v])
+        ax.step(xs, ys, where="post", color=COLORS[v], linewidth=2, linestyle="--" if v in DASHED else "-")
         ends.append([len(ts), v])
-    ax.set_ylim(0, top * 1.08)
-    if end_labels:
-        # spread the labels at the right ends so that they do not overlap (at least 7% of the height apart)
-        gap = top * 1.08 * 0.07
-        ends.sort()
-        pos = []
-        for y, v in ends:
-            pos.append(max(y, pos[-1] + gap) if pos else y)
-        for (y, v), p in zip(ends, pos):
-            ax.annotate(f"{LABELS[v]}: {y}", xy=(T_MAX, y), xytext=(T_MAX * 1.25, p), textcoords="data",
-                        color=COLORS[v], fontsize=11, va="center", annotation_clip=False,
-                        arrowprops=dict(arrowstyle="-", color=COLORS[v], linewidth=0.8) if abs(p - y) > 1e-9 else None)
+    ax.set_ylim(0, top)
+    ax.set_yticks(range(0, top + 1, top // 8 if top <= 160 else top // 6))
+    # spread the labels at the right ends so that they do not overlap (at least 8% of the height apart) and stay
+    # below the top of the axis
+    gap = top * 0.08
+    ends.sort()
+    pos = []
+    for y, v in ends:
+        pos.append(max(y, pos[-1] + gap) if pos else y)
+    for i in reversed(range(len(pos))):
+        pos[i] = min(pos[i], top if i == len(pos) - 1 else pos[i + 1] - gap)
+    for (y, v), p in zip(ends, pos):
+        ax.annotate(f"{LABELS[v]}: {y}", xy=(T_MAX, y), xytext=(T_MAX * 1.25, p), textcoords="data",
+                    color=COLORS[v], fontsize=fontsize, va="center", annotation_clip=False,
+                    arrowprops=dict(arrowstyle="-", color=COLORS[v], linewidth=0.8) if abs(p - y) > 1e-9 else None)
 
 
 def save(fig, out_dir, name):
@@ -88,23 +89,21 @@ def save(fig, out_dir, name):
 
 def single(rows, title, out_dir, name):
     fig, ax = plt.subplots(figsize=(8.5, 4.8))
-    draw(ax, rows, True)
+    draw(ax, rows, instances(rows))
     style(ax)
-    ax.set_title(f"{title}: решено {best(rows)} из {instances(rows)}")
+    ax.set_title(title)
     fig.subplots_adjust(right=0.68)
     save(fig, out_dir, name)
 
 
 def grid(rows, maps, shape, out_dir, name):
-    fig, axes = plt.subplots(*shape, figsize=(5.2 * shape[1], 4.0 * shape[0]))
+    fig, axes = plt.subplots(*shape, figsize=(7.6 * shape[1], 4.0 * shape[0]))
     for ax, m in zip(axes.flat, maps):
         rs = [r for r in rows if r["map"] == m]
-        draw(ax, rs, False)
+        draw(ax, rs, 40, fontsize=10)
         style(ax)
-        ax.set_title(f"{m}: решено {best(rs)} из {instances(rs)}")
-    handles = [Line2D([], [], color=COLORS[v], linewidth=2) for v in VARIANTS]
-    fig.legend(handles, [LABELS[v] for v in VARIANTS], loc="lower center", ncol=4, frameon=False)
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+        ax.set_title(m)
+    fig.subplots_adjust(left=0.05, right=0.86, wspace=0.75, hspace=0.4)
     save(fig, out_dir, name)
 
 
