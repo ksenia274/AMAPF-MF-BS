@@ -163,6 +163,20 @@ public:
     // Soft cuts are not made after a taken goal (that time is occupied by the team anyway).
     void setCut(bool all) { cutMode = all ? 2 : 1; }
 
+    // Cuts of the waiting chains in the network of the last solve(): hard ones (blocks) and soft ones that are not
+    // also hard. The number of pieces is the number of cells plus these.
+    pair<long long, long long> countCuts() const
+    {
+        long long hard = 0, soft = 0;
+        for (int cell = 0; cell < n; ++cell)
+        {
+            hard += blocks[cell].size();
+            for (int b = nextSoftCut(cell, 0); b < INF; b = nextSoftCut(cell, b + 1))
+                soft += !blocks[cell].count(b);
+        }
+        return {hard, soft};
+    }
+
     // Minimal makespan T >= minT (as the original main: T = minT, minT+1, ..., the flow is kept between T);
     // -1 if none up to maxT. Solvability is monotone in T (an agent may stay one more step in its goal),
     // so starting from minT gives max(minT, the minimal makespan).

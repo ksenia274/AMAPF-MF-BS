@@ -513,3 +513,45 @@ Per instance:
 - The rest of the gap (about 0.4) is not about bulks (all has none): it comes from planning one path at a time
   greedily against the other teams, consistent with stage 2. Even so the remaining extra penalty does not grow the
   CT on these 16 instances.
+
+# 5.2а, этап 4
+
+## Part 1: cost of one replanning (2026-11-10)
+
+`replan_cut.py replan_cut.csv`: cbm `--root-only first|last`, N = 128, teams of 5 (K = 26), scen 1, `--t-start lb`;
+bs, bspen, bscut (`--cut penal`). first = team 0 (no other teams yet), last = team 25 (25 teams planned before
+it). ms = time of that call (median of 3 runs, all T tried from minT); expansions = Bulk Search expansions of
+the call over all T tried; hard / soft cuts = cuts of the waiting chains in the network of the final T (new
+`BulkSearchTeam::countCuts`, not timed); pieces = free cells + hard + soft cuts. ms of the whole root: the 26
+calls one by one (last run).
+
+### Measured
+
+| map | team | variant | minT | T | T tried | ms (median of 3) | expansions | hard cuts | soft cuts | pieces | ms of the whole root |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| room-64-64-8 | first (0) | bs | 48 | 53 | 6 | 14.2 | 22908 | 234 | 0 | 3466 | 14 |
+| room-64-64-8 | first (0) | bspen | 48 | 53 | 6 | 14.9 | 22908 | 234 | 0 | 3466 | 15 |
+| room-64-64-8 | first (0) | bscut | 48 | 53 | 6 | 16.9 | 22908 | 234 | 0 | 3466 | 17 |
+| room-64-64-8 | last (25) | bs | 45 | 66 | 22 | 30.5 | 55088 | 136 | 0 | 3368 | 717 |
+| room-64-64-8 | last (25) | bspen | 45 | 66 | 22 | 60.3 | 83929 | 148 | 0 | 3380 | 1825 |
+| room-64-64-8 | last (25) | bscut | 45 | 66 | 22 | 293.4 | 191609 | 158 | 12223 | 15613 | 3129 |
+| warehouse-10-20-10-2-1 | first (0) | bs | 75 | 103 | 29 | 82.8 | 181604 | 246 | 0 | 5945 | 85 |
+| warehouse-10-20-10-2-1 | first (0) | bspen | 75 | 103 | 29 | 88.8 | 181604 | 246 | 0 | 5945 | 89 |
+| warehouse-10-20-10-2-1 | first (0) | bscut | 75 | 103 | 29 | 93.0 | 181604 | 246 | 0 | 5945 | 93 |
+| warehouse-10-20-10-2-1 | last (25) | bs | 61 | 61 | 1 | 1.9 | 2680 | 146 | 0 | 5845 | 1308 |
+| warehouse-10-20-10-2-1 | last (25) | bspen | 61 | 61 | 1 | 4.9 | 2498 | 146 | 0 | 5845 | 1673 |
+| warehouse-10-20-10-2-1 | last (25) | bscut | 61 | 61 | 1 | 11.7 | 4152 | 170 | 12099 | 17968 | 4048 |
+| Berlin_1_256 | first (0) | bs | 155 | 180 | 26 | 1019.7 | 1301820 | 605 | 0 | 48145 | 993 |
+| Berlin_1_256 | first (0) | bspen | 155 | 180 | 26 | 1088.9 | 1301820 | 605 | 0 | 48145 | 1089 |
+| Berlin_1_256 | first (0) | bscut | 155 | 180 | 26 | 1178.4 | 1301820 | 605 | 0 | 48145 | 1178 |
+| Berlin_1_256 | last (25) | bs | 264 | 264 | 1 | 84.7 | 92782 | 865 | 0 | 48405 | 28606 |
+| Berlin_1_256 | last (25) | bspen | 264 | 264 | 1 | 106.9 | 92368 | 865 | 0 | 48405 | 35938 |
+| Berlin_1_256 | last (25) | bscut | 264 | 264 | 1 | 200.4 | 97845 | 865 | 47757 | 96162 | 59864 |
+
+- first: no other teams, so bspen and bscut search exactly as bs (same expansions and cuts); the time differs by
+  5-19% (the penalty lookups).
+- last: bscut makes 12 099-47 757 soft cuts (3.8 and 2.1 times the free cells of room / warehouse, 1.0 per cell on
+  Berlin); the network has 2.0-4.6 times the pieces of bspen.
+- last, time of the call: bscut vs bspen 4.8x on room-64-64-8 (T tried 22), 2.4x on warehouse (T tried 1), 1.9x on
+  Berlin (T tried 1); expansions 2.3x, 1.7x, 1.06x.
+- Whole root: bscut 3.1 s / 4.0 s / 59.9 s vs bspen 1.8 / 1.7 / 35.9 s and bs 0.7 / 1.3 / 28.6 s.

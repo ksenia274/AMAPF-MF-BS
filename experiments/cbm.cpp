@@ -31,7 +31,9 @@
 // u blocked, start stay (lateEntries()).
 // --root-only first|last: only the root, teams 0..0 or 0..K-1 planned one by one (each call with its own time
 // limit); for the last planned team prints minT, T, the number of T tried, the time of the call and the time of a
-// fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams.
+// fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams;
+// Bulk Search variants: expansions of that call (over all T tried) and the hard / soft cuts of its final network
+// (BulkSearchTeam::countCuts, not timed).
 // pen_share (bspen, bscut): share of the low-level rdtsc cycles spent on the penalties.
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "flow_team.hpp"
@@ -82,6 +84,7 @@ public:
     long long lowLevelSumT = 0; // sum of T over successful low-level calls (for the mean T of a call)
     long long swapsFixed = 0;   // swaps inside a team replaced by two waits
     long long lowLevelExpansions = 0; // Bulk Search variants: expansions summed over the low-level calls
+    bool countCuts = false;            // --root-only: count the cuts of the network of every Bulk Search call
     double lowLevelSec = 0;
     bool tieEarlier = false;
     string low = "bs";
@@ -217,6 +220,7 @@ public:
     {
         int team = -1, minT = 0, T = -1;
         double ms = 0;
+        long long expansions = -1, hardCuts = -1, softCuts = -1;
     };
 
     // Plans teams 0..count-1 of the root one by one, each call with its own time limit; stops at a failure.
@@ -228,7 +232,8 @@ public:
             deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
             auto start = steady_clock::now();
             auto plan = replan(team, TeamPlan(), 1, plans);
-            calls.push_back({team, startT(team, 1), plan ? plan->T : -1, duration<double>(steady_clock::now() - start).count() * 1000});
+            calls.push_back({team, startT(team, 1), plan ? plan->T : -1, duration<double>(steady_clock::now() - start).count() * 1000 - lastCountMs,
+                             lastExpansions, lastCuts.first, lastCuts.second});
             if (!plan)
                 break;
             plans.push_back(plan);
@@ -245,7 +250,7 @@ public:
         auto start = steady_clock::now();
         auto plan = replan(team, TeamPlan(), T, plans);
         tStartLb = lb;
-        return plan && plan->T == T ? duration<double>(steady_clock::now() - start).count() * 1000 : -1;
+        return plan && plan->T == T ? duration<double>(steady_clock::now() - start).count() * 1000 - lastCountMs : -1;
     }
 
     int startT(int team, int minT)
@@ -286,6 +291,9 @@ private:
     unsigned long long penaltyCycles = 0, lowLevelCycles = 0;
     unordered_set<size_t> seenConstraintSets; // 64-bit hashes of the canonical per-team constraint sets (diag)
     bool inRoot = false;
+    long long lastExpansions = -1;
+    pair<long long, long long> lastCuts{-1, -1};
+    double lastCountMs = 0; // time of countCuts() in the last call, not part of the call
 
     void noteDiag(const CTNode &node)
     {
@@ -316,6 +324,7 @@ private:
         auto start = steady_clock::now();
         unsigned long long startCycles = __rdtsc();
         ++lowLevelCalls;
+        lastExpansions = -1, lastCuts = {-1, -1}, lastCountMs = 0;
         minT = startT(team, minT);
         vector<vector<int>> others;
         const string &lv = inRoot && !rootLow.empty() ? rootLow : low;
@@ -334,6 +343,14 @@ private:
             ok = solveTeam(solver, team, plan, minT);
             penaltyCycles += solver.penaltyCycles;
             lowLevelExpansions += solver.numOfExpansions;
+            lastExpansions = solver.numOfExpansions;
+            if (countCuts && ok)
+            {
+                auto countStart = steady_clock::now();
+                lastCuts = solver.countCuts();
+                lastCountMs = duration<double>(steady_clock::now() - countStart).count() * 1000;
+                start += steady_clock::now() - countStart;
+            }
         }
         else
         {
@@ -808,6 +825,7 @@ int main(int argc, char *argv[])
     cbm.low = low;
     cbm.rootLow = rootLow;
     cbm.cutAll = cut == "all";
+    cbm.countCuts = !rootOnly.empty();
     cbm.tStartLb = tStart == "lb";
     cbm.diag = diag;
     cbm.penGap = low == "bspen" || low == "bscut" ? penGap : 0;
@@ -852,7 +870,8 @@ int main(int argc, char *argv[])
              << " K=" << numTeams << " minT=" << c.minT << " T=" << c.T << " tried_T=" << (ok ? c.T - c.minT + 1 : -1) << fixed << setprecision(3)
              << " ms=" << c.ms << " final_t_ms=" << finalMs << " net_nodes=" << cbm.netNodesMax << " net_edges=" << cbm.netEdgesMax
              << " root_ms=" << rootMs << " teams_planned=" << calls.size() << " team_T_median=" << (ts.empty() ? -1 : ts[ts.size() / 2])
-             << " team_T_max=" << (ts.empty() ? -1 : ts.back()) << setprecision(1) << " peak_mb=" << peakMb() << endl;
+             << " team_T_max=" << (ts.empty() ? -1 : ts.back()) << " expansions=" << c.expansions << " hard_cuts=" << c.hardCuts
+             << " soft_cuts=" << c.softCuts << setprecision(1) << " peak_mb=" << peakMb() << endl;
         return ok ? 0 : outOfMemory ? 5 : 2;
     }
     shared_ptr<CTNode> result;
