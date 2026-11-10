@@ -581,3 +581,71 @@ Solved of 40 per map:
   and not by bspen: 37.
 - Checks (`--summary`): makespan mismatches on the instances solved by several variants: 0; invalid solutions
   (validate.py --teams K): 0.
+
+### Measured: all maps
+
+Solved of 40 per map (bs, bspen, flow, floww from the earlier run; bscut new):
+
+| map | bs | bspen | bscut | flow | floww |
+|---|---|---|---|---|---|
+| empty-32-32 | 40 | 40 | 40 | 33 | 40 |
+| random-32-32-10 | 39 | 40 | 40 | 32 | 40 |
+| room-32-32-4 | 20 | 32 | 40 | 17 | 40 |
+| maze-32-32-2 | 17 | 19 | 40 | 7 | 37 |
+| random-64-64-10 | 36 | 40 | 40 | 19 | 40 |
+| room-64-64-8 | 13 | 31 | 39 | 7 | 39 |
+| **small (of 240)** | **165** | **202** | **239** | **115** | **236** |
+| warehouse-10-20-10-2-1 | 13 | 35 | 40 | 0 | 6 |
+| Berlin_1_256 | 24 | 28 | 17 | 0 | 0 |
+| Paris_1_256 | 21 | 23 | 13 | 0 | 0 |
+| Boston_0_256 | 20 | 25 | 13 | 0 | 0 |
+| **large (of 160)** | **78** | **111** | **83** | **0** | **6** |
+| **all (of 400)** | **243** | **313** | **322** | **115** | **242** |
+
+Large maps, solved of 10 per N:
+
+| map | N | bs | bspen | bscut | floww |
+|---|---|---|---|---|---|
+| warehouse-10-20-10-2-1 | 64 | 10 | 10 | 10 | 6 |
+| warehouse-10-20-10-2-1 | 128 | 3 | 10 | 10 | 0 |
+| warehouse-10-20-10-2-1 | 192 | 0 | 9 | 10 | 0 |
+| warehouse-10-20-10-2-1 | 256 | 0 | 6 | 10 | 0 |
+| Berlin_1_256 | 64 | 10 | 10 | 10 | 0 |
+| Berlin_1_256 | 128 | 10 | 10 | 7 | 0 |
+| Berlin_1_256 | 192 | 4 | 8 | 0 | 0 |
+| Berlin_1_256 | 256 | 0 | 0 | 0 | 0 |
+| Paris_1_256 | 64 | 10 | 10 | 10 | 0 |
+| Paris_1_256 | 128 | 8 | 8 | 3 | 0 |
+| Paris_1_256 | 192 | 3 | 5 | 0 | 0 |
+| Paris_1_256 | 256 | 0 | 0 | 0 | 0 |
+| Boston_0_256 | 64 | 10 | 10 | 10 | 0 |
+| Boston_0_256 | 128 | 10 | 10 | 3 | 0 |
+| Boston_0_256 | 192 | 0 | 5 | 0 | 0 |
+| Boston_0_256 | 256 | 0 | 0 | 0 | 0 |
+
+| pair | small: only the first | small: only bscut | large: only the first | large: only bscut |
+|---|---|---|---|---|
+| floww / bscut | 0 | 3 | 0 | 77 |
+| bspen / bscut | 0 | 37 | 33 | 5 |
+
+- Checks (`cbm_bench_cactus.py --summary`): makespan mismatches on the 334 instances solved by several variants
+  (314 of them with bscut): 0; invalid solutions: 0.
+- bscut timeouts: 31 (1 room-64-64-8 N160 in the CT; 30 on Berlin / Paris / Boston at N 128-192, all before the
+  root was finished: root_conflict_pairs = -1, 0 CT nodes expanded, 16-38 replannings of the root done, replan
+  median 0.36-3.7 s).
+- Solved city instances, medians over the scens (N 64 / 128): total time bs 14-39 s, bspen 16-40 s, bscut 22-57 s;
+  CT nodes expanded bs 8.5-84.5, bspen 1.5-7.5, bscut 1-5; replan median bs 42-61 ms, bspen 90-521 ms, bscut
+  186-1111 ms.
+- warehouse: bscut 40/40 (N 64-256), bspen 35/40, bs 13/40, floww 6/40; at N 128 median total 5.1 s vs bspen 2.3 s,
+  CT expanded 11 vs 26.
+
+### Interpretation
+
+- On small maps and warehouse bscut solves everything that any other variant solves (239/240 and 40/40), more
+  than floww, with replans ~10-20 times cheaper than floww: it keeps the small CT of floww at the cost of Bulk
+  Search.
+- On the city maps bscut loses to bs and bspen (39/120 vs 64 and 76): the CT is already tiny there for all BS
+  variants (a few nodes), so the time is the root, and a bscut replan costs 2-10 times a bspen one (part 1: soft
+  cuts double the pieces of the network on Berlin). Every city timeout of bscut is in the root.
+- So bscut pays off where the CT blows up (dense maps, many teams) and costs where it does not (large sparse maps,
+  long T). The 60 s limit on cities measures the root cost, not the search.
