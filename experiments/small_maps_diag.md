@@ -555,3 +555,29 @@ calls one by one (last run).
 - last, time of the call: bscut vs bspen 4.8x on room-64-64-8 (T tried 22), 2.4x on warehouse (T tried 1), 1.9x on
   Berlin (T tried 1); expansions 2.3x, 1.7x, 1.06x.
 - Whole root: bscut 3.1 s / 4.0 s / 59.9 s vs bspen 1.8 / 1.7 / 35.9 s and bs 0.7 / 1.3 / 28.6 s.
+
+## Part 2: cactus run with bscut penal (2026-11-10)
+
+`cbm_bench_cactus.py cbm_bench_cactus.csv --resume --variants bscut --maps ...`: bscut = `--low bscut --cut
+penal`, scen 1-10, the same N, teams of 5, `--t-start lb`, 60 s, `--mem-limit 8000`, the stopping rule over N;
+the rows of bs, bspen, flow, floww are those of `cbm_bench_cactus.csv` (not run again), bscut is appended to it.
+
+### Measured: small maps
+
+Solved of 40 per map:
+
+| map | bs | bspen | bscut | flow | floww |
+|---|---|---|---|---|---|
+| empty-32-32 | 40 | 40 | 40 | 33 | 40 |
+| random-32-32-10 | 39 | 40 | 40 | 32 | 40 |
+| room-32-32-4 | 20 | 32 | 40 | 17 | 40 |
+| maze-32-32-2 | 17 | 19 | 40 | 7 | 37 |
+| random-64-64-10 | 36 | 40 | 40 | 19 | 40 |
+| room-64-64-8 | 13 | 31 | 39 | 7 | 39 |
+| **all small (of 240)** | **165** | **202** | **239** | **115** | **236** |
+
+- bscut did not solve: room-64-64-8 N=160 scen 1 (timeout).
+- Solved by floww and not by bscut: 0; by bscut and not by floww: 3. Solved by bspen and not by bscut: 0; by bscut
+  and not by bspen: 37.
+- Checks (`--summary`): makespan mismatches on the instances solved by several variants: 0; invalid solutions
+  (validate.py --teams K): 0.
