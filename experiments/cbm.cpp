@@ -4,10 +4,9 @@
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
-//            [--tie later|earlier] [--t-start 1|lb|match] [--mem-limit MB] [--diag] [--pen-gap S]
+//            [--t-start 1|lb|match] [--mem-limit MB] [--diag] [--pen-gap S]
 //            [--root-only first|last] [--root-low bs|bspen|bscut|flow|floww] [--cut penal|all]
-// Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
-// (--tie earlier: the earlier one).
+// Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node.
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. lowlevel_expansions=.. (Bulk Search variants) last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
 // current lower bound at a limit) and root_conflict_pairs, pruned_unreachable, replan_ms_median/p90/max,
@@ -87,7 +86,6 @@ public:
     long long lowLevelExpansions = 0; // Bulk Search variants: expansions summed over the low-level calls
     bool countCuts = false;            // --root-only: count the cuts of the network of every Bulk Search call
     double lowLevelSec = 0;
-    bool tieEarlier = false;
     string low = "bs";
     string tStart = "lb"; // 1, lb or match
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
@@ -149,13 +147,12 @@ public:
             rootConflictDegrees = firstConflictDegrees(*root, 20);
         rootKey = root->key;
         noteDiag(*root);
-        bool earlier = tieEarlier;
-        auto worse = [earlier](const shared_ptr<CTNode> &a, const shared_ptr<CTNode> &b) {
+        auto worse = [](const shared_ptr<CTNode> &a, const shared_ptr<CTNode> &b) {
             if (a->key != b->key)
                 return a->key > b->key;
             if (a->conflictingTeams != b->conflictingTeams)
                 return a->conflictingTeams > b->conflictingTeams;
-            return earlier ? a->id > b->id : a->id < b->id;
+            return a->id < b->id;
         };
         priority_queue<shared_ptr<CTNode>, vector<shared_ptr<CTNode>>, decltype(worse)> open(worse);
         open.push(root);
@@ -388,7 +385,7 @@ private:
         if (ok)
         {
             lowLevelSumT += plan.T;
-            swapsFixed += removeSwapsInTeam(plan);
+            swapsFixed += bs::removeSwaps(plan.routes, plan.T);
         }
 #ifdef BS_PROFILE
         swapCycles = __rdtsc() - swapStart;
@@ -704,8 +701,6 @@ private:
         return pairs.size();
     }
 
-    static int removeSwapsInTeam(TeamPlan &plan) { return bs::removeSwaps(plan.routes, plan.T); }
-
     // Finds the earliest conflict between agents of different teams (agents stay in their goals after their
     // team's T) and counts the teams involved in conflicts.
     void evaluate(CTNode &node)
@@ -783,14 +778,14 @@ int main(int argc, char *argv[])
 {
     if (argc < 5)
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--tie later|earlier] [--mem-limit MB] [--diag]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--mem-limit MB] [--diag]" << endl;
         return 1;
     }
     string mapFile = argv[1], scenFile = argv[2], routesFile = "-";
     int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
-    bool tieEarlier = false, diag = false;
+    bool diag = false;
     int penGap = 0;
     string low = "bs", rootOnly, tStart = "lb", rootLow, cut = "penal";
     for (int i = 5; i < argc; ++i)
@@ -800,12 +795,8 @@ int main(int argc, char *argv[])
             timeLimit = atof(argv[++i]);
         else if (a == "--max-nodes" && i + 1 < argc)
             maxNodes = atoll(argv[++i]);
-        else if (a == "--tie" && i + 1 < argc)
-            tieEarlier = string(argv[++i]) == "earlier";
         else if (a == "--low" && i + 1 < argc)
             low = argv[++i];
-        else if (a.rfind("--low=", 0) == 0)
-            low = a.substr(6);
         else if (a == "--mem-limit" && i + 1 < argc)
             memLimitMb = atoll(argv[++i]);
         else if (a == "--root-only" && i + 1 < argc)
@@ -893,7 +884,6 @@ int main(int argc, char *argv[])
 #endif
     auto start = steady_clock::now();
     CBM cbm(grid, starts, goals, numTeams);
-    cbm.tieEarlier = tieEarlier;
     cbm.low = low;
     cbm.rootLow = rootLow;
     cbm.cutAll = cut == "all";
