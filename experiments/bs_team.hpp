@@ -90,12 +90,49 @@ struct Grid
     int y(int cell) const { return cellPos[cell] / width; }
 };
 
-// Lower bound of the makespan of a team: every robot needs at least its distance to the nearest goal of the team.
-inline int teamLowerBound(const Grid &g, const vector<int> &starts, const vector<int> &goals)
+// Reads the first `count` agents of a MovingAI .scen; false (with a message) if a start or goal is not a free cell.
+inline bool loadScen(const Grid &g, const string &file, int count, vector<int> &starts, vector<int> &goals)
+{
+    ifstream in(file);
+    string version, num, mapName;
+    int w, h, sx, sy, gx, gy;
+    double optimal;
+    in >> version >> version;
+    while ((int)starts.size() < count && in >> num >> mapName >> w >> h >> sx >> sy >> gx >> gy >> optimal)
+    {
+        starts.push_back(g.id(sx, sy));
+        goals.push_back(g.id(gx, gy));
+        if (starts.back() == -1 || goals.back() == -1)
+        {
+            cerr << "start or goal of agent " << starts.size() - 1 << " is not a free cell" << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+// ROUTES file: first line "T K", then K lines "x,y x,y ..." (T+1 positions).
+inline void writeRoutes(const Grid &g, const string &file, int T, const vector<vector<int>> &routes)
+{
+    ofstream out(file);
+    out << T << " " << routes.size() << "\n";
+    for (auto &route : routes)
+    {
+        for (unsigned int t = 0; t < route.size(); ++t)
+            out << (t ? " " : "") << g.x(route[t]) << "," << g.y(route[t]);
+        out << "\n";
+    }
+}
+
+// Cell of a robot at step t; after the end of its route it stays in the last cell.
+inline int cellAt(const vector<int> &route, int t) { return route[min<int>(t, route.size() - 1)]; }
+
+// BFS distances from the nearest of `sources`, INF for unreachable cells.
+inline vector<int> bfsDistances(const Grid &g, const vector<int> &sources)
 {
     vector<int> d(g.numCells, INF);
     queue<int> q;
-    for (int c : goals)
+    for (int c : sources)
         if (d[c] == INF)
             d[c] = 0, q.push(c);
     while (!q.empty())
@@ -106,6 +143,13 @@ inline int teamLowerBound(const Grid &g, const vector<int> &starts, const vector
             if (d[nb] == INF)
                 d[nb] = d[c] + 1, q.push(nb);
     }
+    return d;
+}
+
+// Lower bound of the makespan of a team: every robot needs at least its distance to the nearest goal of the team.
+inline int teamLowerBound(const Grid &g, const vector<int> &starts, const vector<int> &goals)
+{
+    vector<int> d = bfsDistances(g, goals);
     int lb = 0;
     for (int s : starts)
         lb = max(lb, d[s]);
@@ -120,20 +164,9 @@ inline int teamMatchBound(const Grid &g, const vector<int> &starts, const vector
 {
     int k = starts.size(), m = goals.size();
     vector<vector<int>> d(k, vector<int>(m, INF)); // d[robot][goal]
-    vector<int> dist(g.numCells);
     for (int j = 0; j < m; ++j)
     {
-        fill(dist.begin(), dist.end(), INF);
-        queue<int> q;
-        dist[goals[j]] = 0, q.push(goals[j]);
-        while (!q.empty())
-        {
-            int c = q.front();
-            q.pop();
-            for (int nb : g.nebors[c])
-                if (dist[nb] == INF)
-                    dist[nb] = dist[c] + 1, q.push(nb);
-        }
+        vector<int> dist = bfsDistances(g, {goals[j]});
         for (int i = 0; i < k; ++i)
             d[i][j] = dist[starts[i]];
     }

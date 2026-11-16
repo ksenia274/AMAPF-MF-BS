@@ -125,12 +125,15 @@ public:
             teamStarts[i % numTeams].push_back(starts[i]);
             teamGoals[i % numTeams].push_back(goals[i]);
         }
+        for (int team = 0; team < numTeams; ++team)
+            for (unsigned int i = 0; i < teamAgents[team].size(); ++i)
+                agents.push_back({team, i});
     }
 
     // Returns the conflict-free node with the minimal makespan, or nullptr if a limit is hit.
     shared_ptr<CTNode> solve(double timeLimitSec, long long maxNodes)
     {
-        deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
+        setDeadline(timeLimitSec);
         auto root = make_shared<CTNode>();
         inRoot = true;
         for (unsigned int team = 0; team < teamAgents.size(); ++team)
@@ -227,7 +230,7 @@ public:
         vector<RootCall> calls;
         for (int team = 0; team < count; ++team)
         {
-            deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
+            setDeadline(timeLimitSec);
             auto start = steady_clock::now();
             auto plan = replan(team, TeamPlan(), 1, plans);
             calls.push_back({team, startT(team, 1), plan ? plan->T : -1, duration<double>(steady_clock::now() - start).count() * 1000 - lastCountMs,
@@ -242,7 +245,7 @@ public:
     // Time of a fresh low-level call of `team` that starts at T (the other teams in `plans` give the weights).
     double callAtT(int team, int T, double timeLimitSec, const vector<shared_ptr<const TeamPlan>> &plans)
     {
-        deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
+        setDeadline(timeLimitSec);
         string mode = tStart;
         tStart = "1";
         auto start = steady_clock::now();
@@ -276,7 +279,7 @@ public:
             {
                 auto &r = node.plans[team]->routes[i];
                 for (int t = 0; t <= node.key; ++t)
-                    result[teamAgents[team][i]].push_back(r[min<int>(t, r.size() - 1)]);
+                    result[teamAgents[team][i]].push_back(bs::cellAt(r, t));
             }
         return result;
     }
@@ -284,6 +287,7 @@ public:
 private:
     const bs::Grid &g;
     vector<vector<int>> teamAgents, teamStarts, teamGoals;
+    vector<pair<int, int>> agents; // (team, index in team) of every agent, team by team
     long long nextId = 0;
     steady_clock::time_point deadline = steady_clock::time_point::max();
     vector<int> teamLb;
@@ -294,6 +298,8 @@ private:
     pair<long long, long long> lastCuts{-1, -1};
     double lastCountMs = 0; // time of countCuts() in the last call, not part of the call
     unsigned long long profPrep = 0, profSolve = 0, profExtract = 0; // -DBS_PROFILE: rdtsc marks of solveTeam
+
+    void setDeadline(double sec) { deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(sec)); }
 
     void noteDiag(const CTNode &node)
     {
@@ -563,7 +569,7 @@ private:
             for (unsigned int team = 0; team < teamAgents.size(); ++team)
                 for (auto &r : node.plans[team]->routes)
                 {
-                    int u = r[min<int>(t, r.size() - 1)], v = r[min<int>(t + 1, r.size() - 1)];
+                    int u = bs::cellAt(r, t), v = bs::cellAt(r, t + 1);
                     teamsAt[u].insert(team);
                     if (t < node.key && u != v)
                         teamsMoving[u * n + v].insert(team);
@@ -661,14 +667,7 @@ private:
     // Pairs of robots of different teams with at least one vertex or swap conflict.
     int conflictPairs(const CTNode &node) const
     {
-        vector<pair<int, int>> agents;
-        for (unsigned int team = 0; team < teamAgents.size(); ++team)
-            for (unsigned int i = 0; i < teamAgents[team].size(); ++i)
-                agents.push_back({team, i});
-        auto pos = [&](unsigned int a, int t) {
-            auto &r = node.plans[agents[a].first]->routes[agents[a].second];
-            return r[min<int>(t, r.size() - 1)];
-        };
+        auto pos = [&](unsigned int a, int t) { return bs::cellAt(node.plans[agents[a].first]->routes[agents[a].second], t); };
         set<pair<int, int>> pairs;
         auto note = [&](int a, int b) {
             if (agents[a].first != agents[b].first)
@@ -710,14 +709,7 @@ private:
         node.key = 0;
         for (auto &plan : node.plans)
             node.key = max(node.key, plan->T);
-        vector<pair<int, int>> agents; // (team, index in team)
-        for (unsigned int team = 0; team < teamAgents.size(); ++team)
-            for (unsigned int i = 0; i < teamAgents[team].size(); ++i)
-                agents.push_back({team, i});
-        auto pos = [&](const pair<int, int> &a, int t) {
-            auto &r = node.plans[a.first]->routes[a.second];
-            return r[min<int>(t, r.size() - 1)];
-        };
+        auto pos = [&](const pair<int, int> &a, int t) { return bs::cellAt(node.plans[a.first]->routes[a.second], t); };
         vector<char> inConflict(teamAgents.size(), 0);
         node.first = Conflict();
         auto found = [&](Conflict c) {
@@ -821,21 +813,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     vector<int> starts, goals;
-    ifstream in(scenFile);
-    string version, num, mapName;
-    int w, h, sx, sy, gx, gy;
-    double optimal;
-    in >> version >> version;
-    while ((int)starts.size() < numAgents && in >> num >> mapName >> w >> h >> sx >> sy >> gx >> gy >> optimal)
-    {
-        starts.push_back(grid.id(sx, sy));
-        goals.push_back(grid.id(gx, gy));
-        if (starts.back() == -1 || goals.back() == -1)
-        {
-            cerr << "start or goal of agent " << starts.size() - 1 << " is not a free cell" << endl;
-            return 1;
-        }
-    }
+    if (!bs::loadScen(grid, scenFile, numAgents, starts, goals))
+        return 1;
     if (numAgents < 1 || (int)starts.size() < numAgents || numTeams < 1 || numTeams > numAgents)
     {
         cerr << "need 1 <= K <= N <= " << starts.size() << endl;
@@ -1002,16 +981,6 @@ int main(int argc, char *argv[])
     if (!result)
         return 2;
     if (routesFile != "-")
-    {
-        ofstream out(routesFile);
-        auto routes = cbm.routes(*result);
-        out << result->key << " " << numAgents << "\n";
-        for (auto &route : routes)
-        {
-            for (unsigned int t = 0; t < route.size(); ++t)
-                out << (t ? " " : "") << grid.x(route[t]) << "," << grid.y(route[t]);
-            out << "\n";
-        }
-    }
+        bs::writeRoutes(grid, routesFile, result->key, cbm.routes(*result));
     return 0;
 }

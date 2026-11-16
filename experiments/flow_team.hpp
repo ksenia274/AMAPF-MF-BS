@@ -35,8 +35,8 @@ public:
     {
         for (int goal : goals)
             isGoalCell[goal] = 1;
-        distStart = bfs(starts);
-        distGoal = bfs(goals);
+        distStart = bfsDistances(grid, starts);
+        distGoal = bfsDistances(grid, goals);
     }
 
     void addVertexConstraint(int cell, int t)
@@ -154,24 +154,6 @@ private:
     vector<int> outId, inId, nodeCell; // nodeCell: cell of an out node, -1 for the other nodes
     vector<int> head, nextEdge, to, cap, edgeCost;
 
-    vector<int> bfs(const vector<int> &from) const
-    {
-        vector<int> d(n, INF);
-        queue<int> q;
-        for (int c : from)
-            if (d[c] == INF)
-                d[c] = 0, q.push(c);
-        while (!q.empty())
-        {
-            int c = q.front();
-            q.pop();
-            for (int nb : g.nebors[c])
-                if (d[nb] == INF)
-                    d[nb] = d[c] + 1, q.push(nb);
-        }
-        return d;
-    }
-
     bool late()
     {
         return timedOut = timedOut || chrono::steady_clock::now() > deadline;
@@ -223,10 +205,10 @@ private:
             for (auto &r : otherRoutes)
                 for (int t = 0; t <= T; ++t)
                 {
-                    int here = r[min<int>(t, r.size() - 1)];
+                    int here = cellAt(r, t);
                     if (t >= 1)
                         ++occupied[(long long)t * n + here];
-                    int next = r[min<int>(t + 1, r.size() - 1)];
+                    int next = cellAt(r, t + 1);
                     if (t < T && next != here)
                         ++moved[((long long)t * n + here) * n + next];
                 }

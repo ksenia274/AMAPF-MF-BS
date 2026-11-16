@@ -53,21 +53,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     vector<int> starts, goals;
-    ifstream in(scenFile);
-    string version, num, mapName;
-    int w, h, sx, sy, gx, gy;
-    double optimal;
-    in >> version >> version;
-    while ((int)starts.size() < k && in >> num >> mapName >> w >> h >> sx >> sy >> gx >> gy >> optimal)
-    {
-        starts.push_back(grid.id(sx, sy));
-        goals.push_back(grid.id(gx, gy));
-        if (starts.back() == -1 || goals.back() == -1)
-        {
-            cerr << "start or goal of agent " << starts.size() - 1 << " is not a free cell" << endl;
-            return 1;
-        }
-    }
+    if (!bs::loadScen(grid, scenFile, k, starts, goals))
+        return 1;
     if (k < 1 || (int)starts.size() < k)
     {
         cerr << "K must be in [1, " << starts.size() << "] for " << scenFile << endl;
@@ -180,14 +167,7 @@ int run(Team &team, const bs::Grid &grid, int k, const vector<string> &args, int
         int fixed = bs::removeSwaps(routes, T);
         if (fixed)
             cerr << "swaps inside the team replaced by waits: " << fixed << endl;
-        ofstream out(args[3]);
-        out << T << " " << k << "\n";
-        for (auto &route : routes)
-        {
-            for (unsigned int t = 0; t < route.size(); ++t)
-                out << (t ? " " : "") << grid.x(route[t]) << "," << grid.y(route[t]);
-            out << "\n";
-        }
+        bs::writeRoutes(grid, args[3], T, routes);
     }
     return 0;
 }
