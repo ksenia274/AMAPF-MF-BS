@@ -4,7 +4,7 @@
 // Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
-//            [--tie later|earlier] [--t-start 1|lb] [--mem-limit MB] [--diag] [--pen-gap S]
+//            [--tie later|earlier] [--t-start 1|lb|match] [--mem-limit MB] [--diag] [--pen-gap S]
 //            [--root-only first|last] [--root-low bs|bspen|bscut|flow|floww] [--cut penal|all]
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node
 // (--tie earlier: the earlier one).
@@ -20,8 +20,9 @@
 // floww) minus the floww minimum, over all replannings and over those of the root. The floww time is not counted
 // against the time limit.
 // --mem-limit: the process is put into a job object with this memory limit; bad_alloc gives status=memory.
-// --t-start lb (default): the low level starts T from max(minT, bs::teamLowerBound); --t-start 1: from minT
-// (the answer is the same).
+// --t-start lb (default): the low level starts T from max(minT, bs::teamLowerBound); --t-start 1: from minT;
+// --t-start match: from max(minT, bs::teamMatchBound) (bottleneck assignment of the team's robots to its goals; it is
+// computed once per team, inside the first low-level call). The answer is the same.
 // --root-low: the root is planned by this low level, all other replannings by --low.
 // --low bscut: bspen with soft cuts of the waiting chains (bs_team.hpp, setCut), --cut penal (default) or all.
 // --diag also prints root_pen_wait/enter/swap: the penalty (weights of floww) of the root routes of every team
@@ -88,7 +89,7 @@ public:
     double lowLevelSec = 0;
     bool tieEarlier = false;
     string low = "bs";
-    bool tStartLb = true;
+    string tStart = "lb"; // 1, lb or match
     bool diag = false;       // collect the statistics below (costs a hash of the constraint sets per node)
     int rootKey = -1, maxDepth = 0, maxConstraintsPerTeam = 0;
     long long duplicateConstraintSets = 0; // generated nodes whose constraint sets (per team) were already seen
@@ -245,21 +246,22 @@ public:
     double callAtT(int team, int T, double timeLimitSec, const vector<shared_ptr<const TeamPlan>> &plans)
     {
         deadline = steady_clock::now() + duration_cast<steady_clock::duration>(duration<double>(timeLimitSec));
-        bool lb = tStartLb;
-        tStartLb = false;
+        string mode = tStart;
+        tStart = "1";
         auto start = steady_clock::now();
         auto plan = replan(team, TeamPlan(), T, plans);
-        tStartLb = lb;
+        tStart = mode;
         return plan && plan->T == T ? duration<double>(steady_clock::now() - start).count() * 1000 - lastCountMs : -1;
     }
 
     int startT(int team, int minT)
     {
-        if (!tStartLb)
+        if (tStart == "1")
             return max(minT, 1);
         if (teamLb.empty())
             for (unsigned int i = 0; i < teamAgents.size(); ++i)
-                teamLb.push_back(bs::teamLowerBound(g, teamStarts[i], teamGoals[i]));
+                teamLb.push_back(tStart == "match" ? bs::teamMatchBound(g, teamStarts[i], teamGoals[i])
+                                                   : bs::teamLowerBound(g, teamStarts[i], teamGoals[i]));
         return max({minT, 1, teamLb[team]});
     }
 
@@ -850,10 +852,10 @@ int main(int argc, char *argv[])
     }
 
     auto isLow = [](const string &x) { return x == "bs" || x == "bspen" || x == "bscut" || x == "flow" || x == "floww"; };
-    if (!isLow(low) || (!rootLow.empty() && !isLow(rootLow)) || (tStart != "1" && tStart != "lb") || (cut != "penal" && cut != "all") ||
+    if (!isLow(low) || (!rootLow.empty() && !isLow(rootLow)) || (tStart != "1" && tStart != "lb" && tStart != "match") || (cut != "penal" && cut != "all") ||
         (!rootOnly.empty() && rootOnly != "first" && rootOnly != "last"))
     {
-        cerr << "--low and --root-low must be bs, bspen, bscut, flow or floww, --t-start 1 or lb, --cut penal or all, --root-only first or last" << endl;
+        cerr << "--low and --root-low must be bs, bspen, bscut, flow or floww, --t-start 1, lb or match, --cut penal or all, --root-only first or last" << endl;
         return 1;
     }
 #ifdef _WIN32
@@ -896,7 +898,7 @@ int main(int argc, char *argv[])
     cbm.rootLow = rootLow;
     cbm.cutAll = cut == "all";
     cbm.countCuts = !rootOnly.empty();
-    cbm.tStartLb = tStart == "lb";
+    cbm.tStart = tStart;
     cbm.diag = diag;
     cbm.penGap = low == "bspen" || low == "bscut" ? penGap : 0;
     auto peakMb = []() {

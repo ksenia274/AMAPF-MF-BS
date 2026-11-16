@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Low level alone on random tiny instances: FlowTeam vs BulkSearchTeam vs brute force (bs_team.exe --low ...).
 
-Usage: test_flow_team.py BS_TEAM_EXE --makespan N [--seed S] [--lows bs,flow] [--t-start 1|lb]
-           (2.1: minimal T of the low levels = brute force)
+Usage: test_flow_team.py BS_TEAM_EXE --makespan N [--seed S] [--lows bs,flow] [--t-start 1|lb|match]
+           (2.1: minimal T of the low levels = brute force; with match also lb <= bound_match <= brute T and
+           bound_match = the bottleneck assignment by brute force over the permutations)
        test_flow_team.py BS_TEAM_EXE --weights N [--seed S] [--low floww|bspen|bscut|bscut:all]
            (2.2: floww weight = brute-force minimum; bspen, bscut: T must agree, the penalty must not be below the
            minimum, the excess is only reported)
@@ -56,6 +57,29 @@ def random_instance(rng):
             vertex.add((rng.choice(goals), max(t0, 1) + rng.randint(0, 2)))
             after = True
     return w, h, grid, free, starts, goals, vertex, edge, after
+
+
+def bottleneck(w, h, grid, starts, goals):
+    """Smallest D such that the robots can get distinct goals at distance <= D (all permutations), None if none."""
+    free = {(x, y) for y in range(h) for x in range(w) if grid[y][x] == "."}
+    dist = []
+    for g in goals:
+        d, frontier = {g: 0}, [g]
+        while frontier:
+            nxt = []
+            for c in frontier:
+                for n in neighbours(c, free):
+                    if n not in d:
+                        d[n] = d[c] + 1
+                        nxt.append(n)
+            frontier = nxt
+        dist.append(d)
+    best = None
+    for p in itertools.permutations(range(len(goals))):
+        ds = [dist[j].get(s) for s, j in zip(starts, p)]
+        if None not in ds and (best is None or max(ds) < best):
+            best = max(ds)
+    return best
 
 
 def low_args(low):
@@ -142,6 +166,14 @@ def main():
                 if os.path.exists(routes_path):
                     os.remove(routes_path)
                 t, _, out = run(exe, [mp, sc, k, routes_path, cs, "--t-start", a.t_start] + low_args(low))
+                if a.t_start == "match":
+                    lb = int(out.split("bound_lb=")[1].split()[0])
+                    match = int(out.split("bound_match=")[1].split()[0])
+                    ref = bottleneck(w, h, grid, starts, goals)
+                    if match != (ref if ref is not None else 10 ** 9):
+                        problems.append(f"{low}: bound_match {match}, brute-force assignment {ref}")
+                    if t_ref != -1 and not (lb <= match <= t_ref):
+                        problems.append(f"{low}: lb {lb}, bound_match {match}, brute T {t_ref}")
                 if t != t_ref:
                     problems.append(f"{low}: {out} brute T={t_ref}")
                 elif t != -1:

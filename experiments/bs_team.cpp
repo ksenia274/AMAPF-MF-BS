@@ -1,10 +1,11 @@
 // One team = all K agents of the .scen, solved by bs::BulkSearchTeam (bs_team.hpp) or bs::FlowTeam (flow_team.hpp).
 // Usage: bs_team MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|bscut|flow|floww] [--others ROUTES]
-//                [--t-start 1|lb] [--cut penal|all]
+//                [--t-start 1|lb|match] [--cut penal|all]
 //   -> prints optimal makespan T, expansions (bs, bspen, bscut) or the weight of the flow (flow, floww), ms
 // --cut (bscut): soft cuts of the waiting chains at the penalized steps (default) or at every step.
 // --others: routes of the robots of other teams (format of ROUTES) for the weights of floww / bspen / bscut.
-// --t-start lb (default): T starts from bs::teamLowerBound; --t-start 1: from 1.
+// --t-start lb (default): T starts from bs::teamLowerBound; --t-start 1: from 1; --t-start match: from
+// bs::teamMatchBound. Also prints "bound_lb=.. bound_match=.." on stderr; --bounds-only: only that, no search.
 // ROUTES: first line "T K", then K lines "x,y x,y ..." (T+1 positions), agent i = row i of .scen.
 // CONSTRAINTS (same format as brute_force.py, '#' starts a comment):
 //   v x y t            the team may not be in (x,y) at step t
@@ -20,6 +21,7 @@ int main(int argc, char *argv[])
 {
     vector<string> args;
     string low = "bs", othersFile, tStart = "lb", cut = "penal";
+    bool boundsOnly = false;
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
@@ -31,13 +33,15 @@ int main(int argc, char *argv[])
             tStart = argv[++i];
         else if (a == "--cut" && i + 1 < argc)
             cut = argv[++i];
+        else if (a == "--bounds-only")
+            boundsOnly = true;
         else
             args.push_back(a);
     }
     if (args.size() < 3 || (low != "bs" && low != "bspen" && low != "bscut" && low != "flow" && low != "floww") ||
-        (tStart != "1" && tStart != "lb") || (cut != "penal" && cut != "all"))
+        (tStart != "1" && tStart != "lb" && tStart != "match") || (cut != "penal" && cut != "all"))
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|bscut|flow|floww] [--others ROUTES] [--t-start 1|lb] [--cut penal|all]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen K [ROUTES|-] [CONSTRAINTS] [--low bs|bspen|bscut|flow|floww] [--others ROUTES] [--t-start 1|lb|match] [--cut penal|all]" << endl;
         return 1;
     }
     string mapFile = args[0], scenFile = args[1];
@@ -70,7 +74,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int minT = tStart == "lb" ? max(1, bs::teamLowerBound(grid, starts, goals)) : 1;
+    int boundLb = bs::teamLowerBound(grid, starts, goals), boundMatch = bs::teamMatchBound(grid, starts, goals);
+    cerr << "bound_lb=" << boundLb << " bound_match=" << boundMatch << endl;
+    if (boundsOnly)
+        return 0;
+    int minT = tStart == "lb" ? max(1, boundLb) : tStart == "match" ? max(1, boundMatch) : 1;
     vector<vector<int>> others;
     if (!othersFile.empty())
     {

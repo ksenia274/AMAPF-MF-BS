@@ -112,6 +112,72 @@ inline int teamLowerBound(const Grid &g, const vector<int> &starts, const vector
     return lb;
 }
 
+// Bottleneck assignment bound: the smallest D such that every robot of the team gets its own goal at distance <= D
+// (binary search over the distances, Kuhn's matching on the bipartite graph robot -> goal with dist <= D). Every
+// solution with makespan T gives such an assignment with D <= T, so this is a lower bound of T, never below
+// teamLowerBound. INF if there is no perfect matching at all (then the team has no solution).
+inline int teamMatchBound(const Grid &g, const vector<int> &starts, const vector<int> &goals)
+{
+    int k = starts.size(), m = goals.size();
+    vector<vector<int>> d(k, vector<int>(m, INF)); // d[robot][goal]
+    vector<int> dist(g.numCells);
+    for (int j = 0; j < m; ++j)
+    {
+        fill(dist.begin(), dist.end(), INF);
+        queue<int> q;
+        dist[goals[j]] = 0, q.push(goals[j]);
+        while (!q.empty())
+        {
+            int c = q.front();
+            q.pop();
+            for (int nb : g.nebors[c])
+                if (dist[nb] == INF)
+                    dist[nb] = dist[c] + 1, q.push(nb);
+        }
+        for (int i = 0; i < k; ++i)
+            d[i][j] = dist[starts[i]];
+    }
+    vector<int> values;
+    for (auto &row : d)
+        for (int x : row)
+            if (x < INF)
+                values.push_back(x);
+    sort(values.begin(), values.end());
+    values.erase(unique(values.begin(), values.end()), values.end());
+    auto perfect = [&](int D) {
+        vector<int> robotOfGoal(m, -1), seen(m, -1);
+        function<bool(int, int)> augment = [&](int i, int round) {
+            for (int j = 0; j < m; ++j)
+                if (d[i][j] <= D && seen[j] != round)
+                {
+                    seen[j] = round;
+                    if (robotOfGoal[j] == -1 || augment(robotOfGoal[j], round))
+                    {
+                        robotOfGoal[j] = i;
+                        return true;
+                    }
+                }
+            return false;
+        };
+        for (int i = 0; i < k; ++i)
+            if (!augment(i, i))
+                return false;
+        return true;
+    };
+    if (values.empty() || !perfect(values.back()))
+        return INF;
+    int lo = 0, hi = values.size() - 1; // perfect(values[hi]) holds
+    while (lo < hi)
+    {
+        int mid = (lo + hi) / 2;
+        if (perfect(values[mid]))
+            hi = mid;
+        else
+            lo = mid + 1;
+    }
+    return values[lo];
+}
+
 // A swap of two agents of one team is replaced by two waits and the agents exchange the rest of their routes:
 // the cells occupied at every step stay the same, so no new conflicts appear (never observed with Bulk Search and
 // bspen; bscut makes them; impossible with flow: the gadget lets one robot through an edge per step).
