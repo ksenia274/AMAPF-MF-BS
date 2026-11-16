@@ -258,11 +258,11 @@ public:
     {
         if (tStart == "1")
             return max(minT, 1);
-        if (teamLb.empty())
+        if (teamStartBound.empty())
             for (unsigned int i = 0; i < teamAgents.size(); ++i)
-                teamLb.push_back(tStart == "match" ? bs::teamMatchBound(g, teamStarts[i], teamGoals[i])
-                                                   : bs::teamLowerBound(g, teamStarts[i], teamGoals[i]));
-        return max({minT, 1, teamLb[team]});
+                teamStartBound.push_back(tStart == "match" ? bs::teamMatchBound(g, teamStarts[i], teamGoals[i])
+                                                           : bs::teamLowerBound(g, teamStarts[i], teamGoals[i]));
+        return max({minT, 1, teamStartBound[team]});
     }
 
     double penShare() const { return lowLevelCycles ? (double)penaltyCycles / lowLevelCycles : 0; }
@@ -290,7 +290,7 @@ private:
     vector<pair<int, int>> agents; // (team, index in team) of every agent, team by team
     long long nextId = 0;
     steady_clock::time_point deadline = steady_clock::time_point::max();
-    vector<int> teamLb;
+    vector<int> teamStartBound; // per team: lb or the assignment bound (--t-start)
     unsigned long long penaltyCycles = 0, lowLevelCycles = 0;
     unordered_set<size_t> seenConstraintSets; // 64-bit hashes of the canonical per-team constraint sets (diag)
     bool inRoot = false;
@@ -324,6 +324,95 @@ private:
             ++duplicateConstraintSets;
     }
 
+#ifdef BS_PROFILE
+    // rdtsc marks of one low-level call (-DBS_PROFILE)
+    struct CallProfile
+    {
+        unsigned long long start = 0, count = 0, solverEnd = 0, destroy = 0, swaps = 0;
+        bs::LowProfile low;
+        vector<bs::FlowTeam::ProfT> flow;
+    } callProf;
+
+    // total = the call without countCuts (as `sec`); prep = everything before solveMinMakespan, destroy = the
+    // destructor of the solver
+    void printProfile(int team, const string &lowName, int minT, int T, double sec) const
+    {
+        const CallProfile &c = callProf;
+        const bs::LowProfile &prof = c.low;
+        unsigned long long total = __rdtsc() - c.start - c.count;
+        cerr << "prof call=" << lowLevelCalls << " team=" << team << " low=" << lowName << " minT=" << minT << " T=" << T
+             << " ms=" << fixed << setprecision(3) << sec * 1000 << " total=" << total << " prep=" << profPrep - c.start
+             << " solve=" << profSolve << " extract=" << profExtract << " destroy=" << c.destroy << " swaps=" << c.swaps
+             << " cutBuild=" << prof.cutBuild << " heur=" << prof.heur << " clear=" << prof.clear << " search=" << prof.search
+             << " check=" << prof.check << " cutLookup=" << prof.cutLookup << " pen=" << prof.pen << " addPath=" << prof.addPath
+             << " nCheck=" << prof.nCheck << " nCut=" << prof.nCut << " nPen=" << prof.nPen << " expansions=" << lastExpansions << "\n";
+        for (auto &p : prof.perT)
+            cerr << "prof_T call=" << lowLevelCalls << " team=" << team << " T=" << p.T << " ok=" << p.ok << " paths=" << p.paths
+                 << " heur=" << p.heur << " clear=" << p.clear << " search=" << p.search << "\n";
+        for (auto &p : c.flow)
+            cerr << "prof_T call=" << lowLevelCalls << " team=" << team << " T=" << p.T << " ok=" << p.ok << " build=" << p.build
+                 << " maxflow=" << p.maxFlow << " mincost=" << p.minCost << "\n";
+    }
+#endif
+
+    // Routes of the robots of the other teams in `plans`, for the low levels that use them (and for --diag in the root).
+    vector<vector<int>> otherRoutes(int team, const string &lowName, const vector<shared_ptr<const TeamPlan>> &plans) const
+    {
+        vector<vector<int>> others;
+        if (lowName == "floww" || lowName == "bspen" || lowName == "bscut" || (diag && inRoot))
+            for (unsigned int other = 0; other < plans.size(); ++other)
+                if ((int)other != team)
+                    others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
+        return others;
+    }
+
+    // bs, bspen, bscut. The time of countCuts() is moved out of the call by shifting `start`.
+    bool runBulkSearch(int team, const string &lowName, TeamPlan &plan, int minT, const vector<vector<int>> &others,
+                       steady_clock::time_point &start)
+    {
+        bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
+        if (lowName != "bs")
+            solver.setOtherRoutes(others);
+        if (lowName == "bscut")
+            solver.setCut(cutAll);
+        bool ok = solveTeam(solver, team, plan, minT);
+        penaltyCycles += solver.penaltyCycles;
+        lowLevelExpansions += solver.numOfExpansions;
+        lastExpansions = solver.numOfExpansions;
+#ifdef BS_PROFILE
+        callProf.low = solver.prof;
+        unsigned long long countStartCycles = __rdtsc();
+#endif
+        if (countCuts && ok)
+        {
+            auto countStart = steady_clock::now();
+            lastCuts = solver.countCuts();
+            lastCountMs = duration<double>(steady_clock::now() - countStart).count() * 1000;
+            start += steady_clock::now() - countStart;
+        }
+#ifdef BS_PROFILE
+        callProf.count = __rdtsc() - countStartCycles;
+        callProf.solverEnd = __rdtsc();
+#endif
+        return ok;
+    }
+
+    // flow, floww
+    bool runFlow(int team, const string &lowName, TeamPlan &plan, int minT, const vector<vector<int>> &others)
+    {
+        bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], lowName == "floww");
+        if (lowName == "floww")
+            solver.setOtherRoutes(others);
+        bool ok = solveTeam(solver, team, plan, minT);
+        if (ok)
+            netNodesMax = max(netNodesMax, solver.netNodes), netEdgesMax = max(netEdgesMax, solver.netEdges);
+#ifdef BS_PROFILE
+        callProf.flow = solver.profT;
+        callProf.solverEnd = __rdtsc();
+#endif
+        return ok;
+    }
+
     // floww: the weights come from the routes of the other teams in `plans` (at the root: the teams planned so far).
     shared_ptr<const TeamPlan> replan(int team, TeamPlan plan, int minT, const vector<shared_ptr<const TeamPlan>> &plans)
     {
@@ -334,59 +423,16 @@ private:
         minT = startT(team, minT);
 #ifdef BS_PROFILE
         profSolve = profExtract = 0;
-        unsigned long long countCycles = 0, swapCycles = 0, solverCycles = 0;
-        bs::LowProfile prof;
-        vector<bs::FlowTeam::ProfT> flowProf;
+        callProf = CallProfile();
+        callProf.start = startCycles;
 #endif
-        vector<vector<int>> others;
-        const string &lv = inRoot && !rootLow.empty() ? rootLow : low;
-        if (lv == "floww" || lv == "bspen" || lv == "bscut" || (diag && inRoot))
-            for (unsigned int other = 0; other < plans.size(); ++other)
-                if ((int)other != team)
-                    others.insert(others.end(), plans[other]->routes.begin(), plans[other]->routes.end());
-        bool ok;
-        if (lv == "bs" || lv == "bspen" || lv == "bscut")
-        {
-            bs::BulkSearchTeam solver(g, teamStarts[team], teamGoals[team]);
-            if (lv != "bs")
-                solver.setOtherRoutes(others);
-            if (lv == "bscut")
-                solver.setCut(cutAll);
-            ok = solveTeam(solver, team, plan, minT);
-            penaltyCycles += solver.penaltyCycles;
-            lowLevelExpansions += solver.numOfExpansions;
-            lastExpansions = solver.numOfExpansions;
+        const string &lowName = inRoot && !rootLow.empty() ? rootLow : low;
+        vector<vector<int>> others = otherRoutes(team, lowName, plans);
+        bool ok = lowName == "bs" || lowName == "bspen" || lowName == "bscut" ? runBulkSearch(team, lowName, plan, minT, others, start)
+                                                                              : runFlow(team, lowName, plan, minT, others);
 #ifdef BS_PROFILE
-            prof = solver.prof;
-            unsigned long long countStartCycles = __rdtsc();
-#endif
-            if (countCuts && ok)
-            {
-                auto countStart = steady_clock::now();
-                lastCuts = solver.countCuts();
-                lastCountMs = duration<double>(steady_clock::now() - countStart).count() * 1000;
-                start += steady_clock::now() - countStart;
-            }
-#ifdef BS_PROFILE
-            countCycles = __rdtsc() - countStartCycles;
-            solverCycles = __rdtsc();
-#endif
-        }
-        else
-        {
-            bs::FlowTeam solver(g, teamStarts[team], teamGoals[team], lv == "floww");
-            if (lv == "floww")
-                solver.setOtherRoutes(others);
-            ok = solveTeam(solver, team, plan, minT);
-            if (ok)
-                netNodesMax = max(netNodesMax, solver.netNodes), netEdgesMax = max(netEdgesMax, solver.netEdges);
-#ifdef BS_PROFILE
-            flowProf = solver.profT;
-            solverCycles = __rdtsc();
-#endif
-        }
-#ifdef BS_PROFILE
-        unsigned long long destroyCycles = __rdtsc() - solverCycles, swapStart = __rdtsc();
+        unsigned long long swapStart = __rdtsc();
+        callProf.destroy = swapStart - callProf.solverEnd;
 #endif
         if (ok)
         {
@@ -394,26 +440,12 @@ private:
             swapsFixed += bs::removeSwaps(plan.routes, plan.T);
         }
 #ifdef BS_PROFILE
-        swapCycles = __rdtsc() - swapStart;
+        callProf.swaps = __rdtsc() - swapStart;
 #endif
         double sec = duration<double>(steady_clock::now() - start).count();
         lowLevelCycles += __rdtsc() - startCycles;
 #ifdef BS_PROFILE
-        // total = the call without countCuts (as `sec`); prep = everything before solveMinMakespan, destroy = the
-        // destructor of the solver
-        unsigned long long total = __rdtsc() - startCycles - countCycles;
-        cerr << "prof call=" << lowLevelCalls << " team=" << team << " low=" << lv << " minT=" << minT << " T=" << (ok ? plan.T : -1)
-             << " ms=" << fixed << setprecision(3) << sec * 1000 << " total=" << total << " prep=" << profPrep - startCycles
-             << " solve=" << profSolve << " extract=" << profExtract << " destroy=" << destroyCycles << " swaps=" << swapCycles
-             << " cutBuild=" << prof.cutBuild << " heur=" << prof.heur << " clear=" << prof.clear << " search=" << prof.search
-             << " check=" << prof.check << " cutLookup=" << prof.cutLookup << " pen=" << prof.pen << " addPath=" << prof.addPath
-             << " nCheck=" << prof.nCheck << " nCut=" << prof.nCut << " nPen=" << prof.nPen << " expansions=" << lastExpansions << "\n";
-        for (auto &p : prof.perT)
-            cerr << "prof_T call=" << lowLevelCalls << " team=" << team << " T=" << p.T << " ok=" << p.ok << " paths=" << p.paths
-                 << " heur=" << p.heur << " clear=" << p.clear << " search=" << p.search << "\n";
-        for (auto &p : flowProf)
-            cerr << "prof_T call=" << lowLevelCalls << " team=" << team << " T=" << p.T << " ok=" << p.ok << " build=" << p.build
-                 << " maxflow=" << p.maxFlow << " mincost=" << p.minCost << "\n";
+        printProfile(team, lowName, minT, ok ? plan.T : -1, sec);
 #endif
         lowLevelSec += sec;
         replanMs.push_back(sec * 1000);
@@ -766,172 +798,159 @@ private:
     }
 };
 
-int main(int argc, char *argv[])
+struct Options
 {
-    if (argc < 5)
-    {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--mem-limit MB] [--diag]" << endl;
-        return 1;
-    }
-    string mapFile = argv[1], scenFile = argv[2], routesFile = "-";
-    int numAgents = atoi(argv[3]), numTeams = atoi(argv[4]);
+    string mapFile, scenFile, routesFile = "-";
+    int numAgents = 0, numTeams = 0;
     double timeLimit = 60;
     long long maxNodes = LLONG_MAX, memLimitMb = 0;
     bool diag = false;
     int penGap = 0;
     string low = "bs", rootOnly, tStart = "lb", rootLow, cut = "penal";
+};
+
+// false (with a message) on bad arguments
+bool parseArgs(int argc, char *argv[], Options &o)
+{
+    if (argc < 5)
+    {
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--mem-limit MB] [--diag]" << endl;
+        return false;
+    }
+    o.mapFile = argv[1], o.scenFile = argv[2];
+    o.numAgents = atoi(argv[3]), o.numTeams = atoi(argv[4]);
     for (int i = 5; i < argc; ++i)
     {
         string a = argv[i];
         if (a == "--time-limit" && i + 1 < argc)
-            timeLimit = atof(argv[++i]);
+            o.timeLimit = atof(argv[++i]);
         else if (a == "--max-nodes" && i + 1 < argc)
-            maxNodes = atoll(argv[++i]);
+            o.maxNodes = atoll(argv[++i]);
         else if (a == "--low" && i + 1 < argc)
-            low = argv[++i];
+            o.low = argv[++i];
         else if (a == "--mem-limit" && i + 1 < argc)
-            memLimitMb = atoll(argv[++i]);
+            o.memLimitMb = atoll(argv[++i]);
         else if (a == "--root-only" && i + 1 < argc)
-            rootOnly = argv[++i];
+            o.rootOnly = argv[++i];
         else if (a == "--cut" && i + 1 < argc)
-            cut = argv[++i];
+            o.cut = argv[++i];
         else if (a == "--root-low" && i + 1 < argc)
-            rootLow = argv[++i];
+            o.rootLow = argv[++i];
         else if (a == "--t-start" && i + 1 < argc)
-            tStart = argv[++i];
+            o.tStart = argv[++i];
         else if (a == "--diag")
-            diag = true;
+            o.diag = true;
         else if (a == "--pen-gap" && i + 1 < argc)
-            penGap = max(1, atoi(argv[++i])), diag = true;
+            o.penGap = max(1, atoi(argv[++i])), o.diag = true;
         else
-            routesFile = a;
+            o.routesFile = a;
     }
-    bs::Grid grid;
-    if (!grid.load(mapFile))
-    {
-        cerr << "Couldn't open the file " << mapFile << endl;
-        return 1;
-    }
-    vector<int> starts, goals;
-    if (!bs::loadScen(grid, scenFile, numAgents, starts, goals))
-        return 1;
-    if (numAgents < 1 || (int)starts.size() < numAgents || numTeams < 1 || numTeams > numAgents)
-    {
-        cerr << "need 1 <= K <= N <= " << starts.size() << endl;
-        return 1;
-    }
+    return true;
+}
 
+bool validOptions(const Options &o)
+{
     auto isLow = [](const string &x) { return x == "bs" || x == "bspen" || x == "bscut" || x == "flow" || x == "floww"; };
-    if (!isLow(low) || (!rootLow.empty() && !isLow(rootLow)) || (tStart != "1" && tStart != "lb" && tStart != "match") || (cut != "penal" && cut != "all") ||
-        (!rootOnly.empty() && rootOnly != "first" && rootOnly != "last"))
+    if (!isLow(o.low) || (!o.rootLow.empty() && !isLow(o.rootLow)) || (o.tStart != "1" && o.tStart != "lb" && o.tStart != "match") ||
+        (o.cut != "penal" && o.cut != "all") || (!o.rootOnly.empty() && o.rootOnly != "first" && o.rootOnly != "last"))
     {
         cerr << "--low and --root-low must be bs, bspen, bscut, flow or floww, --t-start 1, lb or match, --cut penal or all, --root-only first or last" << endl;
-        return 1;
+        return false;
     }
+    return true;
+}
+
+// The process is put into a job object with this memory limit (Windows only); false if that fails.
+bool setMemoryLimit(long long mb)
+{
 #ifdef _WIN32
-    if (memLimitMb > 0)
+    if (mb > 0)
     {
         HANDLE job = CreateJobObjectA(nullptr, nullptr);
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION info = {};
         info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_PROCESS_MEMORY;
-        info.ProcessMemoryLimit = (SIZE_T)memLimitMb << 20;
+        info.ProcessMemoryLimit = (SIZE_T)mb << 20;
         if (!job || !SetInformationJobObject(job, JobObjectExtendedLimitInformation, &info, sizeof(info)) ||
             !AssignProcessToJobObject(job, GetCurrentProcess()))
         {
             cerr << "couldn't set the memory limit" << endl;
-            return 1;
+            return false;
         }
     }
 #endif
+    return true;
+}
+
+double peakMb()
+{
+    double mb = 0;
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+        mb = pmc.PeakWorkingSetSize / 1048576.0;
+#endif
+    return mb;
+}
 
 #ifdef BS_PROFILE
+// Cost of one rdtsc pair (the counters of the profile add it once per measured region) and the TSC frequency.
+void printProfileOverhead()
+{
+    unsigned long long sum = 0;
+    for (int i = 0; i < 1000000; ++i)
     {
-        // cost of one rdtsc pair (the counters of the profile add it once per measured region)
-        unsigned long long sum = 0;
-        for (int i = 0; i < 1000000; ++i)
-        {
-            unsigned long long a = __rdtsc();
-            sum += __rdtsc() - a;
-        }
-        auto t0 = steady_clock::now();
-        unsigned long long c0 = __rdtsc();
-        while (steady_clock::now() - t0 < milliseconds(200))
-            ;
-        double ghz = (__rdtsc() - c0) / (duration<double>(steady_clock::now() - t0).count() * 1e9);
-        cerr << "prof_overhead pair_cycles=" << sum / 1e6 << " tsc_ghz=" << ghz << "\n";
+        unsigned long long a = __rdtsc();
+        sum += __rdtsc() - a;
     }
+    auto t0 = steady_clock::now();
+    unsigned long long c0 = __rdtsc();
+    while (steady_clock::now() - t0 < milliseconds(200))
+        ;
+    double ghz = (__rdtsc() - c0) / (duration<double>(steady_clock::now() - t0).count() * 1e9);
+    cerr << "prof_overhead pair_cycles=" << sum / 1e6 << " tsc_ghz=" << ghz << "\n";
+}
 #endif
-    auto start = steady_clock::now();
-    CBM cbm(grid, starts, goals, numTeams);
-    cbm.low = low;
-    cbm.rootLow = rootLow;
-    cbm.cutAll = cut == "all";
-    cbm.countCuts = !rootOnly.empty();
-    cbm.tStart = tStart;
-    cbm.diag = diag;
-    cbm.penGap = low == "bspen" || low == "bscut" ? penGap : 0;
-    auto peakMb = []() {
-        double mb = 0;
-#ifdef _WIN32
-        PROCESS_MEMORY_COUNTERS pmc;
-        if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
-            mb = pmc.PeakWorkingSetSize / 1048576.0;
-#endif
-        return mb;
-    };
-    if (!rootOnly.empty())
-    {
-        vector<shared_ptr<const TeamPlan>> plans;
-        vector<CBM::RootCall> calls;
-        double finalMs = -1;
-        bool outOfMemory = false;
-        try
-        {
-            calls = cbm.planRoot(rootOnly == "first" ? 1 : numTeams, timeLimit, plans);
-            if (calls.back().T != -1)
-            {
-                plans.pop_back();
-                cbm.netNodesMax = cbm.netEdgesMax = 0;
-                finalMs = cbm.callAtT(calls.back().team, calls.back().T, timeLimit, plans);
-            }
-        }
-        catch (const bad_alloc &)
-        {
-            outOfMemory = true;
-        }
-        bool ok = !calls.empty() && calls.back().T != -1;
-        vector<int> ts;
-        double rootMs = 0;
-        for (auto &c : calls)
-            rootMs += c.ms, ts.push_back(c.T);
-        sort(ts.begin(), ts.end());
-        CBM::RootCall none;
-        auto &c = calls.empty() ? none : calls.back();
-        cout << "status=" << (ok ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : "no_solution") << " team=" << c.team
-             << " K=" << numTeams << " minT=" << c.minT << " T=" << c.T << " tried_T=" << (ok ? c.T - c.minT + 1 : -1) << fixed << setprecision(3)
-             << " ms=" << c.ms << " final_t_ms=" << finalMs << " net_nodes=" << cbm.netNodesMax << " net_edges=" << cbm.netEdgesMax
-             << " root_ms=" << rootMs << " teams_planned=" << calls.size() << " team_T_median=" << (ts.empty() ? -1 : ts[ts.size() / 2])
-             << " team_T_max=" << (ts.empty() ? -1 : ts.back()) << " expansions=" << c.expansions << " hard_cuts=" << c.hardCuts
-             << " soft_cuts=" << c.softCuts << setprecision(1) << " peak_mb=" << peakMb() << endl;
-        return ok ? 0 : outOfMemory ? 5 : 2;
-    }
-    shared_ptr<CTNode> result;
+
+// --root-only: plans the root team by team and prints the last call; returns the exit code.
+int runRootOnly(CBM &cbm, const Options &o)
+{
+    vector<shared_ptr<const TeamPlan>> plans;
+    vector<CBM::RootCall> calls;
+    double finalMs = -1;
     bool outOfMemory = false;
     try
     {
-        result = cbm.solve(timeLimit, maxNodes);
-    }
-    catch (const logic_error &e)
-    {
-        cerr << "internal error: " << e.what() << endl;
-        return 4;
+        calls = cbm.planRoot(o.rootOnly == "first" ? 1 : o.numTeams, o.timeLimit, plans);
+        if (calls.back().T != -1)
+        {
+            plans.pop_back();
+            cbm.netNodesMax = cbm.netEdgesMax = 0;
+            finalMs = cbm.callAtT(calls.back().team, calls.back().T, o.timeLimit, plans);
+        }
     }
     catch (const bad_alloc &)
     {
         outOfMemory = true;
     }
-    double total = duration<double>(steady_clock::now() - start).count();
-    string status = result ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : cbm.nodesGenerated >= maxNodes ? "node_limit" : "no_solution";
+    bool ok = !calls.empty() && calls.back().T != -1;
+    vector<int> ts;
+    double rootMs = 0;
+    for (auto &c : calls)
+        rootMs += c.ms, ts.push_back(c.T);
+    sort(ts.begin(), ts.end());
+    CBM::RootCall none;
+    auto &c = calls.empty() ? none : calls.back();
+    cout << "status=" << (ok ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : "no_solution") << " team=" << c.team
+         << " K=" << o.numTeams << " minT=" << c.minT << " T=" << c.T << " tried_T=" << (ok ? c.T - c.minT + 1 : -1) << fixed << setprecision(3)
+         << " ms=" << c.ms << " final_t_ms=" << finalMs << " net_nodes=" << cbm.netNodesMax << " net_edges=" << cbm.netEdgesMax
+         << " root_ms=" << rootMs << " teams_planned=" << calls.size() << " team_T_median=" << (ts.empty() ? -1 : ts[ts.size() / 2])
+         << " team_T_max=" << (ts.empty() ? -1 : ts.back()) << " expansions=" << c.expansions << " hard_cuts=" << c.hardCuts
+         << " soft_cuts=" << c.softCuts << setprecision(1) << " peak_mb=" << peakMb() << endl;
+    return ok ? 0 : outOfMemory ? 5 : 2;
+}
+
+void printResult(CBM &cbm, const shared_ptr<CTNode> &result, const string &status, double total)
+{
     auto &ms = cbm.replanMs;
     sort(ms.begin(), ms.end());
     auto quantile = [&](double q) { return ms.empty() ? 0.0 : ms[min<size_t>(ms.size() - 1, (size_t)(q * ms.size()))]; };
@@ -945,42 +964,101 @@ int main(int argc, char *argv[])
     cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " pruned_unreachable=" << cbm.prunedUnreachable
          << " replan_ms_median=" << quantile(0.5) << " replan_ms_p90=" << quantile(0.9) << " replan_ms_max=" << (ms.empty() ? 0.0 : ms.back())
          << " pen_share=" << cbm.penShare() << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
-    if (diag)
+}
+
+// The second line of --diag.
+void printDiag(const CBM &cbm)
+{
+    cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam
+         << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << " root_conflict_degrees=";
+    for (unsigned int i = 0; i < cbm.rootConflictDegrees.size(); ++i)
+        cout << (i ? "," : "") << cbm.rootConflictDegrees[i];
+    cout << " root_pen_wait=" << cbm.rootPenParts[0] << " root_pen_enter=" << cbm.rootPenParts[1]
+         << " root_pen_swap=" << cbm.rootPenParts[2] << " root_late=";
+    for (int i = 0; i < CBM::LateKinds; ++i)
+        cout << (i ? "," : "") << cbm.rootLateEntries[i];
+    if (cbm.penGap)
     {
-        cout << "diag: root_key=" << cbm.rootKey << " max_depth=" << cbm.maxDepth << " max_constraints_per_team=" << cbm.maxConstraintsPerTeam
-             << " repeated_constraint_sets=" << cbm.duplicateConstraintSets << " root_conflict_degrees=";
-        for (unsigned int i = 0; i < cbm.rootConflictDegrees.size(); ++i)
-            cout << (i ? "," : "") << cbm.rootConflictDegrees[i];
-        cout << " root_pen_wait=" << cbm.rootPenParts[0] << " root_pen_enter=" << cbm.rootPenParts[1]
-             << " root_pen_swap=" << cbm.rootPenParts[2] << " root_late=";
-        for (int i = 0; i < CBM::LateKinds; ++i)
-            cout << (i ? "," : "") << cbm.rootLateEntries[i];
-        if (cbm.penGap)
+        for (int rootOnly = 0; rootOnly < 2; ++rootOnly)
         {
-            for (int rootOnly = 0; rootOnly < 2; ++rootOnly)
-            {
-                long long checks = 0, positive = 0, gapMax = 0, gapMin = LLONG_MAX, ownSum = 0, bestSum = 0;
-                for (auto &c : cbm.penChecks)
-                    if (!rootOnly || c.root)
-                    {
-                        ++checks, ownSum += c.own, bestSum += c.best, positive += c.own > c.best;
-                        gapMax = max(gapMax, c.own - c.best), gapMin = min(gapMin, c.own - c.best);
-                    }
-                string pre = rootOnly ? " root_" : " ";
-                double k = max(checks, 1LL);
-                cout << fixed << setprecision(3) << pre << "pen_checks=" << checks << pre << "pen_gap_mean=" << (ownSum - bestSum) / k
-                     << pre << "pen_gap_max=" << gapMax << pre << "pen_gap_min=" << (checks ? gapMin : 0) << pre << "pen_gap_share=" << positive / k
-                     << pre << "pen_own_mean=" << ownSum / k << pre << "pen_min_mean=" << bestSum / k;
-            }
-            cout << " pen_check_failed=" << cbm.penCheckFailed;
+            long long checks = 0, positive = 0, gapMax = 0, gapMin = LLONG_MAX, ownSum = 0, bestSum = 0;
+            for (auto &c : cbm.penChecks)
+                if (!rootOnly || c.root)
+                {
+                    ++checks, ownSum += c.own, bestSum += c.best, positive += c.own > c.best;
+                    gapMax = max(gapMax, c.own - c.best), gapMin = min(gapMin, c.own - c.best);
+                }
+            string pre = rootOnly ? " root_" : " ";
+            double k = max(checks, 1LL);
+            cout << fixed << setprecision(3) << pre << "pen_checks=" << checks << pre << "pen_gap_mean=" << (ownSum - bestSum) / k
+                 << pre << "pen_gap_max=" << gapMax << pre << "pen_gap_min=" << (checks ? gapMin : 0) << pre << "pen_gap_share=" << positive / k
+                 << pre << "pen_own_mean=" << ownSum / k << pre << "pen_min_mean=" << bestSum / k;
         }
-        cout << endl;
+        cout << " pen_check_failed=" << cbm.penCheckFailed;
     }
+    cout << endl;
+}
+
+int main(int argc, char *argv[])
+{
+    Options o;
+    if (!parseArgs(argc, argv, o))
+        return 1;
+    bs::Grid grid;
+    if (!grid.load(o.mapFile))
+    {
+        cerr << "Couldn't open the file " << o.mapFile << endl;
+        return 1;
+    }
+    vector<int> starts, goals;
+    if (!bs::loadScen(grid, o.scenFile, o.numAgents, starts, goals))
+        return 1;
+    if (o.numAgents < 1 || (int)starts.size() < o.numAgents || o.numTeams < 1 || o.numTeams > o.numAgents)
+    {
+        cerr << "need 1 <= K <= N <= " << starts.size() << endl;
+        return 1;
+    }
+    if (!validOptions(o) || !setMemoryLimit(o.memLimitMb))
+        return 1;
+#ifdef BS_PROFILE
+    printProfileOverhead();
+#endif
+    auto start = steady_clock::now();
+    CBM cbm(grid, starts, goals, o.numTeams);
+    cbm.low = o.low;
+    cbm.rootLow = o.rootLow;
+    cbm.cutAll = o.cut == "all";
+    cbm.countCuts = !o.rootOnly.empty();
+    cbm.tStart = o.tStart;
+    cbm.diag = o.diag;
+    cbm.penGap = o.low == "bspen" || o.low == "bscut" ? o.penGap : 0;
+    if (!o.rootOnly.empty())
+        return runRootOnly(cbm, o);
+    shared_ptr<CTNode> result;
+    bool outOfMemory = false;
+    try
+    {
+        result = cbm.solve(o.timeLimit, o.maxNodes);
+    }
+    catch (const logic_error &e)
+    {
+        cerr << "internal error: " << e.what() << endl;
+        return 4;
+    }
+    catch (const bad_alloc &)
+    {
+        outOfMemory = true;
+    }
+    double total = duration<double>(steady_clock::now() - start).count();
+    string status = result ? "solved" : outOfMemory ? "memory" : cbm.timedOut ? "timeout" : cbm.nodesGenerated >= o.maxNodes ? "node_limit" : "no_solution";
+    printResult(cbm, result, status, total);
+    if (o.diag)
+        printDiag(cbm);
     if (outOfMemory)
         return 5;
     if (!result)
         return 2;
-    if (routesFile != "-")
-        bs::writeRoutes(grid, routesFile, result->key, cbm.routes(*result));
+    if (o.routesFile != "-")
+        bs::writeRoutes(grid, o.routesFile, result->key, cbm.routes(*result));
     return 0;
 }

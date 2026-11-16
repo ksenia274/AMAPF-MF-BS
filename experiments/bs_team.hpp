@@ -12,9 +12,14 @@
 #ifdef BS_PROFILE
 #define PROF_START(v) unsigned long long v = __rdtsc()
 #define PROF_ADD(field, v) (prof.field += __rdtsc() - (v))
+// a checkTimestep* call without the cut lookups inside it
+#define PROF_CHECK_START unsigned long long chk0 = __rdtsc(), cut0 = prof.cutLookup
+#define PROF_CHECK_END (prof.check += __rdtsc() - chk0 - (prof.cutLookup - cut0), ++prof.nCheck)
 #else
 #define PROF_START(v)
 #define PROF_ADD(field, v)
+#define PROF_CHECK_START
+#define PROF_CHECK_END
 #endif
 
 namespace bs
@@ -293,7 +298,7 @@ public:
     // of its own). Waiting across a soft cut is an explicit transition that costs the robots in the cell at the new
     // step, and an entry with an opposite move also gets the earliest entry into the same piece without one.
     // Soft cuts are not made after a taken goal (that time is occupied by the team anyway).
-    void setCut(bool all) { cutMode = all ? 2 : 1; }
+    void setCut(bool all) { cutMode = all ? AllCut : PenalCut; }
 
     // Cuts of the waiting chains in the network of the last solve(): hard ones (blocks) and soft ones that are not
     // also hard. The number of pieces is the number of cells plus these.
@@ -322,7 +327,7 @@ public:
                 return -1; // an agent is in its start at step 0 by definition
         sort(vertexConstraints.begin(), vertexConstraints.end());
         PROF_START(cutStart);
-        if (cutMode == 1)
+        if (cutMode == PenalCut)
         {
             softCuts.assign(n, set<int>());
             for (auto &kv : otherAt)
@@ -463,8 +468,13 @@ private:
     int otherHorizon = 0;
     vector<int> otherLast;                           // other robots per cell after the end of their routes
     unordered_map<long long, int> otherAt, otherMoves; // t*n+cell; (t*n+from)*n+to
-    int cutMode = 0;                                 // 0: no soft cuts (bs, bspen), 1: at the penalized steps, 2: all
-    vector<set<int>> softCuts; // cutMode 1: b = 2t-1 and 2t+1 for the penalized steps t < otherHorizon (as in blocks)
+    enum CutMode
+    {
+        NoCut,    // bs, bspen
+        PenalCut, // bscut: at the penalized steps
+        AllCut    // bscut --cut all: at every step
+    } cutMode = NoCut;
+    vector<set<int>> softCuts; // PenalCut: b = 2t-1 and 2t+1 for the penalized steps t < otherHorizon (as in blocks)
 
     void push(TimestepCostPair p, int parent, int cellID, int pen = 0) { q.push(Node{parent, cellID, p, p.timeStep + heuristic[cellID], pen}); }
 
@@ -499,7 +509,7 @@ private:
             return INF;
         PROF_START(lookStart);
         int b = INF;
-        if (cutMode == 2)
+        if (cutMode == AllCut)
             b = ts | 1;
         else
         {
@@ -523,9 +533,9 @@ private:
             return -1;
         PROF_START(lookStart);
         int bound = min(ts, timeAssigningGoalCell[cell]), b = -1;
-        if (cutMode == 2 || (penalized && otherLast[cell] && bound - 1 >= 2 * otherHorizon - 1))
+        if (cutMode == AllCut || (penalized && otherLast[cell] && bound - 1 >= 2 * otherHorizon - 1))
             b = (bound - 1) % 2 ? bound - 1 : bound - 2;
-        if (cutMode == 1)
+        if (cutMode == PenalCut)
         {
             auto it = softCuts[cell].lower_bound(bound);
             if (it != softCuts[cell].begin())
@@ -915,13 +925,9 @@ private:
                 q.pop();
                 int currentCell = tp.cellID;
                 TimestepCostPair timeStepCostPair = tp.timeStepCostPair;
-#ifdef BS_PROFILE
-                unsigned long long chk0 = __rdtsc(), cut0 = prof.cutLookup;
-#endif
+                PROF_CHECK_START;
                 pair<bool, Interval> res = checkTimestepAndGetUnvisitedSafeInterval(timeStepCostPair, currentCell);
-#ifdef BS_PROFILE
-                prof.check += __rdtsc() - chk0 - (prof.cutLookup - cut0), ++prof.nCheck;
-#endif
+                PROF_CHECK_END;
                 if (!res.first)
                 { // visited time step in ths cell.
                     continue;
@@ -968,14 +974,10 @@ private:
                         getAllTimestepCostPairs(currentCell, neborCell, currentInterval, result);
                         for (auto it : result)
                         {
-#ifdef BS_PROFILE
-                            unsigned long long chk0 = __rdtsc(), cut0 = prof.cutLookup;
+                            PROF_CHECK_START;
                             bool isFree = checkTimestep(it, neborCell);
-                            prof.check += __rdtsc() - chk0 - (prof.cutLookup - cut0), ++prof.nCheck;
+                            PROF_CHECK_END;
                             if (isFree)
-#else
-                            if (checkTimestep(it, neborCell))
-#endif
                                 push(it, nodeID, neborCell,
                                      penalized && it.timeStep % 2 == 0 ? tp.pen + penaltyOfEntry(currentCell, neborCell, it.timeStep / 2) : tp.pen);
                         }
