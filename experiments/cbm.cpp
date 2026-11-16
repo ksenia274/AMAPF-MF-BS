@@ -294,6 +294,7 @@ private:
     long long lastExpansions = -1;
     pair<long long, long long> lastCuts{-1, -1};
     double lastCountMs = 0; // time of countCuts() in the last call, not part of the call
+    unsigned long long profPrep = 0, profSolve = 0, profExtract = 0; // -DBS_PROFILE: rdtsc marks of solveTeam
 
     void noteDiag(const CTNode &node)
     {
@@ -326,6 +327,12 @@ private:
         ++lowLevelCalls;
         lastExpansions = -1, lastCuts = {-1, -1}, lastCountMs = 0;
         minT = startT(team, minT);
+#ifdef BS_PROFILE
+        profSolve = profExtract = 0;
+        unsigned long long countCycles = 0, swapCycles = 0, solverCycles = 0;
+        bs::LowProfile prof;
+        vector<bs::FlowTeam::ProfT> flowProf;
+#endif
         vector<vector<int>> others;
         const string &lv = inRoot && !rootLow.empty() ? rootLow : low;
         if (lv == "floww" || lv == "bspen" || lv == "bscut" || (diag && inRoot))
@@ -344,6 +351,10 @@ private:
             penaltyCycles += solver.penaltyCycles;
             lowLevelExpansions += solver.numOfExpansions;
             lastExpansions = solver.numOfExpansions;
+#ifdef BS_PROFILE
+            prof = solver.prof;
+            unsigned long long countStartCycles = __rdtsc();
+#endif
             if (countCuts && ok)
             {
                 auto countStart = steady_clock::now();
@@ -351,6 +362,10 @@ private:
                 lastCountMs = duration<double>(steady_clock::now() - countStart).count() * 1000;
                 start += steady_clock::now() - countStart;
             }
+#ifdef BS_PROFILE
+            countCycles = __rdtsc() - countStartCycles;
+            solverCycles = __rdtsc();
+#endif
         }
         else
         {
@@ -360,14 +375,41 @@ private:
             ok = solveTeam(solver, team, plan, minT);
             if (ok)
                 netNodesMax = max(netNodesMax, solver.netNodes), netEdgesMax = max(netEdgesMax, solver.netEdges);
+#ifdef BS_PROFILE
+            flowProf = solver.profT;
+            solverCycles = __rdtsc();
+#endif
         }
+#ifdef BS_PROFILE
+        unsigned long long destroyCycles = __rdtsc() - solverCycles, swapStart = __rdtsc();
+#endif
         if (ok)
         {
             lowLevelSumT += plan.T;
             swapsFixed += removeSwapsInTeam(plan);
         }
+#ifdef BS_PROFILE
+        swapCycles = __rdtsc() - swapStart;
+#endif
         double sec = duration<double>(steady_clock::now() - start).count();
         lowLevelCycles += __rdtsc() - startCycles;
+#ifdef BS_PROFILE
+        // total = the call without countCuts (as `sec`); prep = everything before solveMinMakespan, destroy = the
+        // destructor of the solver
+        unsigned long long total = __rdtsc() - startCycles - countCycles;
+        cerr << "prof call=" << lowLevelCalls << " team=" << team << " low=" << lv << " minT=" << minT << " T=" << (ok ? plan.T : -1)
+             << " ms=" << fixed << setprecision(3) << sec * 1000 << " total=" << total << " prep=" << profPrep - startCycles
+             << " solve=" << profSolve << " extract=" << profExtract << " destroy=" << destroyCycles << " swaps=" << swapCycles
+             << " cutBuild=" << prof.cutBuild << " heur=" << prof.heur << " clear=" << prof.clear << " search=" << prof.search
+             << " check=" << prof.check << " cutLookup=" << prof.cutLookup << " pen=" << prof.pen << " addPath=" << prof.addPath
+             << " nCheck=" << prof.nCheck << " nCut=" << prof.nCut << " nPen=" << prof.nPen << " expansions=" << lastExpansions << "\n";
+        for (auto &p : prof.perT)
+            cerr << "prof_T call=" << lowLevelCalls << " team=" << team << " T=" << p.T << " ok=" << p.ok << " paths=" << p.paths
+                 << " heur=" << p.heur << " clear=" << p.clear << " search=" << p.search << "\n";
+        for (auto &p : flowProf)
+            cerr << "prof_T call=" << lowLevelCalls << " team=" << team << " T=" << p.T << " ok=" << p.ok << " build=" << p.build
+                 << " maxflow=" << p.maxFlow << " mincost=" << p.minCost << "\n";
+#endif
         lowLevelSec += sec;
         replanMs.push_back(sec * 1000);
         if (diag && inRoot && ok)
@@ -558,9 +600,20 @@ private:
         for (auto &c : plan.edge)
             solver.addEdgeConstraint(c.from, c.to, c.t), last = max(last, c.t);
         solver.deadline = deadline;
+#ifdef BS_PROFILE
+        profPrep = __rdtsc();
+#endif
         plan.T = solver.solveMinMakespan(g.width * g.height + (int)teamStarts[team].size() + last, minT);
         timedOut = timedOut || solver.timedOut;
+#ifdef BS_PROFILE
+        unsigned long long solved = __rdtsc();
+        profSolve = solved - profPrep;
+        bool ok = plan.T != -1 && solver.extractRoutes(plan.routes);
+        profExtract = __rdtsc() - solved;
+        return ok;
+#else
         return plan.T != -1 && solver.extractRoutes(plan.routes);
+#endif
     }
 
     // For every start alone: the cells reachable at step t under the team's constraints, t = 1, 2, ...; if one of
@@ -819,6 +872,23 @@ int main(int argc, char *argv[])
     }
 #endif
 
+#ifdef BS_PROFILE
+    {
+        // cost of one rdtsc pair (the counters of the profile add it once per measured region)
+        unsigned long long sum = 0;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            unsigned long long a = __rdtsc();
+            sum += __rdtsc() - a;
+        }
+        auto t0 = steady_clock::now();
+        unsigned long long c0 = __rdtsc();
+        while (steady_clock::now() - t0 < milliseconds(200))
+            ;
+        double ghz = (__rdtsc() - c0) / (duration<double>(steady_clock::now() - t0).count() * 1e9);
+        cerr << "prof_overhead pair_cycles=" << sum / 1e6 << " tsc_ghz=" << ghz << "\n";
+    }
+#endif
     auto start = steady_clock::now();
     CBM cbm(grid, starts, goals, numTeams);
     cbm.tieEarlier = tieEarlier;

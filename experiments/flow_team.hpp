@@ -21,6 +21,13 @@ public:
     int netNodes = 0, netEdges = 0; // of the last network built
     chrono::steady_clock::time_point deadline = chrono::steady_clock::time_point::max();
     bool timedOut = false;
+    struct ProfT
+    {
+        int T;
+        bool ok;
+        unsigned long long build, maxFlow, minCost; // rdtsc cycles, filled only with -DBS_PROFILE
+    };
+    vector<ProfT> profT;
 
     FlowTeam(const Grid &grid, const vector<int> &starts, const vector<int> &goals, bool weighted = false)
         : g(grid), n(grid.numCells), weighted(weighted), startCells(starts), isGoalCell(grid.numCells, 0),
@@ -54,8 +61,20 @@ public:
         {
             if (late())
                 return -1;
+#ifdef BS_PROFILE
+            profT.push_back({T, false, 0, 0, 0});
+            unsigned long long c0 = __rdtsc();
+#endif
             build(T);
+#ifdef BS_PROFILE
+            unsigned long long c1 = __rdtsc();
+            profT.back().build = c1 - c0;
+#endif
             int flow = timedOut ? 0 : maxFlow();
+#ifdef BS_PROFILE
+            unsigned long long c2 = __rdtsc();
+            profT.back().maxFlow = c2 - c1;
+#endif
             if (timedOut)
                 return -1;
             if (flow < (int)startCells.size())
@@ -64,9 +83,16 @@ public:
             {
                 for (unsigned int e = 0; e < cap.size(); ++e)
                     cap[e] = e % 2 == 0 ? 1 : 0;
-                if (!minCostFlow())
+                bool done = minCostFlow();
+#ifdef BS_PROFILE
+                profT.back().minCost = __rdtsc() - c2;
+#endif
+                if (!done)
                     return -1;
             }
+#ifdef BS_PROFILE
+            profT.back().ok = true;
+#endif
             cost = 0;
             for (unsigned int e = 0; e < cap.size(); e += 2)
                 if (cap[e] == 0)

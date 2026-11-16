@@ -7,10 +7,42 @@
 #include <bits/stdc++.h>
 #include <x86intrin.h>
 
+// -DBS_PROFILE (cbm_prof.exe, week 6): rdtsc counters of the parts of a low-level call; without it the macros are
+// empty and the code is the same as before.
+#ifdef BS_PROFILE
+#define PROF_START(v) unsigned long long v = __rdtsc()
+#define PROF_ADD(field, v) (prof.field += __rdtsc() - (v))
+#else
+#define PROF_START(v)
+#define PROF_ADD(field, v)
+#endif
+
 namespace bs
 {
 using namespace std;
 const int INF = 1e9;
+
+// Cycles of the parts of one call; the regions do not overlap except where noted.
+struct LowProfile
+{
+    unsigned long long cutBuild = 0;  // softCuts of bscut (solveMinMakespan)
+    unsigned long long heur = 0;      // calHeuristics
+    unsigned long long clear = 0;     // queue, nodes and visitedTimeSTeps cleared before a search
+    unsigned long long search = 0;    // the search loop of one augmenting path (includes check, cutLookup, pen)
+    unsigned long long check = 0;     // checkTimestep*, without the cut lookups inside
+    unsigned long long cutLookup = 0; // nextSoftCut / prevSoftCut of bscut
+    unsigned long long pen = 0;       // penaltyOfEntry
+    unsigned long long addPath = 0;   // addPathEdges
+    long long nCheck = 0, nCut = 0, nPen = 0;
+    struct PerT
+    {
+        int T;
+        bool ok;
+        int paths;
+        unsigned long long heur, clear, search; // search includes addPath here
+    };
+    vector<PerT> perT;
+};
 
 struct Grid
 {
@@ -105,6 +137,7 @@ public:
     chrono::steady_clock::time_point deadline = chrono::steady_clock::time_point::max();
     bool timedOut = false; // solveMinMakespan() returned -1 because the deadline passed
     unsigned long long penaltyCycles = 0; // rdtsc cycles spent on the penalties (setOtherRoutes, lookups)
+    mutable LowProfile prof;              // filled only with -DBS_PROFILE
 
     // starts and goals are free cell ids of the grid.
     BulkSearchTeam(const Grid &grid, const vector<int> &starts, const vector<int> &goals)
@@ -189,6 +222,7 @@ public:
             if (forbiddenIdx[s].count(0))
                 return -1; // an agent is in its start at step 0 by definition
         sort(vertexConstraints.begin(), vertexConstraints.end());
+        PROF_START(cutStart);
         if (cutMode == 1)
         {
             softCuts.assign(n, set<int>());
@@ -199,6 +233,7 @@ public:
                 softCuts[cell].insert(2 * t + 1);
             }
         }
+        PROF_ADD(cutBuild, cutStart);
         remainingGoals = startCells.size();
         partialReset();
         int T = max(minT, 1);
@@ -352,6 +387,10 @@ private:
         unsigned long long start = __rdtsc();
         int p = vertexPenalty(to, t) + swapPenalty(from, to, t);
         penaltyCycles += __rdtsc() - start;
+        PROF_ADD(pen, start);
+#ifdef BS_PROFILE
+        ++prof.nPen;
+#endif
         return p;
     }
     // The smallest soft cut b >= ts of the cell (b odd: the wait edge (cell, b) -> (cell, b+1)), INF if none.
@@ -359,6 +398,7 @@ private:
     {
         if (!cutMode)
             return INF;
+        PROF_START(lookStart);
         int b = INF;
         if (cutMode == 2)
             b = ts | 1;
@@ -370,13 +410,19 @@ private:
             if (penalized && otherLast[cell])
                 b = min(b, max(ts, 2 * otherHorizon - 1) | 1);
         }
-        return b < min(maxTimestep, timeAssigningGoalCell[cell]) ? b : INF;
+        int r = b < min(maxTimestep, timeAssigningGoalCell[cell]) ? b : INF;
+        PROF_ADD(cutLookup, lookStart);
+#ifdef BS_PROFILE
+        ++prof.nCut;
+#endif
+        return r;
     }
     // The largest soft cut b < ts of the cell, -1 if none.
     int prevSoftCut(int cell, int ts) const
     {
         if (!cutMode)
             return -1;
+        PROF_START(lookStart);
         int bound = min(ts, timeAssigningGoalCell[cell]), b = -1;
         if (cutMode == 2 || (penalized && otherLast[cell] && bound - 1 >= 2 * otherHorizon - 1))
             b = (bound - 1) % 2 ? bound - 1 : bound - 2;
@@ -386,6 +432,10 @@ private:
             if (it != softCuts[cell].begin())
                 b = max(b, *prev(it));
         }
+        PROF_ADD(cutLookup, lookStart);
+#ifdef BS_PROFILE
+        ++prof.nCut;
+#endif
         return b >= 1 ? b : -1;
     }
     int nextHardBlock(int cell, int ts) const
@@ -729,9 +779,16 @@ private:
         maxTimestep = min_t * 2 - 1;
         insertVertexConstraints(min_t);
         extendGoalWaits();
+#ifdef BS_PROFILE
+        prof.perT.push_back({min_t, false, 0, 0, 0, 0});
+        auto &pt = prof.perT.back();
+#endif
         while (remainingGoals)
         {
+            PROF_START(heurStart);
             calHeuristics();
+            PROF_ADD(heur, heurStart);
+            PROF_START(clearStart);
             while (!q.empty())
             {
                 q.pop();
@@ -746,6 +803,11 @@ private:
             {
                 visitedTimeSTeps[i].clear();
             }
+            PROF_ADD(clear, clearStart);
+#ifdef BS_PROFILE
+            pt.heur += clearStart - heurStart, pt.clear += __rdtsc() - clearStart;
+#endif
+            PROF_START(searchStart);
             while (!q.empty())
             {
                 Node tp = q.top();
@@ -754,7 +816,13 @@ private:
                 q.pop();
                 int currentCell = tp.cellID;
                 TimestepCostPair timeStepCostPair = tp.timeStepCostPair;
+#ifdef BS_PROFILE
+                unsigned long long chk0 = __rdtsc(), cut0 = prof.cutLookup;
+#endif
                 pair<bool, Interval> res = checkTimestepAndGetUnvisitedSafeInterval(timeStepCostPair, currentCell);
+#ifdef BS_PROFILE
+                prof.check += __rdtsc() - chk0 - (prof.cutLookup - cut0), ++prof.nCheck;
+#endif
                 if (!res.first)
                 { // visited time step in ths cell.
                     continue;
@@ -801,20 +869,39 @@ private:
                         getAllTimestepCostPairs(currentCell, neborCell, currentInterval, result);
                         for (auto it : result)
                         {
+#ifdef BS_PROFILE
+                            unsigned long long chk0 = __rdtsc(), cut0 = prof.cutLookup;
+                            bool isFree = checkTimestep(it, neborCell);
+                            prof.check += __rdtsc() - chk0 - (prof.cutLookup - cut0), ++prof.nCheck;
+                            if (isFree)
+#else
                             if (checkTimestep(it, neborCell))
+#endif
                                 push(it, nodeID, neborCell,
                                      penalized && it.timeStep % 2 == 0 ? tp.pen + penaltyOfEntry(currentCell, neborCell, it.timeStep / 2) : tp.pen);
                         }
                     }
                 }
             }
+            PROF_ADD(search, searchStart);
+#ifdef BS_PROFILE
+            pt.search += __rdtsc() - searchStart;
+#endif
             if (sinkNodeID == -1)
             {
                 return false;
             }
+            PROF_START(pathStart);
             addPathEdges(nodes, sinkNodeID);
+            PROF_ADD(addPath, pathStart);
+#ifdef BS_PROFILE
+            pt.search += __rdtsc() - pathStart, ++pt.paths;
+#endif
             remainingGoals--;
         }
+#ifdef BS_PROFILE
+        pt.ok = true;
+#endif
         return true;
     }
 };
