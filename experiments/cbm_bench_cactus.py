@@ -2,7 +2,7 @@
 """CBM on MovingAI maps for cactus plots: teams of 5, random scen 1..10, low levels bs, bspen, bscut, flow, floww.
 
 Usage: cbm_bench_cactus.py OUT.csv [--resume] [--scens 1-10] [--time-limit 60] [--mem-limit 8000]
-                           [--maps M1,M2,..] [--variants V1,V2,..] [--t-start lb|1]
+                           [--maps M1,M2,..] [--variants V1,V2,..] [--t-start lb|1|match]
        cbm_bench_cactus.py OUT.csv --summary     (markdown table; makespan check over the variants; solved by one
                                                   of floww / bspen and not by bscut and vice versa)
 Instance: random scen s of the map, the first N agents, K = ceil(N/5) teams of consecutive agents (as cbm_bench g5).
@@ -73,6 +73,7 @@ def run(args):
                                 failed.add(variant)
                             continue
                         row = {"map": name, "group": group, "N": n, "K": k, "scen": s, "variant": variant, "valid": ""}
+                        ts = ""  # the --t-start actually passed to cbm, for the log
                         if variant in failed:
                             row.update({"status": "timeout_skipped", "T": -1})
                         else:
@@ -81,6 +82,7 @@ def run(args):
                                 os.remove(routes)
                             cmd = [exe, mp, scen, str(n), str(k), routes] + LOW_ARGS.get(variant, ["--low", variant]) + ["--time-limit",
                                    opt["--time-limit"], "--mem-limit", opt["--mem-limit"], "--t-start", opt["--t-start"]]
+                            ts = "t-start=" + cmd[cmd.index("--t-start") + 1]
                             start = time.perf_counter()
                             try:
                                 p = subprocess.run(cmd, capture_output=True, text=True, timeout=limit + 120)
@@ -102,7 +104,7 @@ def run(args):
                         w.writerow(row)
                         f.flush()
                         print(name, n, s, variant, row["status"], row["T"], row.get("total_ms", ""),
-                              "valid=" + str(row["valid"]), flush=True)
+                              "valid=" + str(row["valid"]), ts, flush=True)
 
 
 def summary(path):
@@ -157,7 +159,7 @@ if __name__ == "__main__":
     ap.add_argument("--mem-limit", default="8000")
     ap.add_argument("--maps", default=",".join(SMALL + LARGE))
     ap.add_argument("--variants", default=",".join(VARIANTS))
-    ap.add_argument("--t-start", default="lb", choices=["lb", "1"])
+    ap.add_argument("--t-start", default="lb", choices=["lb", "1", "match"])
     a = ap.parse_args()
     unknown = set(a.maps.split(",")) - set(SMALL + LARGE)
     if unknown:
