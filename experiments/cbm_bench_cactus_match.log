@@ -1413,3 +1413,205 @@ warehouse-10-20-10-2-1 256 10 bscut solved 143 5483 valid=1 t-start=match
 warehouse-10-20-10-2-1 256 10 flow timeout_skipped -1  valid= 
 warehouse-10-20-10-2-1 256 10 floww timeout_skipped -1  valid= 
 ### map warehouse-10-20-10-2-1 end 2026-11-17 16:01:09 exit=0
+### map Berlin_1_256 start 2026-11-17 16:01:10
+Berlin_1_256 64 1 bs solved 233 1850 valid=1 t-start=match
+Berlin_1_256 64 1 bspen solved 233 943 valid=1 t-start=match
+Berlin_1_256 64 1 bscut solved 233 1610 valid=1 t-start=match
+Berlin_1_256 64 1 flow timeout -1 61188 valid= t-start=match
+Berlin_1_256 64 1 floww timeout -1 60453 valid= t-start=match
+Berlin_1_256 128 1 bs solved 264 8742 valid=1 t-start=match
+Berlin_1_256 128 1 bspen solved 264 3002 valid=1 t-start=match
+Berlin_1_256 128 1 bscut solved 264 4894 valid=1 t-start=match
+Berlin_1_256 128 1 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 1 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 1 bs solved 251 25281 valid=1 t-start=match
+Berlin_1_256 192 1 bspen solved 251 5657 valid=1 t-start=match
+Berlin_1_256 192 1 bscut solved 251 9128 valid=1 t-start=match
+Berlin_1_256 192 1 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 1 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 1 bs timeout -1 60011 valid= t-start=match
+Berlin_1_256 256 1 bspen solved 290 9004 valid=1 t-start=match
+Berlin_1_256 256 1 bscut solved 290 13941 valid=1 t-start=match
+Berlin_1_256 256 1 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 1 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 2 bs solved 329 2134 valid=1 t-start=match
+Berlin_1_256 64 2 bspen solved 329 991 valid=1 t-start=match
+Berlin_1_256 64 2 bscut solved 329 1339 valid=1 t-start=match
+Berlin_1_256 64 2 flow timeout -1 61613 valid= t-start=match
+Berlin_1_256 64 2 floww timeout -1 60180 valid= t-start=match
+Berlin_1_256 128 2 bs solved 299 8422 valid=1 t-start=match
+Berlin_1_256 128 2 bspen solved 299 3184 valid=1 t-start=match
+Berlin_1_256 128 2 bscut solved 299 4775 valid=1 t-start=match
+Berlin_1_256 128 2 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 2 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 2 bs solved 299 23471 valid=1 t-start=match
+Berlin_1_256 192 2 bspen solved 299 6786 valid=1 t-start=match
+Berlin_1_256 192 2 bscut solved 299 11544 valid=1 t-start=match
+Berlin_1_256 192 2 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 2 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 2 bs timeout -1 60004 valid= t-start=match
+Berlin_1_256 256 2 bspen solved 299 11175 valid=1 t-start=match
+Berlin_1_256 256 2 bscut solved 299 17716 valid=1 t-start=match
+Berlin_1_256 256 2 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 2 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 3 bs solved 266 1834 valid=1 t-start=match
+Berlin_1_256 64 3 bspen solved 266 1184 valid=1 t-start=match
+Berlin_1_256 64 3 bscut solved 266 1254 valid=1 t-start=match
+Berlin_1_256 64 3 flow timeout -1 60554 valid= t-start=match
+Berlin_1_256 64 3 floww timeout -1 64454 valid= t-start=match
+Berlin_1_256 128 3 bs solved 266 6935 valid=1 t-start=match
+Berlin_1_256 128 3 bspen solved 266 3705 valid=1 t-start=match
+Berlin_1_256 128 3 bscut solved 266 4895 valid=1 t-start=match
+Berlin_1_256 128 3 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 3 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 3 bs solved 266 21031 valid=1 t-start=match
+Berlin_1_256 192 3 bspen solved 266 6483 valid=1 t-start=match
+Berlin_1_256 192 3 bscut solved 266 9016 valid=1 t-start=match
+Berlin_1_256 192 3 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 3 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 3 bs timeout -1 60004 valid= t-start=match
+Berlin_1_256 256 3 bspen solved 266 9190 valid=1 t-start=match
+Berlin_1_256 256 3 bscut solved 266 16464 valid=1 t-start=match
+Berlin_1_256 256 3 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 3 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 4 bs solved 218 1935 valid=1 t-start=match
+Berlin_1_256 64 4 bspen solved 218 1064 valid=1 t-start=match
+Berlin_1_256 64 4 bscut solved 218 1376 valid=1 t-start=match
+Berlin_1_256 64 4 flow timeout -1 60195 valid= t-start=match
+Berlin_1_256 64 4 floww timeout -1 63581 valid= t-start=match
+Berlin_1_256 128 4 bs solved 259 18600 valid=1 t-start=match
+Berlin_1_256 128 4 bspen solved 259 3111 valid=1 t-start=match
+Berlin_1_256 128 4 bscut solved 259 3736 valid=1 t-start=match
+Berlin_1_256 128 4 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 4 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 4 bs timeout -1 60007 valid= t-start=match
+Berlin_1_256 192 4 bspen solved 259 6195 valid=1 t-start=match
+Berlin_1_256 192 4 bscut solved 259 7351 valid=1 t-start=match
+Berlin_1_256 192 4 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 4 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 4 bs timeout_skipped -1  valid= 
+Berlin_1_256 256 4 bspen solved 309 8600 valid=1 t-start=match
+Berlin_1_256 256 4 bscut solved 309 13327 valid=1 t-start=match
+Berlin_1_256 256 4 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 4 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 5 bs solved 287 1915 valid=1 t-start=match
+Berlin_1_256 64 5 bspen solved 287 1636 valid=1 t-start=match
+Berlin_1_256 64 5 bscut solved 287 1412 valid=1 t-start=match
+Berlin_1_256 64 5 flow timeout -1 60248 valid= t-start=match
+Berlin_1_256 64 5 floww timeout -1 62574 valid= t-start=match
+Berlin_1_256 128 5 bs solved 249 13578 valid=1 t-start=match
+Berlin_1_256 128 5 bspen solved 249 2962 valid=1 t-start=match
+Berlin_1_256 128 5 bscut solved 249 5623 valid=1 t-start=match
+Berlin_1_256 128 5 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 5 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 5 bs solved 330 33458 valid=1 t-start=match
+Berlin_1_256 192 5 bspen solved 330 5468 valid=1 t-start=match
+Berlin_1_256 192 5 bscut solved 330 11150 valid=1 t-start=match
+Berlin_1_256 192 5 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 5 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 5 bs solved 268 50238 valid=1 t-start=match
+Berlin_1_256 256 5 bspen solved 268 7294 valid=1 t-start=match
+Berlin_1_256 256 5 bscut solved 268 14269 valid=1 t-start=match
+Berlin_1_256 256 5 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 5 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 6 bs solved 217 1626 valid=1 t-start=match
+Berlin_1_256 64 6 bspen solved 217 1023 valid=1 t-start=match
+Berlin_1_256 64 6 bscut solved 217 1352 valid=1 t-start=match
+Berlin_1_256 64 6 flow timeout -1 60530 valid= t-start=match
+Berlin_1_256 64 6 floww timeout -1 61835 valid= t-start=match
+Berlin_1_256 128 6 bs solved 241 14848 valid=1 t-start=match
+Berlin_1_256 128 6 bspen solved 241 2593 valid=1 t-start=match
+Berlin_1_256 128 6 bscut solved 241 3561 valid=1 t-start=match
+Berlin_1_256 128 6 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 6 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 6 bs timeout -1 60004 valid= t-start=match
+Berlin_1_256 192 6 bspen solved 293 5457 valid=1 t-start=match
+Berlin_1_256 192 6 bscut solved 293 8543 valid=1 t-start=match
+Berlin_1_256 192 6 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 6 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 6 bs timeout_skipped -1  valid= 
+Berlin_1_256 256 6 bspen solved 293 7760 valid=1 t-start=match
+Berlin_1_256 256 6 bscut solved 293 12944 valid=1 t-start=match
+Berlin_1_256 256 6 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 6 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 7 bs solved 238 8144 valid=1 t-start=match
+Berlin_1_256 64 7 bspen solved 238 1003 valid=1 t-start=match
+Berlin_1_256 64 7 bscut solved 238 1298 valid=1 t-start=match
+Berlin_1_256 64 7 flow timeout -1 60121 valid= t-start=match
+Berlin_1_256 64 7 floww timeout -1 64371 valid= t-start=match
+Berlin_1_256 128 7 bs solved 253 9635 valid=1 t-start=match
+Berlin_1_256 128 7 bspen solved 253 2462 valid=1 t-start=match
+Berlin_1_256 128 7 bscut solved 253 3735 valid=1 t-start=match
+Berlin_1_256 128 7 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 7 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 7 bs solved 292 42595 valid=1 t-start=match
+Berlin_1_256 192 7 bspen solved 292 5004 valid=1 t-start=match
+Berlin_1_256 192 7 bscut solved 292 10338 valid=1 t-start=match
+Berlin_1_256 192 7 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 7 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 7 bs solved 259 47261 valid=1 t-start=match
+Berlin_1_256 256 7 bspen solved 259 8337 valid=1 t-start=match
+Berlin_1_256 256 7 bscut solved 259 13964 valid=1 t-start=match
+Berlin_1_256 256 7 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 7 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 8 bs solved 281 4926 valid=1 t-start=match
+Berlin_1_256 64 8 bspen solved 281 1147 valid=1 t-start=match
+Berlin_1_256 64 8 bscut solved 281 1281 valid=1 t-start=match
+Berlin_1_256 64 8 flow timeout -1 60524 valid= t-start=match
+Berlin_1_256 64 8 floww timeout -1 72095 valid= t-start=match
+Berlin_1_256 128 8 bs solved 293 20809 valid=1 t-start=match
+Berlin_1_256 128 8 bspen solved 293 4024 valid=1 t-start=match
+Berlin_1_256 128 8 bscut solved 293 4343 valid=1 t-start=match
+Berlin_1_256 128 8 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 8 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 8 bs solved 293 33708 valid=1 t-start=match
+Berlin_1_256 192 8 bspen solved 293 6898 valid=1 t-start=match
+Berlin_1_256 192 8 bscut solved 293 8756 valid=1 t-start=match
+Berlin_1_256 192 8 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 8 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 8 bs timeout -1 60006 valid= t-start=match
+Berlin_1_256 256 8 bspen solved 293 9632 valid=1 t-start=match
+Berlin_1_256 256 8 bscut solved 293 14749 valid=1 t-start=match
+Berlin_1_256 256 8 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 8 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 9 bs solved 308 5458 valid=1 t-start=match
+Berlin_1_256 64 9 bspen solved 308 1524 valid=1 t-start=match
+Berlin_1_256 64 9 bscut solved 308 1784 valid=1 t-start=match
+Berlin_1_256 64 9 flow timeout -1 61938 valid= t-start=match
+Berlin_1_256 64 9 floww timeout -1 60837 valid= t-start=match
+Berlin_1_256 128 9 bs solved 308 9565 valid=1 t-start=match
+Berlin_1_256 128 9 bspen solved 308 3704 valid=1 t-start=match
+Berlin_1_256 128 9 bscut solved 308 4914 valid=1 t-start=match
+Berlin_1_256 128 9 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 9 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 9 bs solved 308 23017 valid=1 t-start=match
+Berlin_1_256 192 9 bspen solved 308 9923 valid=1 t-start=match
+Berlin_1_256 192 9 bscut solved 308 9600 valid=1 t-start=match
+Berlin_1_256 192 9 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 9 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 9 bs timeout -1 60010 valid= t-start=match
+Berlin_1_256 256 9 bspen solved 308 9283 valid=1 t-start=match
+Berlin_1_256 256 9 bscut solved 308 14477 valid=1 t-start=match
+Berlin_1_256 256 9 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 9 floww timeout_skipped -1  valid= 
+Berlin_1_256 64 10 bs solved 264 1630 valid=1 t-start=match
+Berlin_1_256 64 10 bspen solved 264 1124 valid=1 t-start=match
+Berlin_1_256 64 10 bscut solved 264 1382 valid=1 t-start=match
+Berlin_1_256 64 10 flow timeout -1 61567 valid= t-start=match
+Berlin_1_256 64 10 floww timeout -1 67021 valid= t-start=match
+Berlin_1_256 128 10 bs solved 264 8419 valid=1 t-start=match
+Berlin_1_256 128 10 bspen solved 264 3197 valid=1 t-start=match
+Berlin_1_256 128 10 bscut solved 264 3442 valid=1 t-start=match
+Berlin_1_256 128 10 flow timeout_skipped -1  valid= 
+Berlin_1_256 128 10 floww timeout_skipped -1  valid= 
+Berlin_1_256 192 10 bs solved 264 18655 valid=1 t-start=match
+Berlin_1_256 192 10 bspen solved 264 4789 valid=1 t-start=match
+Berlin_1_256 192 10 bscut solved 264 7963 valid=1 t-start=match
+Berlin_1_256 192 10 flow timeout_skipped -1  valid= 
+Berlin_1_256 192 10 floww timeout_skipped -1  valid= 
+Berlin_1_256 256 10 bs solved 269 40926 valid=1 t-start=match
+Berlin_1_256 256 10 bspen solved 269 7411 valid=1 t-start=match
+Berlin_1_256 256 10 bscut solved 269 13132 valid=1 t-start=match
+Berlin_1_256 256 10 flow timeout_skipped -1  valid= 
+Berlin_1_256 256 10 floww timeout_skipped -1  valid= 
+### map Berlin_1_256 end 2026-11-17 16:45:56 exit=0
