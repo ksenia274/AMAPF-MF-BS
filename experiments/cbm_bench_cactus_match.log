@@ -1615,3 +1615,205 @@ Berlin_1_256 256 10 bscut solved 269 13132 valid=1 t-start=match
 Berlin_1_256 256 10 flow timeout_skipped -1  valid= 
 Berlin_1_256 256 10 floww timeout_skipped -1  valid= 
 ### map Berlin_1_256 end 2026-11-17 16:45:56 exit=0
+### map Paris_1_256 start 2026-11-17 16:45:56
+Paris_1_256 64 1 bs solved 288 3355 valid=1 t-start=match
+Paris_1_256 64 1 bspen solved 288 1345 valid=1 t-start=match
+Paris_1_256 64 1 bscut solved 288 4001 valid=1 t-start=match
+Paris_1_256 64 1 flow timeout -1 60280 valid= t-start=match
+Paris_1_256 64 1 floww timeout -1 69494 valid= t-start=match
+Paris_1_256 128 1 bs solved 298 12255 valid=1 t-start=match
+Paris_1_256 128 1 bspen solved 298 3232 valid=1 t-start=match
+Paris_1_256 128 1 bscut solved 298 4409 valid=1 t-start=match
+Paris_1_256 128 1 flow timeout_skipped -1  valid= 
+Paris_1_256 128 1 floww timeout_skipped -1  valid= 
+Paris_1_256 192 1 bs solved 302 26541 valid=1 t-start=match
+Paris_1_256 192 1 bspen solved 302 5347 valid=1 t-start=match
+Paris_1_256 192 1 bscut solved 302 8044 valid=1 t-start=match
+Paris_1_256 192 1 flow timeout_skipped -1  valid= 
+Paris_1_256 192 1 floww timeout_skipped -1  valid= 
+Paris_1_256 256 1 bs solved 313 47939 valid=1 t-start=match
+Paris_1_256 256 1 bspen solved 313 8728 valid=1 t-start=match
+Paris_1_256 256 1 bscut solved 313 17214 valid=1 t-start=match
+Paris_1_256 256 1 flow timeout_skipped -1  valid= 
+Paris_1_256 256 1 floww timeout_skipped -1  valid= 
+Paris_1_256 64 2 bs solved 308 1774 valid=1 t-start=match
+Paris_1_256 64 2 bspen solved 308 1101 valid=1 t-start=match
+Paris_1_256 64 2 bscut solved 308 1323 valid=1 t-start=match
+Paris_1_256 64 2 flow timeout -1 61721 valid= t-start=match
+Paris_1_256 64 2 floww timeout -1 62347 valid= t-start=match
+Paris_1_256 128 2 bs solved 308 9511 valid=1 t-start=match
+Paris_1_256 128 2 bspen solved 308 3238 valid=1 t-start=match
+Paris_1_256 128 2 bscut solved 308 4579 valid=1 t-start=match
+Paris_1_256 128 2 flow timeout_skipped -1  valid= 
+Paris_1_256 128 2 floww timeout_skipped -1  valid= 
+Paris_1_256 192 2 bs timeout -1 60003 valid= t-start=match
+Paris_1_256 192 2 bspen solved 308 5054 valid=1 t-start=match
+Paris_1_256 192 2 bscut solved 308 11991 valid=1 t-start=match
+Paris_1_256 192 2 flow timeout_skipped -1  valid= 
+Paris_1_256 192 2 floww timeout_skipped -1  valid= 
+Paris_1_256 256 2 bs timeout_skipped -1  valid= 
+Paris_1_256 256 2 bspen solved 350 9843 valid=1 t-start=match
+Paris_1_256 256 2 bscut solved 350 16634 valid=1 t-start=match
+Paris_1_256 256 2 flow timeout_skipped -1  valid= 
+Paris_1_256 256 2 floww timeout_skipped -1  valid= 
+Paris_1_256 64 3 bs solved 315 1675 valid=1 t-start=match
+Paris_1_256 64 3 bspen solved 315 1175 valid=1 t-start=match
+Paris_1_256 64 3 bscut solved 315 1544 valid=1 t-start=match
+Paris_1_256 64 3 flow timeout -1 60013 valid= t-start=match
+Paris_1_256 64 3 floww timeout -1 61750 valid= t-start=match
+Paris_1_256 128 3 bs solved 382 10299 valid=1 t-start=match
+Paris_1_256 128 3 bspen solved 382 4251 valid=1 t-start=match
+Paris_1_256 128 3 bscut solved 382 10058 valid=1 t-start=match
+Paris_1_256 128 3 flow timeout_skipped -1  valid= 
+Paris_1_256 128 3 floww timeout_skipped -1  valid= 
+Paris_1_256 192 3 bs solved 345 23996 valid=1 t-start=match
+Paris_1_256 192 3 bspen solved 345 6342 valid=1 t-start=match
+Paris_1_256 192 3 bscut solved 345 8678 valid=1 t-start=match
+Paris_1_256 192 3 flow timeout_skipped -1  valid= 
+Paris_1_256 192 3 floww timeout_skipped -1  valid= 
+Paris_1_256 256 3 bs timeout -1 60004 valid= t-start=match
+Paris_1_256 256 3 bspen solved 345 9183 valid=1 t-start=match
+Paris_1_256 256 3 bscut solved 345 15665 valid=1 t-start=match
+Paris_1_256 256 3 flow timeout_skipped -1  valid= 
+Paris_1_256 256 3 floww timeout_skipped -1  valid= 
+Paris_1_256 64 4 bs solved 284 3639 valid=1 t-start=match
+Paris_1_256 64 4 bspen solved 284 1681 valid=1 t-start=match
+Paris_1_256 64 4 bscut solved 284 1992 valid=1 t-start=match
+Paris_1_256 64 4 flow timeout -1 62870 valid= t-start=match
+Paris_1_256 64 4 floww timeout -1 60808 valid= t-start=match
+Paris_1_256 128 4 bs solved 299 19688 valid=1 t-start=match
+Paris_1_256 128 4 bspen solved 299 3938 valid=1 t-start=match
+Paris_1_256 128 4 bscut solved 299 5292 valid=1 t-start=match
+Paris_1_256 128 4 flow timeout_skipped -1  valid= 
+Paris_1_256 128 4 floww timeout_skipped -1  valid= 
+Paris_1_256 192 4 bs solved 287 55698 valid=1 t-start=match
+Paris_1_256 192 4 bspen solved 287 6116 valid=1 t-start=match
+Paris_1_256 192 4 bscut solved 287 9375 valid=1 t-start=match
+Paris_1_256 192 4 flow timeout_skipped -1  valid= 
+Paris_1_256 192 4 floww timeout_skipped -1  valid= 
+Paris_1_256 256 4 bs timeout -1 60003 valid= t-start=match
+Paris_1_256 256 4 bspen solved 388 7485 valid=1 t-start=match
+Paris_1_256 256 4 bscut solved 388 13585 valid=1 t-start=match
+Paris_1_256 256 4 flow timeout_skipped -1  valid= 
+Paris_1_256 256 4 floww timeout_skipped -1  valid= 
+Paris_1_256 64 5 bs solved 290 1360 valid=1 t-start=match
+Paris_1_256 64 5 bspen solved 290 902 valid=1 t-start=match
+Paris_1_256 64 5 bscut solved 290 1135 valid=1 t-start=match
+Paris_1_256 64 5 flow timeout -1 60079 valid= t-start=match
+Paris_1_256 64 5 floww timeout -1 63813 valid= t-start=match
+Paris_1_256 128 5 bs solved 309 5481 valid=1 t-start=match
+Paris_1_256 128 5 bspen solved 309 2205 valid=1 t-start=match
+Paris_1_256 128 5 bscut solved 309 3398 valid=1 t-start=match
+Paris_1_256 128 5 flow timeout_skipped -1  valid= 
+Paris_1_256 128 5 floww timeout_skipped -1  valid= 
+Paris_1_256 192 5 bs timeout -1 60003 valid= t-start=match
+Paris_1_256 192 5 bspen solved 309 4203 valid=1 t-start=match
+Paris_1_256 192 5 bscut solved 309 6324 valid=1 t-start=match
+Paris_1_256 192 5 flow timeout_skipped -1  valid= 
+Paris_1_256 192 5 floww timeout_skipped -1  valid= 
+Paris_1_256 256 5 bs timeout_skipped -1  valid= 
+Paris_1_256 256 5 bspen solved 309 7390 valid=1 t-start=match
+Paris_1_256 256 5 bscut solved 309 11970 valid=1 t-start=match
+Paris_1_256 256 5 flow timeout_skipped -1  valid= 
+Paris_1_256 256 5 floww timeout_skipped -1  valid= 
+Paris_1_256 64 6 bs solved 308 1249 valid=1 t-start=match
+Paris_1_256 64 6 bspen solved 308 786 valid=1 t-start=match
+Paris_1_256 64 6 bscut solved 308 1093 valid=1 t-start=match
+Paris_1_256 64 6 flow timeout -1 60445 valid= t-start=match
+Paris_1_256 64 6 floww timeout -1 61878 valid= t-start=match
+Paris_1_256 128 6 bs solved 332 16005 valid=1 t-start=match
+Paris_1_256 128 6 bspen solved 332 3721 valid=1 t-start=match
+Paris_1_256 128 6 bscut solved 332 4275 valid=1 t-start=match
+Paris_1_256 128 6 flow timeout_skipped -1  valid= 
+Paris_1_256 128 6 floww timeout_skipped -1  valid= 
+Paris_1_256 192 6 bs timeout -1 60003 valid= t-start=match
+Paris_1_256 192 6 bspen solved 362 7176 valid=1 t-start=match
+Paris_1_256 192 6 bscut solved 362 9617 valid=1 t-start=match
+Paris_1_256 192 6 flow timeout_skipped -1  valid= 
+Paris_1_256 192 6 floww timeout_skipped -1  valid= 
+Paris_1_256 256 6 bs timeout_skipped -1  valid= 
+Paris_1_256 256 6 bspen solved 362 12408 valid=1 t-start=match
+Paris_1_256 256 6 bscut solved 362 15451 valid=1 t-start=match
+Paris_1_256 256 6 flow timeout_skipped -1  valid= 
+Paris_1_256 256 6 floww timeout_skipped -1  valid= 
+Paris_1_256 64 7 bs solved 280 1345 valid=1 t-start=match
+Paris_1_256 64 7 bspen solved 280 987 valid=1 t-start=match
+Paris_1_256 64 7 bscut solved 280 1411 valid=1 t-start=match
+Paris_1_256 64 7 flow timeout -1 61232 valid= t-start=match
+Paris_1_256 64 7 floww timeout -1 66013 valid= t-start=match
+Paris_1_256 128 7 bs solved 331 6459 valid=1 t-start=match
+Paris_1_256 128 7 bspen solved 331 3034 valid=1 t-start=match
+Paris_1_256 128 7 bscut solved 331 4541 valid=1 t-start=match
+Paris_1_256 128 7 flow timeout_skipped -1  valid= 
+Paris_1_256 128 7 floww timeout_skipped -1  valid= 
+Paris_1_256 192 7 bs solved 330 17251 valid=1 t-start=match
+Paris_1_256 192 7 bspen solved 330 5062 valid=1 t-start=match
+Paris_1_256 192 7 bscut solved 330 6895 valid=1 t-start=match
+Paris_1_256 192 7 flow timeout_skipped -1  valid= 
+Paris_1_256 192 7 floww timeout_skipped -1  valid= 
+Paris_1_256 256 7 bs timeout -1 60004 valid= t-start=match
+Paris_1_256 256 7 bspen solved 330 8936 valid=1 t-start=match
+Paris_1_256 256 7 bscut solved 330 10801 valid=1 t-start=match
+Paris_1_256 256 7 flow timeout_skipped -1  valid= 
+Paris_1_256 256 7 floww timeout_skipped -1  valid= 
+Paris_1_256 64 8 bs solved 287 1701 valid=1 t-start=match
+Paris_1_256 64 8 bspen solved 287 1074 valid=1 t-start=match
+Paris_1_256 64 8 bscut solved 287 1412 valid=1 t-start=match
+Paris_1_256 64 8 flow timeout -1 62052 valid= t-start=match
+Paris_1_256 64 8 floww timeout -1 68080 valid= t-start=match
+Paris_1_256 128 8 bs solved 298 18266 valid=1 t-start=match
+Paris_1_256 128 8 bspen solved 298 3435 valid=1 t-start=match
+Paris_1_256 128 8 bscut solved 298 5515 valid=1 t-start=match
+Paris_1_256 128 8 flow timeout_skipped -1  valid= 
+Paris_1_256 128 8 floww timeout_skipped -1  valid= 
+Paris_1_256 192 8 bs solved 322 31000 valid=1 t-start=match
+Paris_1_256 192 8 bspen solved 322 4470 valid=1 t-start=match
+Paris_1_256 192 8 bscut solved 322 8157 valid=1 t-start=match
+Paris_1_256 192 8 flow timeout_skipped -1  valid= 
+Paris_1_256 192 8 floww timeout_skipped -1  valid= 
+Paris_1_256 256 8 bs solved 298 50483 valid=1 t-start=match
+Paris_1_256 256 8 bspen solved 298 8846 valid=1 t-start=match
+Paris_1_256 256 8 bscut solved 298 13708 valid=1 t-start=match
+Paris_1_256 256 8 flow timeout_skipped -1  valid= 
+Paris_1_256 256 8 floww timeout_skipped -1  valid= 
+Paris_1_256 64 9 bs solved 274 2168 valid=1 t-start=match
+Paris_1_256 64 9 bspen solved 274 698 valid=1 t-start=match
+Paris_1_256 64 9 bscut solved 274 904 valid=1 t-start=match
+Paris_1_256 64 9 flow timeout -1 61580 valid= t-start=match
+Paris_1_256 64 9 floww timeout -1 61372 valid= t-start=match
+Paris_1_256 128 9 bs solved 274 12746 valid=1 t-start=match
+Paris_1_256 128 9 bspen solved 274 2129 valid=1 t-start=match
+Paris_1_256 128 9 bscut solved 274 3589 valid=1 t-start=match
+Paris_1_256 128 9 flow timeout_skipped -1  valid= 
+Paris_1_256 128 9 floww timeout_skipped -1  valid= 
+Paris_1_256 192 9 bs solved 274 16676 valid=1 t-start=match
+Paris_1_256 192 9 bspen solved 274 5724 valid=1 t-start=match
+Paris_1_256 192 9 bscut solved 274 6326 valid=1 t-start=match
+Paris_1_256 192 9 flow timeout_skipped -1  valid= 
+Paris_1_256 192 9 floww timeout_skipped -1  valid= 
+Paris_1_256 256 9 bs timeout -1 60006 valid= t-start=match
+Paris_1_256 256 9 bspen solved 274 9171 valid=1 t-start=match
+Paris_1_256 256 9 bscut solved 274 13313 valid=1 t-start=match
+Paris_1_256 256 9 flow timeout_skipped -1  valid= 
+Paris_1_256 256 9 floww timeout_skipped -1  valid= 
+Paris_1_256 64 10 bs solved 276 4454 valid=1 t-start=match
+Paris_1_256 64 10 bspen solved 276 1009 valid=1 t-start=match
+Paris_1_256 64 10 bscut solved 276 1015 valid=1 t-start=match
+Paris_1_256 64 10 flow timeout -1 60149 valid= t-start=match
+Paris_1_256 64 10 floww timeout -1 60201 valid= t-start=match
+Paris_1_256 128 10 bs solved 276 10506 valid=1 t-start=match
+Paris_1_256 128 10 bspen solved 276 2572 valid=1 t-start=match
+Paris_1_256 128 10 bscut solved 276 2732 valid=1 t-start=match
+Paris_1_256 128 10 flow timeout_skipped -1  valid= 
+Paris_1_256 128 10 floww timeout_skipped -1  valid= 
+Paris_1_256 192 10 bs timeout -1 60012 valid= t-start=match
+Paris_1_256 192 10 bspen solved 457 5610 valid=1 t-start=match
+Paris_1_256 192 10 bscut solved 457 6984 valid=1 t-start=match
+Paris_1_256 192 10 flow timeout_skipped -1  valid= 
+Paris_1_256 192 10 floww timeout_skipped -1  valid= 
+Paris_1_256 256 10 bs timeout_skipped -1  valid= 
+Paris_1_256 256 10 bspen solved 457 9015 valid=1 t-start=match
+Paris_1_256 256 10 bscut solved 457 14948 valid=1 t-start=match
+Paris_1_256 256 10 flow timeout_skipped -1  valid= 
+Paris_1_256 256 10 floww timeout_skipped -1  valid= 
+### map Paris_1_256 end 2026-11-17 17:29:50 exit=0
