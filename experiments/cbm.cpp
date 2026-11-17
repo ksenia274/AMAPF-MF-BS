@@ -9,7 +9,8 @@
 // Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|bscut|flow|floww]
 //            [--t-start 1|lb|match] [--mem-limit MB] [--diag] [--pen-gap S]
 //            [--root-only first|last] [--root-low bs|bspen|bscut|flow|floww] [--cut penal|all]
-// Any other argument is taken as ROUTES.
+// An unknown argument that starts with "--" (or a flag without its value) is an error (exit code 1); any other
+// argument is taken as ROUTES.
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node.
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. lowlevel_expansions=.. (Bulk Search variants) last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
@@ -844,6 +845,11 @@ bool parseArgs(int argc, char *argv[], Options &o)
             o.diag = true;
         else if (a == "--pen-gap" && i + 1 < argc)
             o.penGap = max(1, atoi(argv[++i])), o.diag = true;
+        else if (a.rfind("--", 0) == 0)
+        {
+            cerr << "unknown flag or missing value: " << a << endl;
+            return false;
+        }
         else
             o.routesFile = a;
     }
