@@ -19,12 +19,15 @@ import itertools
 import os
 import statistics
 import subprocess
+import sys
 import tempfile
 
-from cbm_bench import map_and_scen
-from cbm_paper_exp1 import grouped_scen
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # experiments/ (this script is in archive/)
+sys.path.insert(0, HERE)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+from cbm_bench import load_grid, map_and_scen  # noqa: E402
+from cbm_paper_exp1 import grouped_scen  # noqa: E402
+
 LOGS = os.path.join(HERE, "week6_prof")
 MAIN = ["Berlin_1_256", "room-64-64-8", "warehouse-10-20-10-2-1"]
 EXTRA = ["Paris_1_256", "Boston_0_256"]
@@ -254,13 +257,6 @@ def report22_floww():
               f"{statistics.mean(t['build'] for t in Ts) / 1000:.2f} | {statistics.mean(t['maxflow'] for t in Ts) / 1000:.2f} | "
               f"{fin[0]['mincost'] / 1000 if fin else float('nan'):.2f} |")
     print(f"\nroot: {total / 1000:.1f} s over {len(root)} calls\n")
-
-
-def load_grid(path):
-    rows = open(path).read().split("\n")
-    h, w = int(rows[1].split()[1]), int(rows[2].split()[1])
-    grid = [rows[4 + i][:w] for i in range(h)]
-    return grid, w, h
 
 
 def bfs(grid, w, h, src):

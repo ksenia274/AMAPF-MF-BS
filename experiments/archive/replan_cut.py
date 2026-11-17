@@ -12,12 +12,15 @@ import csv
 import os
 import statistics
 import subprocess
+import sys
 import tempfile
 
-from cbm_bench import field, map_and_scen
-from cbm_paper_exp1 import grouped_scen
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # experiments/ (this script is in archive/)
+sys.path.insert(0, HERE)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+from cbm_bench import field, map_and_scen  # noqa: E402
+from cbm_paper_exp1 import grouped_scen  # noqa: E402
+
 MAPS = ["room-64-64-8", "warehouse-10-20-10-2-1", "Berlin_1_256"]
 VARIANTS = {"bs": ["--low", "bs"], "bspen": ["--low", "bspen"], "bscut": ["--low", "bscut", "--cut", "penal"]}
 OUT = ["status", "team", "minT", "T", "tried_T", "expansions", "hard_cuts", "soft_cuts", "final_t_ms", "root_ms"]

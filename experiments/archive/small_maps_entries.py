@@ -11,11 +11,13 @@ import os
 import sys
 import tempfile
 
-from cbm_bench import map_and_scen
-from cbm_paper_exp1 import grouped_scen
-from small_maps_diag import fields, run
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # experiments/ (this script is in archive/)
+sys.path.insert(0, HERE)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+from cbm_bench import map_and_scen  # noqa: E402
+from cbm_paper_exp1 import grouped_scen  # noqa: E402
+from small_maps_diag import fields, run  # noqa: E402
+
 LATE = ["enter_pen", "enter_structural", "enter_pass_through", "enter_no_free", "enter_u_blocked",
         "wait_pen", "wait_avoidable", "wait_no_free", "wait_u_blocked", "wait_start"]
 KEYS = LATE + ["root_pen_enter", "root_pen_wait", "root_conflict_pairs"]

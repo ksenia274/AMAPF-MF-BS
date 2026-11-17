@@ -13,8 +13,7 @@ import sys
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from cbm_bench import map_and_scen
-from week6_part2 import load_grid
+from cbm_bench import load_grid, map_and_scen
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MAPS = ["empty-32-32", "random-32-32-10", "room-32-32-4", "maze-32-32-2", "random-64-64-10", "room-64-64-8",

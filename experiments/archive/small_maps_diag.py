@@ -17,10 +17,12 @@ import subprocess
 import sys
 import tempfile
 
-from cbm_bench import map_and_scen
-from cbm_paper_exp1 import grouped_scen
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # experiments/ (this script is in archive/)
+sys.path.insert(0, HERE)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+from cbm_bench import map_and_scen  # noqa: E402
+from cbm_paper_exp1 import grouped_scen  # noqa: E402
+
 MAPS_3A = ["empty-32-32", "random-32-32-10", "room-32-32-4", "maze-32-32-2", "random-64-64-10", "room-64-64-8"]
 BOTH = [("room-32-32-4", "40", "g5", "1"), ("room-32-32-4", "40", "g5", "2"), ("maze-32-32-2", "64", "k4", "1"),
         ("maze-32-32-2", "64", "k4", "3"), ("maze-32-32-2", "64", "g5", "1"), ("maze-32-32-2", "40", "g5", "1"),

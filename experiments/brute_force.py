@@ -3,7 +3,7 @@
 
 Usage: brute_force.py MAP.map FILE.scen N [CONSTRAINTS] [--teams K]   -> prints "T=<min makespan>" or "T=-1"
 
-With --teams K agent i belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team
+With --teams K agent i belongs to team i % K (as archive/make_colored_yaml.py) and must end in a goal of its team
 (colored MAPF); the state is then the set of occupied cells of every team.
 State at step t = set of occupied cells (agents of one team are anonymous). Each agent waits or moves to a
 4-neighbour; forbidden: two agents in one cell, two agents swapping along an edge, constraints.
@@ -117,7 +117,7 @@ def main():
     w, h, grid = read_map(map_path)
     starts, goals = read_scen(scen_path, k)
     vertex, edge = read_constraints(args[3] if len(args) > 3 else None)
-    teams = [i % n_teams for i in range(len(starts))]  # as make_colored_yaml.py
+    teams = [i % n_teams for i in range(len(starts))]  # as archive/make_colored_yaml.py
     print(f"T={min_makespan(w, h, grid, starts, goals, vertex, edge, teams)}")
 
 

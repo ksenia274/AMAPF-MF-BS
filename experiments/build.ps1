@@ -14,7 +14,7 @@ try {
         & g++ -O3 -static -o "$name.exe" "$name.cpp"
         if ($LASTEXITCODE -ne 0) { Write-Host "FAILED: $name" -ForegroundColor Red; $failed = $true }
     }
-    # cbm with the rdtsc profile of the low level (week 6, week6_part2.py)
+    # cbm with the rdtsc profile of the low level (week 6, archive/week6_part2.py)
     Write-Host "g++ -O3 -static -DBS_PROFILE -o cbm_prof.exe cbm.cpp"
     & g++ -O3 -static -DBS_PROFILE -o cbm_prof.exe cbm.cpp
     if ($LASTEXITCODE -ne 0) { Write-Host "FAILED: cbm_prof" -ForegroundColor Red; $failed = $true }

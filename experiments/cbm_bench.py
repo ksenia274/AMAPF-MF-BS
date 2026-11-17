@@ -39,6 +39,15 @@ def map_and_scen(name, s):
         return os.path.join(OWN_MAPS, name + ".map"), os.path.join(OWN_MAPS, f"{name}-random-{s}.scen")
     return (os.path.join(DATA, "mapf-map", name + ".map"),
             os.path.join(DATA, "mapf-scen-random", "scen-random", f"{name}-random-{s}.scen"))
+
+
+def load_grid(path):
+    rows = open(path).read().split("\n")
+    h, w = int(rows[1].split()[1]), int(rows[2].split()[1])
+    grid = [rows[4 + i][:w] for i in range(h)]
+    return grid, w, h
+
+
 VARIANTS = {"bs": ["--low", "bs"], "flow": ["--low", "flow"], "floww": ["--low", "floww"],
             "bspen": ["--low", "bspen"]}
 OUT_FIELDS = ["status", "T", "nodes_generated", "nodes_expanded", "lowlevel_calls", "lowlevel_ms", "total_ms",

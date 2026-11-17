@@ -13,11 +13,13 @@ import subprocess
 import sys
 import tempfile
 
-from cbm_bench import map_and_scen
-from cbm_paper_exp1 import grouped_scen
-from small_maps_diag import fields, run
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # experiments/ (this script is in archive/)
+sys.path.insert(0, HERE)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+from cbm_bench import map_and_scen  # noqa: E402
+from cbm_paper_exp1 import grouped_scen  # noqa: E402
+from small_maps_diag import fields, run  # noqa: E402
+
 PARTS = ["root_pen_wait", "root_pen_enter", "root_pen_swap"]
 RUN = ["status", "T", "total_ms", "nodes_generated", "nodes_expanded", "lowlevel_calls", "root_conflict_pairs",
        "root_key", "max_depth"]
