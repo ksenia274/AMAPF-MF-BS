@@ -1,11 +1,15 @@
-// CBM (Ma, Koenig 2016) for colored MAPF with makespan, low level = Bulk Search (bs_team.hpp, --low bs; --low bspen:
-// OPEN ordered by the penalties of floww) or max-flow / min-cost flow with the weights of section 3.2
-// (flow_team.hpp, --low flow / floww).
-// Agent i of the .scen belongs to team i % K (as make_colored_yaml.py) and must end in a goal of its team.
+// CBM (Ma, Koenig 2016) for colored MAPF with makespan. Low level of one team (--low):
+//   bs     Bulk Search (bs_team.hpp);
+//   bspen  Bulk Search, OPEN ordered by the penalties of floww (the routes of the other teams);
+//   bscut  bspen plus soft cuts of the waiting chains (BulkSearchTeam::setCut, --cut penal or all);
+//   flow   max-flow (flow_team.hpp);
+//   floww  min-cost flow with the weights of section 3.2 (the routes of the other teams).
+// Agent i of the .scen belongs to team i % K (as archive/make_colored_yaml.py) and must end in a goal of its team.
 // High level = CBS over teams: a node holds the constraints and the plan of every team, key = max team makespan.
-// Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|flow|floww]
+// Usage: cbm MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|bscut|flow|floww]
 //            [--t-start 1|lb|match] [--mem-limit MB] [--diag] [--pen-gap S]
 //            [--root-only first|last] [--root-low bs|bspen|bscut|flow|floww] [--cut penal|all]
+// Any other argument is taken as ROUTES.
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node.
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. lowlevel_expansions=.. (Bulk Search variants) last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
@@ -23,7 +27,6 @@
 // --t-start match: from max(minT, bs::teamMatchBound) (bottleneck assignment of the team's robots to its goals; it is
 // computed once per team, inside the first low-level call). The answer is the same.
 // --root-low: the root is planned by this low level, all other replannings by --low.
-// --low bscut: bspen with soft cuts of the waiting chains (bs_team.hpp, setCut), --cut penal (default) or all.
 // --diag also prints root_pen_wait/enter/swap: the penalty (weights of floww) of the root routes of every team
 // against the teams planned before it, summed over the teams: wait = steps t >= 1 that stay in a cell with other
 // robots, enter = steps t >= 1 that enter such a cell (both weight (a)), swap = opposite moves (weight (b));
@@ -814,7 +817,9 @@ bool parseArgs(int argc, char *argv[], Options &o)
 {
     if (argc < 5)
     {
-        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|flow|floww] [--mem-limit MB] [--diag]" << endl;
+        cerr << "usage: " << argv[0] << " MAP.map FILE.scen N K [ROUTES|-] [--time-limit SEC] [--max-nodes M] [--low bs|bspen|bscut|flow|floww]"
+                " [--t-start 1|lb|match] [--mem-limit MB] [--diag] [--pen-gap S] [--root-only first|last]"
+                " [--root-low bs|bspen|bscut|flow|floww] [--cut penal|all]" << endl;
         return false;
     }
     o.mapFile = argv[1], o.scenFile = argv[2];

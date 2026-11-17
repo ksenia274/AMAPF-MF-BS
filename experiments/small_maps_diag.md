@@ -1,3 +1,26 @@
+**Оглавление**
+
+- [Why bspen solves fewer instances of 3a than floww (2026-11-04)](#why-bspen-solves-fewer-instances-of-3a-than-floww-2026-11-04)
+  - [Measured](#measured)
+  - [Interpretation](#interpretation)
+- [Continuation (2026-11-04)](#continuation-2026-11-04)
+  - [Старт T](#старт-t)
+  - [Откуда лишний штраф](#откуда-лишний-штраф)
+  - [Корень от floww](#корень-от-floww)
+- [5.2а](#52а)
+  - [Stage 1: where the extra entries come from (2026-11-09)](#stage-1-where-the-extra-entries-come-from-2026-11-09)
+  - [Stage 2: low level bscut (2026-11-10)](#stage-2-low-level-bscut-2026-11-10)
+  - [Stage 3: bscut in CBM on the 16 instances (2026-11-10)](#stage-3-bscut-in-cbm-on-the-16-instances-2026-11-10)
+- [5.2а, этап 4](#52а-этап-4)
+  - [Part 1: cost of one replanning (2026-11-10)](#part-1-cost-of-one-replanning-2026-11-10)
+  - [Part 2: cactus run with bscut penal (2026-11-10)](#part-2-cactus-run-with-bscut-penal-2026-11-10)
+  - [Part 3: cactus plots with bscut (2026-11-10)](#part-3-cactus-plots-with-bscut-2026-11-10)
+- [Неделя 6 (2026-11-16)](#неделя-6-2026-11-16)
+  - [Часть 0. Инвентаризация (без запусков)](#часть-0-инвентаризация-без-запусков)
+  - [Часть 1. Из готовых данных (без запусков)](#часть-1-из-готовых-данных-без-запусков)
+  - [Часть 2. Профиль и корень (короткие запуски)](#часть-2-профиль-и-корень-короткие-запуски)
+  - [Этап A. Старт корня с оценки через назначение (--t-start match)](#этап-a-старт-корня-с-оценки-через-назначение---t-start-match)
+
 # Why bspen solves fewer instances of 3a than floww (2026-11-04)
 
 `python small_maps_diag.py small_maps_diag.csv` (raw output: small_maps_diag.log); t-start check: small_maps_tstart.csv.
