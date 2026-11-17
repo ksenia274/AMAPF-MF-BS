@@ -402,3 +402,205 @@ random-32-32-10 80 10 bscut solved 34 121 valid=1 t-start=match
 random-32-32-10 80 10 flow timeout_skipped -1  valid= 
 random-32-32-10 80 10 floww solved 34 925 valid=1 t-start=match
 ### map random-32-32-10 end 2026-11-17 11:54:54 exit=0
+### map room-32-32-4 start 2026-11-17 11:54:54
+room-32-32-4 20 1 bs solved 35 29 valid=1 t-start=match
+room-32-32-4 20 1 bspen solved 35 13 valid=1 t-start=match
+room-32-32-4 20 1 bscut solved 35 12 valid=1 t-start=match
+room-32-32-4 20 1 flow solved 35 354 valid=1 t-start=match
+room-32-32-4 20 1 floww solved 35 168 valid=1 t-start=match
+room-32-32-4 40 1 bs solved 37 305 valid=1 t-start=match
+room-32-32-4 40 1 bspen solved 37 68 valid=1 t-start=match
+room-32-32-4 40 1 bscut solved 37 45 valid=1 t-start=match
+room-32-32-4 40 1 flow solved 37 2164 valid=1 t-start=match
+room-32-32-4 40 1 floww solved 37 336 valid=1 t-start=match
+room-32-32-4 60 1 bs solved 37 7361 valid=1 t-start=match
+room-32-32-4 60 1 bspen solved 37 249 valid=1 t-start=match
+room-32-32-4 60 1 bscut solved 37 95 valid=1 t-start=match
+room-32-32-4 60 1 flow timeout -1 60008 valid= t-start=match
+room-32-32-4 60 1 floww solved 37 512 valid=1 t-start=match
+room-32-32-4 80 1 bs timeout -1 60047 valid= t-start=match
+room-32-32-4 80 1 bspen solved 37 1090 valid=1 t-start=match
+room-32-32-4 80 1 bscut solved 37 172 valid=1 t-start=match
+room-32-32-4 80 1 flow timeout_skipped -1  valid= 
+room-32-32-4 80 1 floww solved 37 837 valid=1 t-start=match
+room-32-32-4 20 2 bs solved 44 23 valid=1 t-start=match
+room-32-32-4 20 2 bspen solved 44 4 valid=1 t-start=match
+room-32-32-4 20 2 bscut solved 44 5 valid=1 t-start=match
+room-32-32-4 20 2 flow solved 44 1186 valid=1 t-start=match
+room-32-32-4 20 2 floww solved 44 163 valid=1 t-start=match
+room-32-32-4 40 2 bs solved 44 30129 valid=1 t-start=match
+room-32-32-4 40 2 bspen solved 44 47 valid=1 t-start=match
+room-32-32-4 40 2 bscut solved 44 37 valid=1 t-start=match
+room-32-32-4 40 2 flow solved 44 11352 valid=1 t-start=match
+room-32-32-4 40 2 floww solved 44 413 valid=1 t-start=match
+room-32-32-4 60 2 bs timeout -1 60053 valid= t-start=match
+room-32-32-4 60 2 bspen solved 44 142 valid=1 t-start=match
+room-32-32-4 60 2 bscut solved 44 102 valid=1 t-start=match
+room-32-32-4 60 2 flow timeout -1 60006 valid= t-start=match
+room-32-32-4 60 2 floww solved 44 821 valid=1 t-start=match
+room-32-32-4 80 2 bs timeout_skipped -1  valid= 
+room-32-32-4 80 2 bspen solved 44 7728 valid=1 t-start=match
+room-32-32-4 80 2 bscut solved 44 217 valid=1 t-start=match
+room-32-32-4 80 2 flow timeout_skipped -1  valid= 
+room-32-32-4 80 2 floww solved 44 1208 valid=1 t-start=match
+room-32-32-4 20 3 bs solved 28 17 valid=1 t-start=match
+room-32-32-4 20 3 bspen solved 28 10 valid=1 t-start=match
+room-32-32-4 20 3 bscut solved 28 11 valid=1 t-start=match
+room-32-32-4 20 3 flow solved 28 49 valid=1 t-start=match
+room-32-32-4 20 3 floww solved 28 91 valid=1 t-start=match
+room-32-32-4 40 3 bs timeout -1 60046 valid= t-start=match
+room-32-32-4 40 3 bspen timeout -1 60030 valid= t-start=match
+room-32-32-4 40 3 bscut solved 28 53 valid=1 t-start=match
+room-32-32-4 40 3 flow timeout -1 60010 valid= t-start=match
+room-32-32-4 40 3 floww solved 28 221 valid=1 t-start=match
+room-32-32-4 60 3 bs timeout_skipped -1  valid= 
+room-32-32-4 60 3 bspen timeout_skipped -1  valid= 
+room-32-32-4 60 3 bscut solved 39 372 valid=1 t-start=match
+room-32-32-4 60 3 flow timeout_skipped -1  valid= 
+room-32-32-4 60 3 floww solved 39 776 valid=1 t-start=match
+room-32-32-4 80 3 bs timeout_skipped -1  valid= 
+room-32-32-4 80 3 bspen timeout_skipped -1  valid= 
+room-32-32-4 80 3 bscut solved 39 318 valid=1 t-start=match
+room-32-32-4 80 3 flow timeout_skipped -1  valid= 
+room-32-32-4 80 3 floww solved 39 1037 valid=1 t-start=match
+room-32-32-4 20 4 bs solved 32 24 valid=1 t-start=match
+room-32-32-4 20 4 bspen solved 32 10 valid=1 t-start=match
+room-32-32-4 20 4 bscut solved 32 14 valid=1 t-start=match
+room-32-32-4 20 4 flow solved 32 96 valid=1 t-start=match
+room-32-32-4 20 4 floww solved 32 90 valid=1 t-start=match
+room-32-32-4 40 4 bs solved 32 201 valid=1 t-start=match
+room-32-32-4 40 4 bspen solved 32 124 valid=1 t-start=match
+room-32-32-4 40 4 bscut solved 32 68 valid=1 t-start=match
+room-32-32-4 40 4 flow timeout -1 60011 valid= t-start=match
+room-32-32-4 40 4 floww solved 32 401 valid=1 t-start=match
+room-32-32-4 60 4 bs solved 37 1704 valid=1 t-start=match
+room-32-32-4 60 4 bspen solved 37 3762 valid=1 t-start=match
+room-32-32-4 60 4 bscut solved 37 151 valid=1 t-start=match
+room-32-32-4 60 4 flow timeout_skipped -1  valid= 
+room-32-32-4 60 4 floww solved 37 802 valid=1 t-start=match
+room-32-32-4 80 4 bs timeout -1 60013 valid= t-start=match
+room-32-32-4 80 4 bspen solved 37 1510 valid=1 t-start=match
+room-32-32-4 80 4 bscut solved 37 239 valid=1 t-start=match
+room-32-32-4 80 4 flow timeout_skipped -1  valid= 
+room-32-32-4 80 4 floww solved 37 1103 valid=1 t-start=match
+room-32-32-4 20 5 bs solved 31 13 valid=1 t-start=match
+room-32-32-4 20 5 bspen solved 31 9 valid=1 t-start=match
+room-32-32-4 20 5 bscut solved 31 9 valid=1 t-start=match
+room-32-32-4 20 5 flow solved 31 139 valid=1 t-start=match
+room-32-32-4 20 5 floww solved 31 68 valid=1 t-start=match
+room-32-32-4 40 5 bs solved 31 2965 valid=1 t-start=match
+room-32-32-4 40 5 bspen solved 31 186 valid=1 t-start=match
+room-32-32-4 40 5 bscut solved 31 48 valid=1 t-start=match
+room-32-32-4 40 5 flow timeout -1 60013 valid= t-start=match
+room-32-32-4 40 5 floww solved 31 305 valid=1 t-start=match
+room-32-32-4 60 5 bs timeout -1 60039 valid= t-start=match
+room-32-32-4 60 5 bspen solved 34 668 valid=1 t-start=match
+room-32-32-4 60 5 bscut solved 34 191 valid=1 t-start=match
+room-32-32-4 60 5 flow timeout_skipped -1  valid= 
+room-32-32-4 60 5 floww solved 34 537 valid=1 t-start=match
+room-32-32-4 80 5 bs timeout_skipped -1  valid= 
+room-32-32-4 80 5 bspen timeout -1 60027 valid= t-start=match
+room-32-32-4 80 5 bscut solved 34 440 valid=1 t-start=match
+room-32-32-4 80 5 flow timeout_skipped -1  valid= 
+room-32-32-4 80 5 floww solved 34 1140 valid=1 t-start=match
+room-32-32-4 20 6 bs solved 29 14 valid=1 t-start=match
+room-32-32-4 20 6 bspen solved 29 6 valid=1 t-start=match
+room-32-32-4 20 6 bscut solved 29 5 valid=1 t-start=match
+room-32-32-4 20 6 flow solved 29 73 valid=1 t-start=match
+room-32-32-4 20 6 floww solved 29 61 valid=1 t-start=match
+room-32-32-4 40 6 bs solved 36 162 valid=1 t-start=match
+room-32-32-4 40 6 bspen solved 36 67 valid=1 t-start=match
+room-32-32-4 40 6 bscut solved 36 14 valid=1 t-start=match
+room-32-32-4 40 6 flow solved 36 2493 valid=1 t-start=match
+room-32-32-4 40 6 floww solved 36 269 valid=1 t-start=match
+room-32-32-4 60 6 bs timeout -1 60048 valid= t-start=match
+room-32-32-4 60 6 bspen solved 36 2231 valid=1 t-start=match
+room-32-32-4 60 6 bscut solved 36 96 valid=1 t-start=match
+room-32-32-4 60 6 flow timeout -1 60010 valid= t-start=match
+room-32-32-4 60 6 floww solved 36 553 valid=1 t-start=match
+room-32-32-4 80 6 bs timeout_skipped -1  valid= 
+room-32-32-4 80 6 bspen solved 36 761 valid=1 t-start=match
+room-32-32-4 80 6 bscut solved 36 260 valid=1 t-start=match
+room-32-32-4 80 6 flow timeout_skipped -1  valid= 
+room-32-32-4 80 6 floww solved 36 1007 valid=1 t-start=match
+room-32-32-4 20 7 bs solved 35 122 valid=1 t-start=match
+room-32-32-4 20 7 bspen solved 35 27 valid=1 t-start=match
+room-32-32-4 20 7 bscut solved 35 30 valid=1 t-start=match
+room-32-32-4 20 7 flow solved 35 780 valid=1 t-start=match
+room-32-32-4 20 7 floww solved 35 228 valid=1 t-start=match
+room-32-32-4 40 7 bs solved 35 664 valid=1 t-start=match
+room-32-32-4 40 7 bspen solved 35 124 valid=1 t-start=match
+room-32-32-4 40 7 bscut solved 35 78 valid=1 t-start=match
+room-32-32-4 40 7 flow solved 35 22782 valid=1 t-start=match
+room-32-32-4 40 7 floww solved 35 570 valid=1 t-start=match
+room-32-32-4 60 7 bs timeout -1 60057 valid= t-start=match
+room-32-32-4 60 7 bspen solved 37 466 valid=1 t-start=match
+room-32-32-4 60 7 bscut solved 37 203 valid=1 t-start=match
+room-32-32-4 60 7 flow timeout -1 60009 valid= t-start=match
+room-32-32-4 60 7 floww solved 37 1069 valid=1 t-start=match
+room-32-32-4 80 7 bs timeout_skipped -1  valid= 
+room-32-32-4 80 7 bspen solved 38 36816 valid=1 t-start=match
+room-32-32-4 80 7 bscut solved 38 440 valid=1 t-start=match
+room-32-32-4 80 7 flow timeout_skipped -1  valid= 
+room-32-32-4 80 7 floww solved 38 1816 valid=1 t-start=match
+room-32-32-4 20 8 bs solved 31 24 valid=1 t-start=match
+room-32-32-4 20 8 bspen solved 31 7 valid=1 t-start=match
+room-32-32-4 20 8 bscut solved 31 6 valid=1 t-start=match
+room-32-32-4 20 8 flow solved 31 269 valid=1 t-start=match
+room-32-32-4 20 8 floww solved 31 100 valid=1 t-start=match
+room-32-32-4 40 8 bs timeout -1 60031 valid= t-start=match
+room-32-32-4 40 8 bspen solved 38 1176 valid=1 t-start=match
+room-32-32-4 40 8 bscut solved 38 39 valid=1 t-start=match
+room-32-32-4 40 8 flow timeout -1 60007 valid= t-start=match
+room-32-32-4 40 8 floww solved 38 341 valid=1 t-start=match
+room-32-32-4 60 8 bs timeout_skipped -1  valid= 
+room-32-32-4 60 8 bspen solved 38 427 valid=1 t-start=match
+room-32-32-4 60 8 bscut solved 38 141 valid=1 t-start=match
+room-32-32-4 60 8 flow timeout_skipped -1  valid= 
+room-32-32-4 60 8 floww solved 38 699 valid=1 t-start=match
+room-32-32-4 80 8 bs timeout_skipped -1  valid= 
+room-32-32-4 80 8 bspen timeout -1 60023 valid= t-start=match
+room-32-32-4 80 8 bscut solved 38 299 valid=1 t-start=match
+room-32-32-4 80 8 flow timeout_skipped -1  valid= 
+room-32-32-4 80 8 floww solved 38 1171 valid=1 t-start=match
+room-32-32-4 20 9 bs solved 29 12 valid=1 t-start=match
+room-32-32-4 20 9 bspen solved 29 9 valid=1 t-start=match
+room-32-32-4 20 9 bscut solved 29 10 valid=1 t-start=match
+room-32-32-4 20 9 flow solved 29 99 valid=1 t-start=match
+room-32-32-4 20 9 floww solved 29 91 valid=1 t-start=match
+room-32-32-4 40 9 bs solved 35 227 valid=1 t-start=match
+room-32-32-4 40 9 bspen solved 35 128 valid=1 t-start=match
+room-32-32-4 40 9 bscut solved 35 29 valid=1 t-start=match
+room-32-32-4 40 9 flow solved 35 9403 valid=1 t-start=match
+room-32-32-4 40 9 floww solved 35 283 valid=1 t-start=match
+room-32-32-4 60 9 bs timeout -1 60048 valid= t-start=match
+room-32-32-4 60 9 bspen solved 35 16434 valid=1 t-start=match
+room-32-32-4 60 9 bscut solved 35 105 valid=1 t-start=match
+room-32-32-4 60 9 flow timeout -1 60009 valid= t-start=match
+room-32-32-4 60 9 floww solved 35 528 valid=1 t-start=match
+room-32-32-4 80 9 bs timeout_skipped -1  valid= 
+room-32-32-4 80 9 bspen solved 37 6791 valid=1 t-start=match
+room-32-32-4 80 9 bscut solved 37 222 valid=1 t-start=match
+room-32-32-4 80 9 flow timeout_skipped -1  valid= 
+room-32-32-4 80 9 floww solved 37 970 valid=1 t-start=match
+room-32-32-4 20 10 bs solved 45 27 valid=1 t-start=match
+room-32-32-4 20 10 bspen solved 45 11 valid=1 t-start=match
+room-32-32-4 20 10 bscut solved 45 11 valid=1 t-start=match
+room-32-32-4 20 10 flow solved 45 974 valid=1 t-start=match
+room-32-32-4 20 10 floww solved 45 165 valid=1 t-start=match
+room-32-32-4 40 10 bs timeout -1 60039 valid= t-start=match
+room-32-32-4 40 10 bspen solved 45 42 valid=1 t-start=match
+room-32-32-4 40 10 bscut solved 45 42 valid=1 t-start=match
+room-32-32-4 40 10 flow solved 45 3889 valid=1 t-start=match
+room-32-32-4 40 10 floww solved 45 545 valid=1 t-start=match
+room-32-32-4 60 10 bs timeout_skipped -1  valid= 
+room-32-32-4 60 10 bspen solved 45 119 valid=1 t-start=match
+room-32-32-4 60 10 bscut solved 45 129 valid=1 t-start=match
+room-32-32-4 60 10 flow solved 45 11899 valid=1 t-start=match
+room-32-32-4 60 10 floww solved 45 760 valid=1 t-start=match
+room-32-32-4 80 10 bs timeout_skipped -1  valid= 
+room-32-32-4 80 10 bspen solved 45 516 valid=1 t-start=match
+room-32-32-4 80 10 bscut solved 45 247 valid=1 t-start=match
+room-32-32-4 80 10 flow timeout -1 60006 valid= t-start=match
+room-32-32-4 80 10 floww solved 45 1442 valid=1 t-start=match
+### map room-32-32-4 end 2026-11-17 12:21:45 exit=0
