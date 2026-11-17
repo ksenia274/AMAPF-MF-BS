@@ -1817,3 +1817,205 @@ Paris_1_256 256 10 bscut solved 457 14948 valid=1 t-start=match
 Paris_1_256 256 10 flow timeout_skipped -1  valid= 
 Paris_1_256 256 10 floww timeout_skipped -1  valid= 
 ### map Paris_1_256 end 2026-11-17 17:29:50 exit=0
+### map Boston_0_256 start 2026-11-17 17:29:50
+Boston_0_256 64 1 bs solved 270 3266 valid=1 t-start=match
+Boston_0_256 64 1 bspen solved 270 764 valid=1 t-start=match
+Boston_0_256 64 1 bscut solved 270 1016 valid=1 t-start=match
+Boston_0_256 64 1 flow timeout -1 61095 valid= t-start=match
+Boston_0_256 64 1 floww timeout -1 61825 valid= t-start=match
+Boston_0_256 128 1 bs solved 279 11274 valid=1 t-start=match
+Boston_0_256 128 1 bspen solved 279 2473 valid=1 t-start=match
+Boston_0_256 128 1 bscut solved 279 3828 valid=1 t-start=match
+Boston_0_256 128 1 flow timeout_skipped -1  valid= 
+Boston_0_256 128 1 floww timeout_skipped -1  valid= 
+Boston_0_256 192 1 bs timeout -1 60009 valid= t-start=match
+Boston_0_256 192 1 bspen solved 317 4908 valid=1 t-start=match
+Boston_0_256 192 1 bscut solved 317 7639 valid=1 t-start=match
+Boston_0_256 192 1 flow timeout_skipped -1  valid= 
+Boston_0_256 192 1 floww timeout_skipped -1  valid= 
+Boston_0_256 256 1 bs timeout_skipped -1  valid= 
+Boston_0_256 256 1 bspen solved 352 12012 valid=1 t-start=match
+Boston_0_256 256 1 bscut solved 352 26380 valid=1 t-start=match
+Boston_0_256 256 1 flow timeout_skipped -1  valid= 
+Boston_0_256 256 1 floww timeout_skipped -1  valid= 
+Boston_0_256 64 2 bs solved 296 3633 valid=1 t-start=match
+Boston_0_256 64 2 bspen solved 296 1670 valid=1 t-start=match
+Boston_0_256 64 2 bscut solved 296 2376 valid=1 t-start=match
+Boston_0_256 64 2 flow timeout -1 61820 valid= t-start=match
+Boston_0_256 64 2 floww timeout -1 64788 valid= t-start=match
+Boston_0_256 128 2 bs solved 296 24415 valid=1 t-start=match
+Boston_0_256 128 2 bspen solved 296 3684 valid=1 t-start=match
+Boston_0_256 128 2 bscut solved 296 4280 valid=1 t-start=match
+Boston_0_256 128 2 flow timeout_skipped -1  valid= 
+Boston_0_256 128 2 floww timeout_skipped -1  valid= 
+Boston_0_256 192 2 bs timeout -1 60003 valid= t-start=match
+Boston_0_256 192 2 bspen solved 296 5882 valid=1 t-start=match
+Boston_0_256 192 2 bscut solved 296 9524 valid=1 t-start=match
+Boston_0_256 192 2 flow timeout_skipped -1  valid= 
+Boston_0_256 192 2 floww timeout_skipped -1  valid= 
+Boston_0_256 256 2 bs timeout_skipped -1  valid= 
+Boston_0_256 256 2 bspen solved 358 9118 valid=1 t-start=match
+Boston_0_256 256 2 bscut solved 358 17265 valid=1 t-start=match
+Boston_0_256 256 2 flow timeout_skipped -1  valid= 
+Boston_0_256 256 2 floww timeout_skipped -1  valid= 
+Boston_0_256 64 3 bs solved 280 1494 valid=1 t-start=match
+Boston_0_256 64 3 bspen solved 280 878 valid=1 t-start=match
+Boston_0_256 64 3 bscut solved 280 1044 valid=1 t-start=match
+Boston_0_256 64 3 flow timeout -1 60026 valid= t-start=match
+Boston_0_256 64 3 floww timeout -1 60860 valid= t-start=match
+Boston_0_256 128 3 bs solved 280 6608 valid=1 t-start=match
+Boston_0_256 128 3 bspen solved 280 1995 valid=1 t-start=match
+Boston_0_256 128 3 bscut solved 280 3406 valid=1 t-start=match
+Boston_0_256 128 3 flow timeout_skipped -1  valid= 
+Boston_0_256 128 3 floww timeout_skipped -1  valid= 
+Boston_0_256 192 3 bs timeout -1 60003 valid= t-start=match
+Boston_0_256 192 3 bspen solved 340 5917 valid=1 t-start=match
+Boston_0_256 192 3 bscut solved 340 8983 valid=1 t-start=match
+Boston_0_256 192 3 flow timeout_skipped -1  valid= 
+Boston_0_256 192 3 floww timeout_skipped -1  valid= 
+Boston_0_256 256 3 bs timeout_skipped -1  valid= 
+Boston_0_256 256 3 bspen solved 340 8528 valid=1 t-start=match
+Boston_0_256 256 3 bscut solved 340 15505 valid=1 t-start=match
+Boston_0_256 256 3 flow timeout_skipped -1  valid= 
+Boston_0_256 256 3 floww timeout_skipped -1  valid= 
+Boston_0_256 64 4 bs solved 309 2216 valid=1 t-start=match
+Boston_0_256 64 4 bspen solved 309 860 valid=1 t-start=match
+Boston_0_256 64 4 bscut solved 309 977 valid=1 t-start=match
+Boston_0_256 64 4 flow timeout -1 61623 valid= t-start=match
+Boston_0_256 64 4 floww timeout -1 62434 valid= t-start=match
+Boston_0_256 128 4 bs solved 309 7476 valid=1 t-start=match
+Boston_0_256 128 4 bspen solved 309 2282 valid=1 t-start=match
+Boston_0_256 128 4 bscut solved 309 3115 valid=1 t-start=match
+Boston_0_256 128 4 flow timeout_skipped -1  valid= 
+Boston_0_256 128 4 floww timeout_skipped -1  valid= 
+Boston_0_256 192 4 bs timeout -1 60007 valid= t-start=match
+Boston_0_256 192 4 bspen solved 326 4694 valid=1 t-start=match
+Boston_0_256 192 4 bscut solved 326 7341 valid=1 t-start=match
+Boston_0_256 192 4 flow timeout_skipped -1  valid= 
+Boston_0_256 192 4 floww timeout_skipped -1  valid= 
+Boston_0_256 256 4 bs timeout_skipped -1  valid= 
+Boston_0_256 256 4 bspen solved 326 6845 valid=1 t-start=match
+Boston_0_256 256 4 bscut solved 326 12928 valid=1 t-start=match
+Boston_0_256 256 4 flow timeout_skipped -1  valid= 
+Boston_0_256 256 4 floww timeout_skipped -1  valid= 
+Boston_0_256 64 5 bs solved 310 2789 valid=1 t-start=match
+Boston_0_256 64 5 bspen solved 310 929 valid=1 t-start=match
+Boston_0_256 64 5 bscut solved 310 1101 valid=1 t-start=match
+Boston_0_256 64 5 flow timeout -1 60891 valid= t-start=match
+Boston_0_256 64 5 floww timeout -1 60255 valid= t-start=match
+Boston_0_256 128 5 bs solved 310 10960 valid=1 t-start=match
+Boston_0_256 128 5 bspen solved 310 2187 valid=1 t-start=match
+Boston_0_256 128 5 bscut solved 310 2865 valid=1 t-start=match
+Boston_0_256 128 5 flow timeout_skipped -1  valid= 
+Boston_0_256 128 5 floww timeout_skipped -1  valid= 
+Boston_0_256 192 5 bs timeout -1 60005 valid= t-start=match
+Boston_0_256 192 5 bspen solved 312 4287 valid=1 t-start=match
+Boston_0_256 192 5 bscut solved 312 6201 valid=1 t-start=match
+Boston_0_256 192 5 flow timeout_skipped -1  valid= 
+Boston_0_256 192 5 floww timeout_skipped -1  valid= 
+Boston_0_256 256 5 bs timeout_skipped -1  valid= 
+Boston_0_256 256 5 bspen solved 312 7041 valid=1 t-start=match
+Boston_0_256 256 5 bscut solved 312 11304 valid=1 t-start=match
+Boston_0_256 256 5 flow timeout_skipped -1  valid= 
+Boston_0_256 256 5 floww timeout_skipped -1  valid= 
+Boston_0_256 64 6 bs solved 322 2410 valid=1 t-start=match
+Boston_0_256 64 6 bspen solved 322 1120 valid=1 t-start=match
+Boston_0_256 64 6 bscut solved 322 1176 valid=1 t-start=match
+Boston_0_256 64 6 flow timeout -1 60307 valid= t-start=match
+Boston_0_256 64 6 floww timeout -1 61011 valid= t-start=match
+Boston_0_256 128 6 bs solved 322 8766 valid=1 t-start=match
+Boston_0_256 128 6 bspen solved 322 3307 valid=1 t-start=match
+Boston_0_256 128 6 bscut solved 322 3317 valid=1 t-start=match
+Boston_0_256 128 6 flow timeout_skipped -1  valid= 
+Boston_0_256 128 6 floww timeout_skipped -1  valid= 
+Boston_0_256 192 6 bs solved 322 35701 valid=1 t-start=match
+Boston_0_256 192 6 bspen solved 322 4620 valid=1 t-start=match
+Boston_0_256 192 6 bscut solved 322 5447 valid=1 t-start=match
+Boston_0_256 192 6 flow timeout_skipped -1  valid= 
+Boston_0_256 192 6 floww timeout_skipped -1  valid= 
+Boston_0_256 256 6 bs timeout -1 60004 valid= t-start=match
+Boston_0_256 256 6 bspen solved 322 8963 valid=1 t-start=match
+Boston_0_256 256 6 bscut solved 322 11593 valid=1 t-start=match
+Boston_0_256 256 6 flow timeout_skipped -1  valid= 
+Boston_0_256 256 6 floww timeout_skipped -1  valid= 
+Boston_0_256 64 7 bs solved 310 1228 valid=1 t-start=match
+Boston_0_256 64 7 bspen solved 310 825 valid=1 t-start=match
+Boston_0_256 64 7 bscut solved 310 1191 valid=1 t-start=match
+Boston_0_256 64 7 flow timeout -1 61544 valid= t-start=match
+Boston_0_256 64 7 floww timeout -1 61466 valid= t-start=match
+Boston_0_256 128 7 bs solved 292 14667 valid=1 t-start=match
+Boston_0_256 128 7 bspen solved 292 2663 valid=1 t-start=match
+Boston_0_256 128 7 bscut solved 292 4089 valid=1 t-start=match
+Boston_0_256 128 7 flow timeout_skipped -1  valid= 
+Boston_0_256 128 7 floww timeout_skipped -1  valid= 
+Boston_0_256 192 7 bs solved 315 31089 valid=1 t-start=match
+Boston_0_256 192 7 bspen solved 315 4747 valid=1 t-start=match
+Boston_0_256 192 7 bscut solved 315 8308 valid=1 t-start=match
+Boston_0_256 192 7 flow timeout_skipped -1  valid= 
+Boston_0_256 192 7 floww timeout_skipped -1  valid= 
+Boston_0_256 256 7 bs timeout -1 60003 valid= t-start=match
+Boston_0_256 256 7 bspen solved 295 7942 valid=1 t-start=match
+Boston_0_256 256 7 bscut solved 295 16128 valid=1 t-start=match
+Boston_0_256 256 7 flow timeout_skipped -1  valid= 
+Boston_0_256 256 7 floww timeout_skipped -1  valid= 
+Boston_0_256 64 8 bs solved 283 2094 valid=1 t-start=match
+Boston_0_256 64 8 bspen solved 283 998 valid=1 t-start=match
+Boston_0_256 64 8 bscut solved 283 1199 valid=1 t-start=match
+Boston_0_256 64 8 flow timeout -1 60336 valid= t-start=match
+Boston_0_256 64 8 floww timeout -1 60138 valid= t-start=match
+Boston_0_256 128 8 bs solved 350 8061 valid=1 t-start=match
+Boston_0_256 128 8 bspen solved 350 4074 valid=1 t-start=match
+Boston_0_256 128 8 bscut solved 350 4140 valid=1 t-start=match
+Boston_0_256 128 8 flow timeout_skipped -1  valid= 
+Boston_0_256 128 8 floww timeout_skipped -1  valid= 
+Boston_0_256 192 8 bs solved 350 26619 valid=1 t-start=match
+Boston_0_256 192 8 bspen solved 350 6467 valid=1 t-start=match
+Boston_0_256 192 8 bscut solved 350 9188 valid=1 t-start=match
+Boston_0_256 192 8 flow timeout_skipped -1  valid= 
+Boston_0_256 192 8 floww timeout_skipped -1  valid= 
+Boston_0_256 256 8 bs timeout -1 60004 valid= t-start=match
+Boston_0_256 256 8 bspen solved 350 11562 valid=1 t-start=match
+Boston_0_256 256 8 bscut solved 350 17927 valid=1 t-start=match
+Boston_0_256 256 8 flow timeout_skipped -1  valid= 
+Boston_0_256 256 8 floww timeout_skipped -1  valid= 
+Boston_0_256 64 9 bs solved 285 1850 valid=1 t-start=match
+Boston_0_256 64 9 bspen solved 285 1115 valid=1 t-start=match
+Boston_0_256 64 9 bscut solved 285 1150 valid=1 t-start=match
+Boston_0_256 64 9 flow timeout -1 61654 valid= t-start=match
+Boston_0_256 64 9 floww timeout -1 62599 valid= t-start=match
+Boston_0_256 128 9 bs solved 312 26779 valid=1 t-start=match
+Boston_0_256 128 9 bspen solved 312 2457 valid=1 t-start=match
+Boston_0_256 128 9 bscut solved 312 3626 valid=1 t-start=match
+Boston_0_256 128 9 flow timeout_skipped -1  valid= 
+Boston_0_256 128 9 floww timeout_skipped -1  valid= 
+Boston_0_256 192 9 bs timeout -1 60004 valid= t-start=match
+Boston_0_256 192 9 bspen solved 274 4781 valid=1 t-start=match
+Boston_0_256 192 9 bscut solved 274 5857 valid=1 t-start=match
+Boston_0_256 192 9 flow timeout_skipped -1  valid= 
+Boston_0_256 192 9 floww timeout_skipped -1  valid= 
+Boston_0_256 256 9 bs timeout_skipped -1  valid= 
+Boston_0_256 256 9 bspen solved 305 7748 valid=1 t-start=match
+Boston_0_256 256 9 bscut solved 305 12571 valid=1 t-start=match
+Boston_0_256 256 9 flow timeout_skipped -1  valid= 
+Boston_0_256 256 9 floww timeout_skipped -1  valid= 
+Boston_0_256 64 10 bs solved 281 2233 valid=1 t-start=match
+Boston_0_256 64 10 bspen solved 281 1071 valid=1 t-start=match
+Boston_0_256 64 10 bscut solved 281 1057 valid=1 t-start=match
+Boston_0_256 64 10 flow timeout -1 60117 valid= t-start=match
+Boston_0_256 64 10 floww timeout -1 60716 valid= t-start=match
+Boston_0_256 128 10 bs solved 281 7585 valid=1 t-start=match
+Boston_0_256 128 10 bspen solved 281 2064 valid=1 t-start=match
+Boston_0_256 128 10 bscut solved 281 3297 valid=1 t-start=match
+Boston_0_256 128 10 flow timeout_skipped -1  valid= 
+Boston_0_256 128 10 floww timeout_skipped -1  valid= 
+Boston_0_256 192 10 bs solved 281 20523 valid=1 t-start=match
+Boston_0_256 192 10 bspen solved 281 4656 valid=1 t-start=match
+Boston_0_256 192 10 bscut solved 281 6749 valid=1 t-start=match
+Boston_0_256 192 10 flow timeout_skipped -1  valid= 
+Boston_0_256 192 10 floww timeout_skipped -1  valid= 
+Boston_0_256 256 10 bs solved 281 42900 valid=1 t-start=match
+Boston_0_256 256 10 bspen solved 281 7136 valid=1 t-start=match
+Boston_0_256 256 10 bscut solved 281 14038 valid=1 t-start=match
+Boston_0_256 256 10 flow timeout_skipped -1  valid= 
+Boston_0_256 256 10 floww timeout_skipped -1  valid= 
+### map Boston_0_256 end 2026-11-17 18:12:10 exit=0
