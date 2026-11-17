@@ -604,3 +604,205 @@ room-32-32-4 80 10 bscut solved 45 247 valid=1 t-start=match
 room-32-32-4 80 10 flow timeout -1 60006 valid= t-start=match
 room-32-32-4 80 10 floww solved 45 1442 valid=1 t-start=match
 ### map room-32-32-4 end 2026-11-17 12:21:45 exit=0
+### map maze-32-32-2 start 2026-11-17 12:21:45
+maze-32-32-2 20 1 bs solved 104 205 valid=1 t-start=match
+maze-32-32-2 20 1 bspen solved 104 95 valid=1 t-start=match
+maze-32-32-2 20 1 bscut solved 104 65 valid=1 t-start=match
+maze-32-32-2 20 1 flow solved 104 5445 valid=1 t-start=match
+maze-32-32-2 20 1 floww solved 104 1689 valid=1 t-start=match
+maze-32-32-2 40 1 bs solved 107 2630 valid=1 t-start=match
+maze-32-32-2 40 1 bspen solved 107 266 valid=1 t-start=match
+maze-32-32-2 40 1 bscut solved 107 156 valid=1 t-start=match
+maze-32-32-2 40 1 flow timeout -1 60003 valid= t-start=match
+maze-32-32-2 40 1 floww solved 107 2744 valid=1 t-start=match
+maze-32-32-2 60 1 bs timeout -1 60030 valid= t-start=match
+maze-32-32-2 60 1 bspen solved 107 2194 valid=1 t-start=match
+maze-32-32-2 60 1 bscut solved 107 468 valid=1 t-start=match
+maze-32-32-2 60 1 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 1 floww solved 107 5403 valid=1 t-start=match
+maze-32-32-2 80 1 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 1 bspen timeout -1 60016 valid= t-start=match
+maze-32-32-2 80 1 bscut solved 107 916 valid=1 t-start=match
+maze-32-32-2 80 1 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 1 floww solved 107 7774 valid=1 t-start=match
+maze-32-32-2 20 2 bs solved 69 52 valid=1 t-start=match
+maze-32-32-2 20 2 bspen solved 69 11 valid=1 t-start=match
+maze-32-32-2 20 2 bscut solved 69 7 valid=1 t-start=match
+maze-32-32-2 20 2 flow solved 69 1355 valid=1 t-start=match
+maze-32-32-2 20 2 floww solved 69 146 valid=1 t-start=match
+maze-32-32-2 40 2 bs solved 96 1205 valid=1 t-start=match
+maze-32-32-2 40 2 bspen solved 96 3381 valid=1 t-start=match
+maze-32-32-2 40 2 bscut solved 96 115 valid=1 t-start=match
+maze-32-32-2 40 2 flow timeout -1 60006 valid= t-start=match
+maze-32-32-2 40 2 floww solved 96 1822 valid=1 t-start=match
+maze-32-32-2 60 2 bs timeout -1 60030 valid= t-start=match
+maze-32-32-2 60 2 bspen timeout -1 60015 valid= t-start=match
+maze-32-32-2 60 2 bscut solved 96 381 valid=1 t-start=match
+maze-32-32-2 60 2 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 2 floww solved 96 3224 valid=1 t-start=match
+maze-32-32-2 80 2 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 2 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 2 bscut solved 103 1029 valid=1 t-start=match
+maze-32-32-2 80 2 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 2 floww solved 103 9741 valid=1 t-start=match
+maze-32-32-2 20 3 bs solved 79 185 valid=1 t-start=match
+maze-32-32-2 20 3 bspen solved 79 92 valid=1 t-start=match
+maze-32-32-2 20 3 bscut solved 79 31 valid=1 t-start=match
+maze-32-32-2 20 3 flow solved 79 3023 valid=1 t-start=match
+maze-32-32-2 20 3 floww solved 79 485 valid=1 t-start=match
+maze-32-32-2 40 3 bs timeout -1 60031 valid= t-start=match
+maze-32-32-2 40 3 bspen timeout -1 60027 valid= t-start=match
+maze-32-32-2 40 3 bscut solved 114 495 valid=1 t-start=match
+maze-32-32-2 40 3 flow timeout -1 60004 valid= t-start=match
+maze-32-32-2 40 3 floww timeout -1 60036 valid= t-start=match
+maze-32-32-2 60 3 bs timeout_skipped -1  valid= 
+maze-32-32-2 60 3 bspen timeout_skipped -1  valid= 
+maze-32-32-2 60 3 bscut solved 114 807 valid=1 t-start=match
+maze-32-32-2 60 3 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 3 floww timeout_skipped -1  valid= 
+maze-32-32-2 80 3 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 3 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 3 bscut solved 114 1214 valid=1 t-start=match
+maze-32-32-2 80 3 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 3 floww timeout_skipped -1  valid= 
+maze-32-32-2 20 4 bs solved 115 163 valid=1 t-start=match
+maze-32-32-2 20 4 bspen solved 115 120 valid=1 t-start=match
+maze-32-32-2 20 4 bscut solved 115 17 valid=1 t-start=match
+maze-32-32-2 20 4 flow timeout -1 60006 valid= t-start=match
+maze-32-32-2 20 4 floww solved 115 1361 valid=1 t-start=match
+maze-32-32-2 40 4 bs timeout -1 60027 valid= t-start=match
+maze-32-32-2 40 4 bspen timeout -1 60023 valid= t-start=match
+maze-32-32-2 40 4 bscut solved 115 143 valid=1 t-start=match
+maze-32-32-2 40 4 flow timeout_skipped -1  valid= 
+maze-32-32-2 40 4 floww solved 115 3757 valid=1 t-start=match
+maze-32-32-2 60 4 bs timeout_skipped -1  valid= 
+maze-32-32-2 60 4 bspen timeout_skipped -1  valid= 
+maze-32-32-2 60 4 bscut solved 115 516 valid=1 t-start=match
+maze-32-32-2 60 4 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 4 floww solved 115 6051 valid=1 t-start=match
+maze-32-32-2 80 4 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 4 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 4 bscut solved 115 653 valid=1 t-start=match
+maze-32-32-2 80 4 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 4 floww solved 115 7740 valid=1 t-start=match
+maze-32-32-2 20 5 bs solved 62 75 valid=1 t-start=match
+maze-32-32-2 20 5 bspen solved 62 10 valid=1 t-start=match
+maze-32-32-2 20 5 bscut solved 62 17 valid=1 t-start=match
+maze-32-32-2 20 5 flow solved 62 3242 valid=1 t-start=match
+maze-32-32-2 20 5 floww solved 62 414 valid=1 t-start=match
+maze-32-32-2 40 5 bs timeout -1 60044 valid= t-start=match
+maze-32-32-2 40 5 bspen timeout -1 60020 valid= t-start=match
+maze-32-32-2 40 5 bscut solved 74 167 valid=1 t-start=match
+maze-32-32-2 40 5 flow timeout -1 60004 valid= t-start=match
+maze-32-32-2 40 5 floww solved 74 1758 valid=1 t-start=match
+maze-32-32-2 60 5 bs timeout_skipped -1  valid= 
+maze-32-32-2 60 5 bspen timeout_skipped -1  valid= 
+maze-32-32-2 60 5 bscut solved 102 479 valid=1 t-start=match
+maze-32-32-2 60 5 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 5 floww solved 102 5194 valid=1 t-start=match
+maze-32-32-2 80 5 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 5 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 5 bscut solved 102 880 valid=1 t-start=match
+maze-32-32-2 80 5 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 5 floww solved 102 6196 valid=1 t-start=match
+maze-32-32-2 20 6 bs solved 89 651 valid=1 t-start=match
+maze-32-32-2 20 6 bspen solved 89 39 valid=1 t-start=match
+maze-32-32-2 20 6 bscut solved 89 37 valid=1 t-start=match
+maze-32-32-2 20 6 flow timeout -1 60004 valid= t-start=match
+maze-32-32-2 20 6 floww solved 89 839 valid=1 t-start=match
+maze-32-32-2 40 6 bs solved 89 2477 valid=1 t-start=match
+maze-32-32-2 40 6 bspen solved 89 279 valid=1 t-start=match
+maze-32-32-2 40 6 bscut solved 89 160 valid=1 t-start=match
+maze-32-32-2 40 6 flow timeout_skipped -1  valid= 
+maze-32-32-2 40 6 floww solved 89 2411 valid=1 t-start=match
+maze-32-32-2 60 6 bs timeout -1 60025 valid= t-start=match
+maze-32-32-2 60 6 bspen timeout -1 60026 valid= t-start=match
+maze-32-32-2 60 6 bscut solved 89 373 valid=1 t-start=match
+maze-32-32-2 60 6 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 6 floww solved 89 3579 valid=1 t-start=match
+maze-32-32-2 80 6 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 6 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 6 bscut solved 89 901 valid=1 t-start=match
+maze-32-32-2 80 6 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 6 floww solved 89 6440 valid=1 t-start=match
+maze-32-32-2 20 7 bs solved 93 321 valid=1 t-start=match
+maze-32-32-2 20 7 bspen solved 93 17 valid=1 t-start=match
+maze-32-32-2 20 7 bscut solved 93 35 valid=1 t-start=match
+maze-32-32-2 20 7 flow solved 93 8905 valid=1 t-start=match
+maze-32-32-2 20 7 floww solved 93 691 valid=1 t-start=match
+maze-32-32-2 40 7 bs solved 93 2011 valid=1 t-start=match
+maze-32-32-2 40 7 bspen solved 93 237 valid=1 t-start=match
+maze-32-32-2 40 7 bscut solved 93 141 valid=1 t-start=match
+maze-32-32-2 40 7 flow timeout -1 60005 valid= t-start=match
+maze-32-32-2 40 7 floww solved 93 2094 valid=1 t-start=match
+maze-32-32-2 60 7 bs timeout -1 60025 valid= t-start=match
+maze-32-32-2 60 7 bspen timeout -1 60022 valid= t-start=match
+maze-32-32-2 60 7 bscut solved 93 911 valid=1 t-start=match
+maze-32-32-2 60 7 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 7 floww solved 93 6785 valid=1 t-start=match
+maze-32-32-2 80 7 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 7 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 7 bscut solved 93 2157 valid=1 t-start=match
+maze-32-32-2 80 7 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 7 floww solved 93 9227 valid=1 t-start=match
+maze-32-32-2 20 8 bs solved 88 312 valid=1 t-start=match
+maze-32-32-2 20 8 bspen solved 88 24 valid=1 t-start=match
+maze-32-32-2 20 8 bscut solved 88 25 valid=1 t-start=match
+maze-32-32-2 20 8 flow solved 88 9045 valid=1 t-start=match
+maze-32-32-2 20 8 floww solved 88 584 valid=1 t-start=match
+maze-32-32-2 40 8 bs solved 88 1612 valid=1 t-start=match
+maze-32-32-2 40 8 bspen solved 88 291 valid=1 t-start=match
+maze-32-32-2 40 8 bscut solved 88 124 valid=1 t-start=match
+maze-32-32-2 40 8 flow timeout -1 60003 valid= t-start=match
+maze-32-32-2 40 8 floww solved 88 1667 valid=1 t-start=match
+maze-32-32-2 60 8 bs timeout -1 60029 valid= t-start=match
+maze-32-32-2 60 8 bspen timeout -1 60014 valid= t-start=match
+maze-32-32-2 60 8 bscut solved 100 392 valid=1 t-start=match
+maze-32-32-2 60 8 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 8 floww solved 100 4824 valid=1 t-start=match
+maze-32-32-2 80 8 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 8 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 8 bscut solved 111 857 valid=1 t-start=match
+maze-32-32-2 80 8 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 8 floww solved 111 6602 valid=1 t-start=match
+maze-32-32-2 20 9 bs solved 81 92 valid=1 t-start=match
+maze-32-32-2 20 9 bspen solved 81 13 valid=1 t-start=match
+maze-32-32-2 20 9 bscut solved 81 18 valid=1 t-start=match
+maze-32-32-2 20 9 flow solved 81 11186 valid=1 t-start=match
+maze-32-32-2 20 9 floww solved 81 612 valid=1 t-start=match
+maze-32-32-2 40 9 bs solved 81 8150 valid=1 t-start=match
+maze-32-32-2 40 9 bspen timeout -1 60026 valid= t-start=match
+maze-32-32-2 40 9 bscut solved 81 72 valid=1 t-start=match
+maze-32-32-2 40 9 flow timeout -1 60006 valid= t-start=match
+maze-32-32-2 40 9 floww solved 81 1435 valid=1 t-start=match
+maze-32-32-2 60 9 bs timeout -1 60034 valid= t-start=match
+maze-32-32-2 60 9 bspen timeout_skipped -1  valid= 
+maze-32-32-2 60 9 bscut solved 81 213 valid=1 t-start=match
+maze-32-32-2 60 9 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 9 floww solved 81 2683 valid=1 t-start=match
+maze-32-32-2 80 9 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 9 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 9 bscut solved 81 548 valid=1 t-start=match
+maze-32-32-2 80 9 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 9 floww solved 81 4311 valid=1 t-start=match
+maze-32-32-2 20 10 bs solved 72 79 valid=1 t-start=match
+maze-32-32-2 20 10 bspen solved 72 16 valid=1 t-start=match
+maze-32-32-2 20 10 bscut solved 72 21 valid=1 t-start=match
+maze-32-32-2 20 10 flow timeout -1 60009 valid= t-start=match
+maze-32-32-2 20 10 floww solved 72 456 valid=1 t-start=match
+maze-32-32-2 40 10 bs solved 77 707 valid=1 t-start=match
+maze-32-32-2 40 10 bspen solved 77 106 valid=1 t-start=match
+maze-32-32-2 40 10 bscut solved 77 92 valid=1 t-start=match
+maze-32-32-2 40 10 flow timeout_skipped -1  valid= 
+maze-32-32-2 40 10 floww solved 77 1274 valid=1 t-start=match
+maze-32-32-2 60 10 bs timeout -1 60034 valid= t-start=match
+maze-32-32-2 60 10 bspen timeout -1 60020 valid= t-start=match
+maze-32-32-2 60 10 bscut solved 77 221 valid=1 t-start=match
+maze-32-32-2 60 10 flow timeout_skipped -1  valid= 
+maze-32-32-2 60 10 floww solved 77 2227 valid=1 t-start=match
+maze-32-32-2 80 10 bs timeout_skipped -1  valid= 
+maze-32-32-2 80 10 bspen timeout_skipped -1  valid= 
+maze-32-32-2 80 10 bscut solved 77 461 valid=1 t-start=match
+maze-32-32-2 80 10 flow timeout_skipped -1  valid= 
+maze-32-32-2 80 10 floww solved 77 3043 valid=1 t-start=match
+### map maze-32-32-2 end 2026-11-17 12:56:26 exit=0
