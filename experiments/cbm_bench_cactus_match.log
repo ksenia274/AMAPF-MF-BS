@@ -1009,3 +1009,205 @@ random-64-64-10 160 10 bscut solved 60 726 valid=1 t-start=match
 random-64-64-10 160 10 flow timeout_skipped -1  valid= 
 random-64-64-10 160 10 floww solved 60 12953 valid=1 t-start=match
 ### map random-64-64-10 end 2026-11-17 14:23:15 exit=0
+### map room-64-64-8 start 2026-11-17 14:23:15
+room-64-64-8 40 1 bs solved 95 795 valid=1 t-start=match
+room-64-64-8 40 1 bspen solved 95 303 valid=1 t-start=match
+room-64-64-8 40 1 bscut solved 95 181 valid=1 t-start=match
+room-64-64-8 40 1 flow solved 95 50866 valid=1 t-start=match
+room-64-64-8 40 1 floww solved 95 7137 valid=1 t-start=match
+room-64-64-8 80 1 bs solved 95 5682 valid=1 t-start=match
+room-64-64-8 80 1 bspen solved 95 1207 valid=1 t-start=match
+room-64-64-8 80 1 bscut solved 95 586 valid=1 t-start=match
+room-64-64-8 80 1 flow timeout -1 60023 valid= t-start=match
+room-64-64-8 80 1 floww solved 95 18574 valid=1 t-start=match
+room-64-64-8 120 1 bs timeout -1 60013 valid= t-start=match
+room-64-64-8 120 1 bspen timeout -1 60019 valid= t-start=match
+room-64-64-8 120 1 bscut solved 95 1350 valid=1 t-start=match
+room-64-64-8 120 1 flow timeout_skipped -1  valid= 
+room-64-64-8 120 1 floww solved 95 29599 valid=1 t-start=match
+room-64-64-8 160 1 bs timeout_skipped -1  valid= 
+room-64-64-8 160 1 bspen timeout_skipped -1  valid= 
+room-64-64-8 160 1 bscut timeout -1 60002 valid= t-start=match
+room-64-64-8 160 1 flow timeout_skipped -1  valid= 
+room-64-64-8 160 1 floww timeout -1 60004 valid= t-start=match
+room-64-64-8 40 2 bs solved 64 315 valid=1 t-start=match
+room-64-64-8 40 2 bspen solved 64 41 valid=1 t-start=match
+room-64-64-8 40 2 bscut solved 64 52 valid=1 t-start=match
+room-64-64-8 40 2 flow timeout -1 60007 valid= t-start=match
+room-64-64-8 40 2 floww solved 64 1617 valid=1 t-start=match
+room-64-64-8 80 2 bs solved 85 6501 valid=1 t-start=match
+room-64-64-8 80 2 bspen solved 85 1095 valid=1 t-start=match
+room-64-64-8 80 2 bscut solved 85 390 valid=1 t-start=match
+room-64-64-8 80 2 flow timeout_skipped -1  valid= 
+room-64-64-8 80 2 floww solved 85 14361 valid=1 t-start=match
+room-64-64-8 120 2 bs timeout -1 60018 valid= t-start=match
+room-64-64-8 120 2 bspen solved 85 2563 valid=1 t-start=match
+room-64-64-8 120 2 bscut solved 85 885 valid=1 t-start=match
+room-64-64-8 120 2 flow timeout_skipped -1  valid= 
+room-64-64-8 120 2 floww solved 85 25486 valid=1 t-start=match
+room-64-64-8 160 2 bs timeout_skipped -1  valid= 
+room-64-64-8 160 2 bspen timeout -1 60006 valid= t-start=match
+room-64-64-8 160 2 bscut solved 86 2179 valid=1 t-start=match
+room-64-64-8 160 2 flow timeout_skipped -1  valid= 
+room-64-64-8 160 2 floww solved 86 41984 valid=1 t-start=match
+room-64-64-8 40 3 bs solved 102 14284 valid=1 t-start=match
+room-64-64-8 40 3 bspen solved 102 215 valid=1 t-start=match
+room-64-64-8 40 3 bscut solved 102 167 valid=1 t-start=match
+room-64-64-8 40 3 flow timeout -1 60001 valid= t-start=match
+room-64-64-8 40 3 floww solved 102 7586 valid=1 t-start=match
+room-64-64-8 80 3 bs timeout -1 60009 valid= t-start=match
+room-64-64-8 80 3 bspen solved 102 3323 valid=1 t-start=match
+room-64-64-8 80 3 bscut solved 102 432 valid=1 t-start=match
+room-64-64-8 80 3 flow timeout_skipped -1  valid= 
+room-64-64-8 80 3 floww solved 102 19919 valid=1 t-start=match
+room-64-64-8 120 3 bs timeout_skipped -1  valid= 
+room-64-64-8 120 3 bspen solved 102 39456 valid=1 t-start=match
+room-64-64-8 120 3 bscut solved 102 1056 valid=1 t-start=match
+room-64-64-8 120 3 flow timeout_skipped -1  valid= 
+room-64-64-8 120 3 floww solved 102 35203 valid=1 t-start=match
+room-64-64-8 160 3 bs timeout_skipped -1  valid= 
+room-64-64-8 160 3 bspen timeout -1 60007 valid= t-start=match
+room-64-64-8 160 3 bscut solved 102 2588 valid=1 t-start=match
+room-64-64-8 160 3 flow timeout_skipped -1  valid= 
+room-64-64-8 160 3 floww solved 102 46357 valid=1 t-start=match
+room-64-64-8 40 4 bs solved 78 1622 valid=1 t-start=match
+room-64-64-8 40 4 bspen solved 78 181 valid=1 t-start=match
+room-64-64-8 40 4 bscut solved 78 147 valid=1 t-start=match
+room-64-64-8 40 4 flow solved 78 44069 valid=1 t-start=match
+room-64-64-8 40 4 floww solved 78 4522 valid=1 t-start=match
+room-64-64-8 80 4 bs timeout -1 60016 valid= t-start=match
+room-64-64-8 80 4 bspen solved 78 916 valid=1 t-start=match
+room-64-64-8 80 4 bscut solved 78 468 valid=1 t-start=match
+room-64-64-8 80 4 flow timeout -1 60001 valid= t-start=match
+room-64-64-8 80 4 floww solved 78 11055 valid=1 t-start=match
+room-64-64-8 120 4 bs timeout_skipped -1  valid= 
+room-64-64-8 120 4 bspen solved 87 7282 valid=1 t-start=match
+room-64-64-8 120 4 bscut solved 87 1457 valid=1 t-start=match
+room-64-64-8 120 4 flow timeout_skipped -1  valid= 
+room-64-64-8 120 4 floww solved 87 40792 valid=1 t-start=match
+room-64-64-8 160 4 bs timeout_skipped -1  valid= 
+room-64-64-8 160 4 bspen timeout -1 60007 valid= t-start=match
+room-64-64-8 160 4 bscut solved 95 2501 valid=1 t-start=match
+room-64-64-8 160 4 flow timeout_skipped -1  valid= 
+room-64-64-8 160 4 floww solved 95 55426 valid=1 t-start=match
+room-64-64-8 40 5 bs solved 79 1093 valid=1 t-start=match
+room-64-64-8 40 5 bspen solved 79 85 valid=1 t-start=match
+room-64-64-8 40 5 bscut solved 79 112 valid=1 t-start=match
+room-64-64-8 40 5 flow solved 79 51212 valid=1 t-start=match
+room-64-64-8 40 5 floww solved 79 4999 valid=1 t-start=match
+room-64-64-8 80 5 bs solved 81 3545 valid=1 t-start=match
+room-64-64-8 80 5 bspen solved 81 925 valid=1 t-start=match
+room-64-64-8 80 5 bscut solved 81 380 valid=1 t-start=match
+room-64-64-8 80 5 flow timeout -1 60006 valid= t-start=match
+room-64-64-8 80 5 floww solved 81 12285 valid=1 t-start=match
+room-64-64-8 120 5 bs timeout -1 60018 valid= t-start=match
+room-64-64-8 120 5 bspen solved 98 3085 valid=1 t-start=match
+room-64-64-8 120 5 bscut solved 98 1027 valid=1 t-start=match
+room-64-64-8 120 5 flow timeout_skipped -1  valid= 
+room-64-64-8 120 5 floww solved 98 40531 valid=1 t-start=match
+room-64-64-8 160 5 bs timeout_skipped -1  valid= 
+room-64-64-8 160 5 bspen solved 98 12497 valid=1 t-start=match
+room-64-64-8 160 5 bscut solved 98 1959 valid=1 t-start=match
+room-64-64-8 160 5 flow timeout_skipped -1  valid= 
+room-64-64-8 160 5 floww solved 98 53068 valid=1 t-start=match
+room-64-64-8 40 6 bs solved 73 823 valid=1 t-start=match
+room-64-64-8 40 6 bspen solved 73 199 valid=1 t-start=match
+room-64-64-8 40 6 bscut solved 73 181 valid=1 t-start=match
+room-64-64-8 40 6 flow solved 73 27333 valid=1 t-start=match
+room-64-64-8 40 6 floww solved 73 3525 valid=1 t-start=match
+room-64-64-8 80 6 bs timeout -1 60015 valid= t-start=match
+room-64-64-8 80 6 bspen solved 73 1457 valid=1 t-start=match
+room-64-64-8 80 6 bscut solved 73 428 valid=1 t-start=match
+room-64-64-8 80 6 flow timeout -1 60005 valid= t-start=match
+room-64-64-8 80 6 floww solved 73 7950 valid=1 t-start=match
+room-64-64-8 120 6 bs timeout_skipped -1  valid= 
+room-64-64-8 120 6 bspen timeout -1 60006 valid= t-start=match
+room-64-64-8 120 6 bscut solved 87 1175 valid=1 t-start=match
+room-64-64-8 120 6 flow timeout_skipped -1  valid= 
+room-64-64-8 120 6 floww solved 87 26547 valid=1 t-start=match
+room-64-64-8 160 6 bs timeout_skipped -1  valid= 
+room-64-64-8 160 6 bspen timeout_skipped -1  valid= 
+room-64-64-8 160 6 bscut solved 87 2061 valid=1 t-start=match
+room-64-64-8 160 6 flow timeout_skipped -1  valid= 
+room-64-64-8 160 6 floww solved 87 33663 valid=1 t-start=match
+room-64-64-8 40 7 bs solved 92 1218 valid=1 t-start=match
+room-64-64-8 40 7 bspen solved 92 278 valid=1 t-start=match
+room-64-64-8 40 7 bscut solved 92 91 valid=1 t-start=match
+room-64-64-8 40 7 flow solved 92 46325 valid=1 t-start=match
+room-64-64-8 40 7 floww solved 92 7007 valid=1 t-start=match
+room-64-64-8 80 7 bs timeout -1 60017 valid= t-start=match
+room-64-64-8 80 7 bspen solved 92 454 valid=1 t-start=match
+room-64-64-8 80 7 bscut solved 92 394 valid=1 t-start=match
+room-64-64-8 80 7 flow timeout -1 60001 valid= t-start=match
+room-64-64-8 80 7 floww solved 92 21357 valid=1 t-start=match
+room-64-64-8 120 7 bs timeout_skipped -1  valid= 
+room-64-64-8 120 7 bspen solved 92 14658 valid=1 t-start=match
+room-64-64-8 120 7 bscut solved 92 894 valid=1 t-start=match
+room-64-64-8 120 7 flow timeout_skipped -1  valid= 
+room-64-64-8 120 7 floww solved 92 32821 valid=1 t-start=match
+room-64-64-8 160 7 bs timeout_skipped -1  valid= 
+room-64-64-8 160 7 bspen solved 92 26870 valid=1 t-start=match
+room-64-64-8 160 7 bscut solved 92 3602 valid=1 t-start=match
+room-64-64-8 160 7 flow timeout_skipped -1  valid= 
+room-64-64-8 160 7 floww solved 92 55881 valid=1 t-start=match
+room-64-64-8 40 8 bs solved 82 3491 valid=1 t-start=match
+room-64-64-8 40 8 bspen solved 82 90 valid=1 t-start=match
+room-64-64-8 40 8 bscut solved 82 112 valid=1 t-start=match
+room-64-64-8 40 8 flow timeout -1 60014 valid= t-start=match
+room-64-64-8 40 8 floww solved 82 3722 valid=1 t-start=match
+room-64-64-8 80 8 bs timeout -1 60015 valid= t-start=match
+room-64-64-8 80 8 bspen solved 91 498 valid=1 t-start=match
+room-64-64-8 80 8 bscut solved 91 361 valid=1 t-start=match
+room-64-64-8 80 8 flow timeout_skipped -1  valid= 
+room-64-64-8 80 8 floww solved 91 11194 valid=1 t-start=match
+room-64-64-8 120 8 bs timeout_skipped -1  valid= 
+room-64-64-8 120 8 bspen solved 91 4581 valid=1 t-start=match
+room-64-64-8 120 8 bscut solved 91 1044 valid=1 t-start=match
+room-64-64-8 120 8 flow timeout_skipped -1  valid= 
+room-64-64-8 120 8 floww solved 91 26231 valid=1 t-start=match
+room-64-64-8 160 8 bs timeout_skipped -1  valid= 
+room-64-64-8 160 8 bspen timeout -1 60008 valid= t-start=match
+room-64-64-8 160 8 bscut solved 91 1980 valid=1 t-start=match
+room-64-64-8 160 8 flow timeout_skipped -1  valid= 
+room-64-64-8 160 8 floww solved 91 41911 valid=1 t-start=match
+room-64-64-8 40 9 bs solved 82 483 valid=1 t-start=match
+room-64-64-8 40 9 bspen solved 82 99 valid=1 t-start=match
+room-64-64-8 40 9 bscut solved 82 67 valid=1 t-start=match
+room-64-64-8 40 9 flow solved 82 39257 valid=1 t-start=match
+room-64-64-8 40 9 floww solved 82 3517 valid=1 t-start=match
+room-64-64-8 80 9 bs solved 85 2659 valid=1 t-start=match
+room-64-64-8 80 9 bspen solved 85 695 valid=1 t-start=match
+room-64-64-8 80 9 bscut solved 85 312 valid=1 t-start=match
+room-64-64-8 80 9 flow timeout -1 60006 valid= t-start=match
+room-64-64-8 80 9 floww solved 85 13773 valid=1 t-start=match
+room-64-64-8 120 9 bs timeout -1 60015 valid= t-start=match
+room-64-64-8 120 9 bspen solved 85 4361 valid=1 t-start=match
+room-64-64-8 120 9 bscut solved 85 899 valid=1 t-start=match
+room-64-64-8 120 9 flow timeout_skipped -1  valid= 
+room-64-64-8 120 9 floww solved 85 23235 valid=1 t-start=match
+room-64-64-8 160 9 bs timeout_skipped -1  valid= 
+room-64-64-8 160 9 bspen timeout -1 60007 valid= t-start=match
+room-64-64-8 160 9 bscut solved 85 1415 valid=1 t-start=match
+room-64-64-8 160 9 flow timeout_skipped -1  valid= 
+room-64-64-8 160 9 floww solved 85 31454 valid=1 t-start=match
+room-64-64-8 40 10 bs solved 72 634 valid=1 t-start=match
+room-64-64-8 40 10 bspen solved 72 90 valid=1 t-start=match
+room-64-64-8 40 10 bscut solved 72 52 valid=1 t-start=match
+room-64-64-8 40 10 flow solved 72 15881 valid=1 t-start=match
+room-64-64-8 40 10 floww solved 72 2608 valid=1 t-start=match
+room-64-64-8 80 10 bs timeout -1 60019 valid= t-start=match
+room-64-64-8 80 10 bspen solved 79 823 valid=1 t-start=match
+room-64-64-8 80 10 bscut solved 79 536 valid=1 t-start=match
+room-64-64-8 80 10 flow timeout -1 60002 valid= t-start=match
+room-64-64-8 80 10 floww solved 79 11448 valid=1 t-start=match
+room-64-64-8 120 10 bs timeout_skipped -1  valid= 
+room-64-64-8 120 10 bspen solved 86 2882 valid=1 t-start=match
+room-64-64-8 120 10 bscut solved 86 999 valid=1 t-start=match
+room-64-64-8 120 10 flow timeout_skipped -1  valid= 
+room-64-64-8 120 10 floww solved 86 24228 valid=1 t-start=match
+room-64-64-8 160 10 bs timeout_skipped -1  valid= 
+room-64-64-8 160 10 bspen solved 86 5551 valid=1 t-start=match
+room-64-64-8 160 10 bscut solved 86 2065 valid=1 t-start=match
+room-64-64-8 160 10 flow timeout_skipped -1  valid= 
+room-64-64-8 160 10 floww solved 86 38354 valid=1 t-start=match
+### map room-64-64-8 end 2026-11-17 15:15:26 exit=0
