@@ -240,7 +240,6 @@ public:
     long long numOfExpansions = 0;
     chrono::steady_clock::time_point deadline = chrono::steady_clock::time_point::max();
     bool timedOut = false; // solveMinMakespan() returned -1 because the deadline passed
-    unsigned long long penaltyCycles = 0; // rdtsc cycles spent on the penalties (setOtherRoutes, lookups)
     mutable LowProfile prof;              // filled only with -DBS_PROFILE
 
     // starts and goals are free cell ids of the grid.
@@ -275,7 +274,6 @@ public:
     // Any augmenting path gives the same T, so only the choice of the paths changes.
     void setOtherRoutes(const vector<vector<int>> &routes)
     {
-        unsigned long long start = __rdtsc();
         penalized = true;
         otherHorizon = 0;
         for (auto &r : routes)
@@ -290,7 +288,6 @@ public:
                 if (r[t] != r[t + 1])
                     ++otherMoves[((long long)t * n + r[t]) * n + r[t + 1]];
         }
-        penaltyCycles += __rdtsc() - start;
     }
 
     // bscut (5.2a): as bspen, but the waiting chains are also cut softly (an unused edge stays usable): `all`: at
@@ -493,9 +490,8 @@ private:
     // Penalty of the move from -> to between steps t-1 and t.
     int penaltyOfEntry(int from, int to, int t)
     {
-        unsigned long long start = __rdtsc();
+        PROF_START(start);
         int p = vertexPenalty(to, t) + swapPenalty(from, to, t);
-        penaltyCycles += __rdtsc() - start;
         PROF_ADD(pen, start);
 #ifdef BS_PROFILE
         ++prof.nPen;

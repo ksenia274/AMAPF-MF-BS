@@ -37,7 +37,6 @@
 // fresh call that starts at the final T (one network / one flow), plus the root time and the T of the teams;
 // Bulk Search variants: expansions of that call (over all T tried) and the hard / soft cuts of its final network
 // (BulkSearchTeam::countCuts, not timed).
-// pen_share (bspen, bscut): share of the low-level rdtsc cycles spent on the penalties.
 // T=-1 if a limit was hit (or no solution: then CBS never stops by itself). ROUTES: as bs_team, all N agents.
 #include "flow_team.hpp"
 #ifdef _WIN32
@@ -268,7 +267,6 @@ public:
         return max({minT, 1, teamStartBound[team]});
     }
 
-    double penShare() const { return lowLevelCycles ? (double)penaltyCycles / lowLevelCycles : 0; }
 
     // Routes of all agents in the order of the .scen, padded to the makespan.
     vector<vector<int>> routes(const CTNode &node) const
@@ -294,7 +292,6 @@ private:
     long long nextId = 0;
     steady_clock::time_point deadline = steady_clock::time_point::max();
     vector<int> teamStartBound; // per team: lb or the assignment bound (--t-start)
-    unsigned long long penaltyCycles = 0, lowLevelCycles = 0;
     unordered_set<size_t> seenConstraintSets; // 64-bit hashes of the canonical per-team constraint sets (diag)
     bool inRoot = false;
     long long lastExpansions = -1;
@@ -379,7 +376,6 @@ private:
         if (lowName == "bscut")
             solver.setCut(cutAll);
         bool ok = solveTeam(solver, team, plan, minT);
-        penaltyCycles += solver.penaltyCycles;
         lowLevelExpansions += solver.numOfExpansions;
         lastExpansions = solver.numOfExpansions;
 #ifdef BS_PROFILE
@@ -420,7 +416,9 @@ private:
     shared_ptr<const TeamPlan> replan(int team, TeamPlan plan, int minT, const vector<shared_ptr<const TeamPlan>> &plans)
     {
         auto start = steady_clock::now();
+#ifdef BS_PROFILE
         unsigned long long startCycles = __rdtsc();
+#endif
         ++lowLevelCalls;
         lastExpansions = -1, lastCuts = {-1, -1}, lastCountMs = 0;
         minT = startT(team, minT);
@@ -446,7 +444,6 @@ private:
         callProf.swaps = __rdtsc() - swapStart;
 #endif
         double sec = duration<double>(steady_clock::now() - start).count();
-        lowLevelCycles += __rdtsc() - startCycles;
 #ifdef BS_PROFILE
         printProfile(team, lowName, minT, ok ? plan.T : -1, sec);
 #endif
@@ -968,7 +965,7 @@ void printResult(CBM &cbm, const shared_ptr<CTNode> &result, const string &statu
         cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;
     cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " pruned_unreachable=" << cbm.prunedUnreachable
          << " replan_ms_median=" << quantile(0.5) << " replan_ms_p90=" << quantile(0.9) << " replan_ms_max=" << (ms.empty() ? 0.0 : ms.back())
-         << " pen_share=" << cbm.penShare() << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
+         << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
 }
 
 // The second line of --diag.
