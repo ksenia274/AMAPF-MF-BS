@@ -1211,3 +1211,205 @@ room-64-64-8 160 10 bscut solved 86 2065 valid=1 t-start=match
 room-64-64-8 160 10 flow timeout_skipped -1  valid= 
 room-64-64-8 160 10 floww solved 86 38354 valid=1 t-start=match
 ### map room-64-64-8 end 2026-11-17 15:15:26 exit=0
+### map warehouse-10-20-10-2-1 start 2026-11-17 15:15:26
+warehouse-10-20-10-2-1 64 1 bs solved 121 536 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 1 bspen solved 121 161 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 1 bscut solved 121 160 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 1 flow timeout -1 60043 valid= t-start=match
+warehouse-10-20-10-2-1 64 1 floww solved 121 23415 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 1 bs solved 121 32780 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 1 bspen solved 121 478 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 1 bscut solved 121 705 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 1 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 1 floww solved 121 57891 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 1 bs timeout -1 60006 valid= t-start=match
+warehouse-10-20-10-2-1 192 1 bspen solved 132 2978 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 1 bscut solved 132 2355 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 1 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 1 floww timeout -1 60174 valid= t-start=match
+warehouse-10-20-10-2-1 256 1 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 1 bspen timeout -1 60005 valid= t-start=match
+warehouse-10-20-10-2-1 256 1 bscut solved 132 4853 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 1 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 1 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 2 bs solved 113 661 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 2 bspen solved 113 112 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 2 bscut solved 113 239 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 2 flow timeout -1 60037 valid= t-start=match
+warehouse-10-20-10-2-1 64 2 floww solved 113 21377 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 2 bs solved 113 11029 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 2 bspen solved 113 436 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 2 bscut solved 113 679 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 2 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 2 floww solved 113 41925 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 2 bs timeout -1 60012 valid= t-start=match
+warehouse-10-20-10-2-1 192 2 bspen timeout -1 60010 valid= t-start=match
+warehouse-10-20-10-2-1 192 2 bscut solved 130 1952 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 2 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 2 floww timeout -1 60212 valid= t-start=match
+warehouse-10-20-10-2-1 256 2 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 2 bspen timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 2 bscut solved 135 4081 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 2 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 2 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 3 bs solved 122 417 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 3 bspen solved 122 182 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 3 bscut solved 122 284 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 3 flow timeout -1 60025 valid= t-start=match
+warehouse-10-20-10-2-1 64 3 floww solved 122 16142 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 3 bs timeout -1 60012 valid= t-start=match
+warehouse-10-20-10-2-1 128 3 bspen solved 122 726 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 3 bscut solved 122 645 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 3 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 3 floww solved 122 57133 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 3 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 3 bspen solved 140 1867 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 3 bscut solved 140 1800 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 3 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 3 floww timeout -1 60120 valid= t-start=match
+warehouse-10-20-10-2-1 256 3 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 3 bspen solved 140 14633 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 3 bscut solved 140 3881 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 3 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 3 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 4 bs solved 139 1104 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 4 bspen solved 139 132 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 4 bscut solved 139 203 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 4 flow timeout -1 60018 valid= t-start=match
+warehouse-10-20-10-2-1 64 4 floww solved 139 32062 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 4 bs timeout -1 60012 valid= t-start=match
+warehouse-10-20-10-2-1 128 4 bspen solved 139 533 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 4 bscut solved 139 713 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 4 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 4 floww timeout -1 60395 valid= t-start=match
+warehouse-10-20-10-2-1 192 4 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 4 bspen solved 139 1995 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 4 bscut solved 139 2130 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 4 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 4 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 4 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 4 bspen timeout -1 60007 valid= t-start=match
+warehouse-10-20-10-2-1 256 4 bscut solved 139 5724 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 4 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 4 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 5 bs solved 135 702 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 5 bspen solved 135 471 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 5 bscut solved 135 184 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 5 flow timeout -1 60007 valid= t-start=match
+warehouse-10-20-10-2-1 64 5 floww solved 135 57013 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 5 bs timeout -1 60012 valid= t-start=match
+warehouse-10-20-10-2-1 128 5 bspen solved 135 968 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 5 bscut solved 135 965 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 5 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 5 floww timeout -1 60672 valid= t-start=match
+warehouse-10-20-10-2-1 192 5 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 5 bspen solved 136 6037 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 5 bscut solved 136 3394 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 5 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 5 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 5 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 5 bspen solved 136 8075 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 5 bscut solved 136 5517 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 5 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 5 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 6 bs solved 135 971 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 6 bspen solved 135 196 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 6 bscut solved 135 355 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 6 flow timeout -1 60055 valid= t-start=match
+warehouse-10-20-10-2-1 64 6 floww solved 135 59481 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 6 bs timeout -1 60031 valid= t-start=match
+warehouse-10-20-10-2-1 128 6 bspen solved 135 1335 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 6 bscut solved 135 1810 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 6 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 6 floww timeout -1 60217 valid= t-start=match
+warehouse-10-20-10-2-1 192 6 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 6 bspen solved 142 1803 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 6 bscut solved 142 3015 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 6 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 6 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 6 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 6 bspen timeout -1 60015 valid= t-start=match
+warehouse-10-20-10-2-1 256 6 bscut solved 149 6955 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 6 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 6 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 7 bs solved 118 682 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 7 bspen solved 118 166 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 7 bscut solved 118 255 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 7 flow timeout -1 60059 valid= t-start=match
+warehouse-10-20-10-2-1 64 7 floww solved 118 28816 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 7 bs timeout -1 60008 valid= t-start=match
+warehouse-10-20-10-2-1 128 7 bspen solved 139 1060 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 7 bscut solved 139 1066 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 7 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 7 floww timeout -1 60256 valid= t-start=match
+warehouse-10-20-10-2-1 192 7 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 7 bspen solved 139 1510 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 7 bscut solved 139 2087 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 7 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 7 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 7 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 7 bspen solved 139 3041 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 7 bscut solved 139 5487 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 7 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 7 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 8 bs solved 129 1304 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 8 bspen solved 129 297 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 8 bscut solved 129 155 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 8 flow timeout -1 60060 valid= t-start=match
+warehouse-10-20-10-2-1 64 8 floww solved 129 18258 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 8 bs timeout -1 60010 valid= t-start=match
+warehouse-10-20-10-2-1 128 8 bspen solved 129 664 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 8 bscut solved 129 772 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 8 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 8 floww timeout -1 60313 valid= t-start=match
+warehouse-10-20-10-2-1 192 8 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 8 bspen solved 136 2732 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 8 bscut solved 136 3064 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 8 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 8 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 8 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 8 bspen solved 129 7943 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 8 bscut solved 129 4060 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 8 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 8 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 9 bs solved 143 1740 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 9 bspen solved 143 134 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 9 bscut solved 143 223 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 9 flow timeout -1 60012 valid= t-start=match
+warehouse-10-20-10-2-1 64 9 floww timeout -1 60373 valid= t-start=match
+warehouse-10-20-10-2-1 128 9 bs solved 143 27840 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 9 bspen solved 143 584 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 9 bscut solved 143 1100 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 9 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 9 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 9 bs timeout -1 60018 valid= t-start=match
+warehouse-10-20-10-2-1 192 9 bspen solved 143 1650 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 9 bscut solved 143 2721 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 9 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 9 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 9 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 9 bspen solved 143 2495 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 9 bscut solved 143 4612 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 9 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 9 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 64 10 bs solved 135 1407 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 10 bspen solved 135 242 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 10 bscut solved 135 210 valid=1 t-start=match
+warehouse-10-20-10-2-1 64 10 flow timeout -1 60077 valid= t-start=match
+warehouse-10-20-10-2-1 64 10 floww solved 135 31832 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 10 bs timeout -1 60034 valid= t-start=match
+warehouse-10-20-10-2-1 128 10 bspen solved 135 1219 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 10 bscut solved 135 1261 valid=1 t-start=match
+warehouse-10-20-10-2-1 128 10 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 128 10 floww timeout -1 60274 valid= t-start=match
+warehouse-10-20-10-2-1 192 10 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 10 bspen solved 143 2512 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 10 bscut solved 143 2518 valid=1 t-start=match
+warehouse-10-20-10-2-1 192 10 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 192 10 floww timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 10 bs timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 10 bspen solved 143 5749 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 10 bscut solved 143 5483 valid=1 t-start=match
+warehouse-10-20-10-2-1 256 10 flow timeout_skipped -1  valid= 
+warehouse-10-20-10-2-1 256 10 floww timeout_skipped -1  valid= 
+### map warehouse-10-20-10-2-1 end 2026-11-17 16:01:09 exit=0
