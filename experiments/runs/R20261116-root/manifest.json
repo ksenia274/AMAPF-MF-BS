@@ -1,0 +1,44 @@
+{
+  "run_id": "R20261116-root",
+  "legacy": true,
+  "script": "archive/week6_part2.py, archive/week6_match.py root",
+  "note": "профиль корня (cbm_prof.exe, rdtsc), время по T, оценка назначением; корень с lb и match; журнал Неделя 6, часть 2, и Этап A",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "commits_with_results": [
+    "26897f1",
+    "c4a6c01"
+  ],
+  "params": {
+    "summary": "--root-only last, N 128, сценарий 1, команды по 5; Berlin, Paris, Boston, room-64-64-8, warehouse; bs, bspen, bscut (penal); floww на Berlin N 64; лимит 600 с на вызов (floww 1800 с), 8000 МБ; старт T lb (профиль) и lb / match (week6_match_root.csv)",
+    "time_limit": 600.0,
+    "mem_limit": 8000,
+    "t_start": "lb, match",
+    "teams": "size:5"
+  },
+  "files": [
+    {
+      "path": "../../week6_root_teams.csv",
+      "role": "results"
+    },
+    {
+      "path": "../../week6_root_T.csv",
+      "role": "results"
+    },
+    {
+      "path": "../../week6_match_root.csv",
+      "role": "results"
+    },
+    {
+      "path": "../../week6_prof",
+      "role": "raw logs"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

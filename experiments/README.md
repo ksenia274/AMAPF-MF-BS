@@ -53,7 +53,8 @@ T у всех пяти одинаковый: это проверяют тест�
 - `compare_brute.py`, `compare_exe.py` — то же для одной команды (`bs_single` / `bs_team`);
 - `check_match_bound.py` — проверка оценки `--t-start match`.
 
-Результаты: `*.csv` и `*.md` рядом со скриптами, рисунки в `figures/`, сырые логи профиля в `week6_prof/`.
+Результаты: новые прогоны в `runs/<ID>/` (список: `runs/REGISTRY.md`); старые `*.csv` и `*.md` рядом со
+скриптами, рисунки в `figures/`, сырые логи профиля в `week6_prof/`. `runlib.py` — ID прогона, manifest, реестр.
 `archive/` — одноразовые скрипты разборов, их результаты уже в журнале (список в `archive/README.md`).
 `t/` — крошечные задачи для ручных проверок.
 
@@ -91,12 +92,18 @@ experiments/cbm.exe MAP.map FILE.scen N K [ROUTES|-] --low bspen --t-start match
 ## Как повторить большой прогон
 
 ```
-python experiments/cbm_bench_cactus.py OUT.csv --scens 1-10 --time-limit 60 --mem-limit 8000
-python experiments/cbm_bench_cactus.py OUT.csv --summary
+python experiments/cbm_bench_cactus.py --name big-match --t-start match --scens 1-10 --time-limit 60 --mem-limit 8000
+python experiments/cbm_bench_cactus.py --summary experiments/runs/R20261124-big-match/results.csv
+python experiments/figures/make_cactus.py experiments/runs/R20261124-big-match/results.csv
 ```
+Каждый прогон получает ID `R<ГГГГММДД>-<имя>` (`--name`; или `--run-id` целиком) и папку `runs/<ID>/`:
+`manifest.json` (даты начала и конца, коммит и есть ли незакоммиченные изменения, все параметры, машина),
+`results.csv` (колонка `run_id`), `run.log`. Таблица всех прогонов: `runs/REGISTRY.md`, создаётся из manifest
+(`runlib.py`). Прогоны до появления ID внесены туда задним числом; их файлы остались на старых местах.
+Рисунки называются `<ID>__...png` и подписаны снизу: ID, карты, лимит, команды, старт T.
 Карты: 6 маленьких (32×32 и 64×64) и 4 большие (warehouse, Berlin, Paris, Boston), сценарии 1–10, все пять
 вариантов, команды по 5. Внутри сценария N растёт; если вариант не решил задачу, большие N этого сценария для него
 не запускаются (`timeout_skipped`). Запуски идут строго по одному, каждое решение проверяется `validate.py`, CSV
-дописывается после каждого запуска; прерванный прогон продолжает `--resume`. Выбор подмножества: `--maps`,
+дописывается после каждого запуска; прерванный прогон продолжает `--resume --run-id ID` (с теми же параметрами). Выбор подмножества: `--maps`,
 `--variants`; `--t-start lb|1|match` передаётся в `cbm.exe` (по умолчанию `lb`).
 Полный прогон идёт много часов (до 60 с на задачу).

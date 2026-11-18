@@ -1,0 +1,164 @@
+{
+  "run_id": "R20261117-big-match",
+  "legacy": true,
+  "script": "cbm_bench_cactus.py",
+  "note": "этап B: большой прогон с --t-start match; пауза 12:57-13:54",
+  "started": "2026-11-17T11:37:29",
+  "finished": "2026-11-17T18:12:10",
+  "commit": "a883df5",
+  "dirty": null,
+  "dirty_note": "не записано: прогон сделан до появления manifest; cbm.cpp и cbm_bench_cactus.py как в a883df5",
+  "commits_with_results": [
+    "b507a7f",
+    "a3b5f7f",
+    "ed28855",
+    "9f4e945",
+    "08ee38d",
+    "62edc1e",
+    "cfc41a9",
+    "8c85511",
+    "d76a5e4",
+    "9621af9",
+    "4d51136"
+  ],
+  "params": {
+    "maps": [
+      "empty-32-32",
+      "random-32-32-10",
+      "room-32-32-4",
+      "maze-32-32-2",
+      "random-64-64-10",
+      "room-64-64-8",
+      "warehouse-10-20-10-2-1",
+      "Berlin_1_256",
+      "Paris_1_256",
+      "Boston_0_256"
+    ],
+    "scens": "1-10",
+    "N": {
+      "empty-32-32": [
+        20,
+        40,
+        60,
+        80
+      ],
+      "random-32-32-10": [
+        20,
+        40,
+        60,
+        80
+      ],
+      "room-32-32-4": [
+        20,
+        40,
+        60,
+        80
+      ],
+      "maze-32-32-2": [
+        20,
+        40,
+        60,
+        80
+      ],
+      "random-64-64-10": [
+        40,
+        80,
+        120,
+        160
+      ],
+      "room-64-64-8": [
+        40,
+        80,
+        120,
+        160
+      ],
+      "warehouse-10-20-10-2-1": [
+        64,
+        128,
+        192,
+        256
+      ],
+      "Berlin_1_256": [
+        64,
+        128,
+        192,
+        256
+      ],
+      "Paris_1_256": [
+        64,
+        128,
+        192,
+        256
+      ],
+      "Boston_0_256": [
+        64,
+        128,
+        192,
+        256
+      ]
+    },
+    "teams": "size:5",
+    "time_limit": 60.0,
+    "mem_limit": 8000,
+    "variants": [
+      "bs",
+      "bspen",
+      "bscut",
+      "flow",
+      "floww"
+    ],
+    "low_args": {
+      "bs": [
+        "--low",
+        "bs"
+      ],
+      "bspen": [
+        "--low",
+        "bspen"
+      ],
+      "bscut": [
+        "--low",
+        "bscut",
+        "--cut",
+        "penal"
+      ],
+      "flow": [
+        "--low",
+        "flow"
+      ],
+      "floww": [
+        "--low",
+        "floww"
+      ]
+    },
+    "t_start": "match",
+    "stopping_rule": "within a scen, after a failure the larger N are timeout_skipped"
+  },
+  "files": [
+    {
+      "path": "../../cbm_bench_cactus_match.csv",
+      "role": "results"
+    },
+    {
+      "path": "../../cbm_bench_cactus_match.log",
+      "role": "log"
+    },
+    {
+      "path": "../../cbm_bench_cactus_match_partial.csv",
+      "role": "snapshot",
+      "snapshot": "@5small",
+      "note": "5 малых карт, готовых к 15:00 (fcd7f4f)"
+    },
+    {
+      "path": "../../cbm_bench_cactus_match_big2.csv",
+      "role": "snapshot",
+      "snapshot": "@big2",
+      "note": "warehouse и Berlin (e9cc18b)"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

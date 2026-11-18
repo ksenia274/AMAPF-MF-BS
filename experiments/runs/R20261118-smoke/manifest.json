@@ -1,0 +1,115 @@
+{
+  "run_id": "R20261118-smoke",
+  "script": "cbm_bench_cactus.py",
+  "note": "проверка скрипта прогона (8 запусков cbm), этап C0",
+  "started": "2026-11-18T13:46:28",
+  "finished": "2026-11-18T13:46:31",
+  "commit": "4d51136",
+  "dirty": true,
+  "machine": {
+    "node": "HOME-PC",
+    "os": "Windows-10-10.0.19045-SP0",
+    "cpu": "Intel64 Family 6 Model 140 Stepping 2, GenuineIntel",
+    "cpus": 4,
+    "python": "3.12.3",
+    "ram_mb": 16086
+  },
+  "params": {
+    "maps": [
+      "empty-32-32"
+    ],
+    "scens": "1-1",
+    "N": {
+      "empty-32-32": [
+        20,
+        40,
+        60,
+        80
+      ]
+    },
+    "teams": "size:5",
+    "time_limit": 60.0,
+    "mem_limit": 8000,
+    "variants": [
+      "bscut",
+      "floww"
+    ],
+    "low_args": {
+      "bscut": [
+        "--low",
+        "bscut",
+        "--cut",
+        "penal"
+      ],
+      "floww": [
+        "--low",
+        "floww"
+      ]
+    },
+    "t_start": "match",
+    "stopping_rule": "within a scen, after a failure the larger N are timeout_skipped"
+  },
+  "files": [
+    {
+      "path": "results.csv",
+      "role": "results"
+    },
+    {
+      "path": "run.log",
+      "role": "log"
+    }
+  ],
+  "sessions": [
+    {
+      "started": "2026-11-18T13:46:28",
+      "commit": "4d51136",
+      "dirty": true,
+      "dirty_files": [
+        "experiments/cbm_bench_cactus.py",
+        "experiments/figures/make_cactus.py",
+        "experiments/week6_part1.py"
+      ],
+      "argv": [
+        "--name",
+        "smoke",
+        "--maps",
+        "empty-32-32",
+        "--scens",
+        "1-1",
+        "--variants",
+        "bscut,floww",
+        "--t-start",
+        "match",
+        "--note",
+        "проверка скрипта прогона (8 запусков cbm), этап C0"
+      ],
+      "exe_sha256": "85f739d2b3c3590c",
+      "finished": "2026-11-18T13:46:31"
+    },
+    {
+      "started": "2026-11-18T13:46:31",
+      "commit": "4d51136",
+      "dirty": true,
+      "dirty_files": [
+        "experiments/cbm_bench_cactus.py",
+        "experiments/figures/make_cactus.py",
+        "experiments/week6_part1.py"
+      ],
+      "argv": [
+        "--run-id",
+        "R20261118-smoke",
+        "--resume",
+        "--maps",
+        "empty-32-32",
+        "--scens",
+        "1-1",
+        "--variants",
+        "bscut,floww",
+        "--t-start",
+        "match"
+      ],
+      "exe_sha256": "85f739d2b3c3590c",
+      "finished": "2026-11-18T13:46:31"
+    }
+  ]
+}

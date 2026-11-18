@@ -1,0 +1,31 @@
+{
+  "run_id": "R20261110-hard16",
+  "legacy": true,
+  "script": "archive/small_maps_cut.py",
+  "note": "16 трудных задач малых карт (из small_maps_diag.csv): bspen, bscut penal / all, floww; журнал 5.2а этап 3",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "commits_with_results": [
+    "a19578a"
+  ],
+  "params": {
+    "summary": "16 задач из small_maps_diag.csv: room-32-32-4, maze-32-32-2, room-64-64-8; N 40, 64, 128; команды g5 (по 5) и k4 (4 команды); cbm --diag; лимит 60 с, 8000 МБ; варианты bspen, bscut (penal), bscut_all, floww; старт T lb",
+    "time_limit": 60.0,
+    "mem_limit": 8000,
+    "t_start": "lb",
+    "teams": "size:5"
+  },
+  "files": [
+    {
+      "path": "../../small_maps_cut.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

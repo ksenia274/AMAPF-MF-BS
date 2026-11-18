@@ -1,0 +1,9 @@
+run_id,map,group,N,K,scen,variant,status,T,nodes_generated,nodes_expanded,lowlevel_calls,lowlevel_ms,total_ms,root_conflict_pairs,pruned_unreachable,replan_ms_median,peak_mb,last_key,valid,exit,wall_s
+R20261118-smoke,empty-32-32,small,20,4,1,bscut,solved,25,1,0,4,7,7,0,0,2.139,3.9,-1,1,0,0.0
+R20261118-smoke,empty-32-32,small,20,4,1,floww,solved,25,3,1,6,124,127,1,0,24.908,7.9,25,1,0,0.1
+R20261118-smoke,empty-32-32,small,40,8,1,bscut,solved,28,3,1,10,21,22,1,0,2.124,4.0,28,1,0,0.0
+R20261118-smoke,empty-32-32,small,40,8,1,floww,solved,28,5,2,12,353,354,4,0,37.582,10.0,28,1,0,0.4
+R20261118-smoke,empty-32-32,small,60,12,1,bscut,solved,28,7,3,18,53,55,4,0,2.925,4.4,28,1,0,0.1
+R20261118-smoke,empty-32-32,small,60,12,1,floww,solved,28,7,3,18,465,467,5,0,30.206,10.1,28,1,0,0.5
+R20261118-smoke,empty-32-32,small,80,16,1,bscut,solved,28,9,4,24,78,81,6,0,3.111,4.5,28,1,0,0.1
+R20261118-smoke,empty-32-32,small,80,16,1,floww,solved,28,11,5,26,720,723,8,0,30.348,10.2,28,1,0,0.7

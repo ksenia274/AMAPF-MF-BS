@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """CBM on MovingAI maps for cactus plots: teams of 5, random scen 1..10, low levels bs, bspen, bscut, flow, floww.
 
-Usage: cbm_bench_cactus.py OUT.csv [--resume] [--scens 1-10] [--time-limit 60] [--mem-limit 8000]
-                           [--maps M1,M2,..] [--variants V1,V2,..] [--t-start lb|1|match]
-       cbm_bench_cactus.py OUT.csv --summary     (markdown table; makespan check over the variants; solved by one
+Usage: cbm_bench_cactus.py (--name NAME | --run-id R<YYYYMMDD>-<name>) [--note TEXT] [--resume] [--scens 1-10]
+                           [--time-limit 60] [--mem-limit 8000] [--maps M1,M2,..] [--variants V1,V2,..]
+                           [--t-start lb|1|match]
+       cbm_bench_cactus.py --summary CSV        (markdown table; makespan check over the variants; solved by one
                                                   of floww / bspen and not by bscut and vice versa)
+The run ID is R<today>-NAME unless --run-id is given; output in runs/<ID>/ (manifest.json, results.csv with a
+run_id column, run.log), see runlib.py. --resume needs --run-id and the same parameters.
 Instance: random scen s of the map, the first N agents, K = ceil(N/5) teams of consecutive agents (as cbm_bench g5).
 Stopping rule of the Bulk Search paper: within a scen N grows; once a variant does not solve an instance, the larger
 N of that scen are not run for it and are written as timeout_skipped. T starts from the lower bound (the default).
 Runs are sequential; every solution is checked by validate.py --teams K; the CSV is flushed after every run.
---resume: keeps the rows of OUT.csv and runs only the missing ones (rows with status error, i.e. cbm printed
+--resume: keeps the rows of results.csv and runs only the missing ones (rows with status error, i.e. cbm printed
 nothing, are run again).
 bscut = --low bscut --cut penal.
 """
@@ -21,6 +24,7 @@ import sys
 import tempfile
 import time
 
+import runlib
 from cbm_bench import field, map_and_scen
 from cbm_paper_exp1 import grouped_scen
 
@@ -32,7 +36,8 @@ VARIANTS = ["bs", "bspen", "bscut", "flow", "floww"]
 LOW_ARGS = {"bscut": ["--low", "bscut", "--cut", "penal"]}
 OUT_FIELDS = ["status", "T", "nodes_generated", "nodes_expanded", "lowlevel_calls", "lowlevel_ms", "total_ms",
               "root_conflict_pairs", "pruned_unreachable", "replan_ms_median", "peak_mb", "last_key"]
-FIELDS = ["map", "group", "N", "K", "scen", "variant"] + OUT_FIELDS + ["valid", "exit", "wall_s"]
+FIELDS = ["run_id", "map", "group", "N", "K", "scen", "variant"] + OUT_FIELDS + ["valid", "exit", "wall_s"]
+TEAM_SIZE = 5
 
 
 def ns_of(name):
@@ -41,16 +46,26 @@ def ns_of(name):
     return NS["32"] if "-32-32" in name else NS["64"]
 
 
+def params_of(args):
+    maps = args.maps.split(",")
+    return {"maps": maps, "scens": args.scens, "N": {m: ns_of(m) for m in maps}, "teams": f"size:{TEAM_SIZE}",
+            "time_limit": float(args.time_limit), "mem_limit": int(args.mem_limit), "variants": args.variants.split(","),
+            "low_args": {v: LOW_ARGS.get(v, ["--low", v]) for v in args.variants.split(",")}, "t_start": args.t_start,
+            "stopping_rule": "within a scen, after a failure the larger N are timeout_skipped"}
+
+
 def run(args):
-    out_csv = args.out_csv
     opt = {"--" + k.replace("_", "-"): v for k, v in vars(args).items()}
     lo, hi = map(int, opt["--scens"].split("-"))
+    exe = os.path.join(HERE, "cbm.exe")
+    rid = runlib.make_id(args.name, args.run_id)
+    rn = runlib.Run(rid, "cbm_bench_cactus.py", params_of(args), args.resume, args.note, exe)
+    out_csv = rn.csv_path
     kept = []
-    if opt.get("--resume") and os.path.exists(out_csv):
+    if args.resume and os.path.exists(out_csv):
         with open(out_csv) as f:
             kept = [r for r in csv.DictReader(f) if r["status"] not in ("", "error")]
     done = {(r["map"], r["N"], r["scen"], r["variant"]): r["status"] for r in kept}
-    exe = os.path.join(HERE, "cbm.exe")
     tmp = tempfile.mkdtemp()
     limit = float(opt["--time-limit"])
     with open(out_csv, "w", newline="") as f:
@@ -72,7 +87,7 @@ def run(args):
                             if done[key] != "solved":
                                 failed.add(variant)
                             continue
-                        row = {"map": name, "group": group, "N": n, "K": k, "scen": s, "variant": variant, "valid": ""}
+                        row = {"run_id": rid, "map": name, "group": group, "N": n, "K": k, "scen": s, "variant": variant, "valid": ""}
                         ts = ""  # the --t-start actually passed to cbm, for the log
                         if variant in failed:
                             row.update({"status": "timeout_skipped", "T": -1})
@@ -103,8 +118,9 @@ def run(args):
                             failed.add(variant)
                         w.writerow(row)
                         f.flush()
-                        print(name, n, s, variant, row["status"], row["T"], row.get("total_ms", ""),
-                              "valid=" + str(row["valid"]), ts, flush=True)
+                        rn.log(name, n, s, variant, row["status"], row["T"], row.get("total_ms", ""),
+                               "valid=" + str(row["valid"]), ts)
+    rn.finish()
 
 
 def summary(path):
@@ -151,8 +167,10 @@ def summary(path):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="CBM cactus benchmark (see the module docstring)")
-    ap.add_argument("out_csv")
-    ap.add_argument("--summary", action="store_true", help="print the table of OUT_CSV instead of running")
+    ap.add_argument("--summary", metavar="CSV", help="print the table of CSV instead of running")
+    ap.add_argument("--name", help="run ID = R<today>-NAME")
+    ap.add_argument("--run-id")
+    ap.add_argument("--note", default="", help="one line for runs/REGISTRY.md")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--scens", default="1-10")
     ap.add_argument("--time-limit", default="60")
@@ -165,6 +183,10 @@ if __name__ == "__main__":
     if unknown:
         ap.error(f"unknown maps: {sorted(unknown)}")
     if a.summary:
-        summary(a.out_csv)
+        summary(a.summary)
+    elif not (a.name or a.run_id):
+        ap.error("--name or --run-id is needed")
+    elif a.resume and not a.run_id:
+        ap.error("--resume needs --run-id")
     else:
         run(a)

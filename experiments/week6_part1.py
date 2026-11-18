@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Week 6, part 1: from cbm_bench_cactus.csv and small_maps_cut.csv only (no runs).
 
-Usage: week6_part1.py            (prints the markdown tables, writes figures/week6_time_bscut_floww.png/.pdf)
-       week6_part1.py --stage-b [NEW.csv] [--suffix S]
+Usage: week6_part1.py            (prints the markdown tables, writes figures/<ID>__time_bscut_floww.png/.pdf)
+       week6_part1.py --stage-b [NEW.csv]
            stage B: NEW.csv (default cbm_bench_cactus_match.csv, --t-start match) against cbm_bench_cactus.csv (lb)
-           on the maps present in NEW.csv; writes figures/week6_time_bscut_floww<S>.png/.pdf (S defaults to _match)
+           on the maps present in NEW.csv; writes figures/<ID>__time_bscut_floww.png/.pdf
+ID: the run of the CSV (runlib.run_meta); a small grey line under the figure: ID, maps, limit, teams, start T.
 1.1 small maps: instances solved by both bscut and floww, total_ms of both.
 1.2 large maps: per map and variant solved / timeout in the root (root_conflict_pairs = -1) / timeout in the CT /
     timeout_skipped (not run).
@@ -15,6 +16,9 @@ import csv
 import os
 import statistics
 import sys
+import textwrap
+
+import runlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SMALL = ["empty-32-32", "random-32-32-10", "room-32-32-4", "maze-32-32-2", "random-64-64-10", "room-64-64-8"]
@@ -27,7 +31,8 @@ def load(name):
         return list(csv.DictReader(f))
 
 
-def part11(rows, fig_name="week6_time_bscut_floww"):
+def part11(rows, run):
+    """run = (ID, manifest) of the CSV of rows: the figure is figures/<ID>__time_bscut_floww.png/.pdf"""
     by = {(r["map"], r["N"], r["scen"], r["variant"]): r for r in rows}
     pairs = []
     for (m, n, s, v), r in by.items():
@@ -55,10 +60,10 @@ def part11(rows, fig_name="week6_time_bscut_floww"):
     print("\nbscut slower than floww:", ", ".join(f"{m} N{n} s{s} ({b:.0f} vs {f:.0f} ms)" for m, n, s, b, f in slower))
     # ms of the run is rounded to whole ms, so ratios of tiny runs are coarse
     print("instances with bscut total_ms < 10:", sum(p[3] < 10 for p in pairs))
-    plot(pairs, fig_name)
+    plot(pairs, run)
 
 
-def plot(pairs, fig_name):
+def plot(pairs, run):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -85,8 +90,10 @@ def plot(pairs, fig_name):
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     fig.tight_layout()
+    cap = runlib.caption(run[0], run[1], [m for m in SMALL if any(p[0] == m for p in pairs)])
+    fig.text(0.02, -0.01, "\n".join(textwrap.wrap(cap, 85)), ha="left", va="top", fontsize=8, color="#777777")
     for ext in ("png", "pdf"):
-        fig.savefig(os.path.join(HERE, "figures", f"{fig_name}.{ext}"), dpi=150)
+        fig.savefig(os.path.join(HERE, "figures", f"{run[0]}__time_bscut_floww.{ext}"), dpi=150, bbox_inches="tight")
 
 
 def part12(rows, maps=LARGE):
@@ -162,9 +169,10 @@ def solved_by(rows):
     return out
 
 
-def stage_b(new_name="cbm_bench_cactus_match.csv", suffix="_match"):
+def stage_b(new_name="cbm_bench_cactus_match.csv"):
     """Only the maps present in new_name are compared; the old (lb) rows are cut to the same maps."""
     new = load(new_name)
+    run = runlib.run_meta(os.path.join(HERE, new_name))
     maps = [m for m in SMALL + LARGE if any(r["map"] == m for r in new)]
     large = [m for m in LARGE if m in maps]
     old = [r for r in load("cbm_bench_cactus.csv") if r["map"] in maps]
@@ -221,7 +229,7 @@ def stage_b(new_name="cbm_bench_cactus_match.csv", suffix="_match"):
               f"not valid {sum(r['valid'] != '1' for r in sol)}")
 
     print("\n### B.5 small maps, bscut vs floww (as 1.1), match\n")
-    part11(new, "week6_time_bscut_floww" + suffix)
+    part11(new, run)
 
     print("\n### B.6 large maps, bscut vs bspen, total_ms on instances solved by both, match\n")
     if not large:
@@ -247,15 +255,10 @@ def stage_b(new_name="cbm_bench_cactus_match.csv", suffix="_match"):
 def main():
     if "--stage-b" in sys.argv:
         args = sys.argv[sys.argv.index("--stage-b") + 1:]
-        suffix = "_match"
-        if "--suffix" in args:
-            i = args.index("--suffix")
-            suffix = args[i + 1]
-            del args[i:i + 2]
-        stage_b(args[0] if args else "cbm_bench_cactus_match.csv", suffix)
+        stage_b(args[0] if args else "cbm_bench_cactus_match.csv")
         return
     rows = load("cbm_bench_cactus.csv")
-    part11(rows)
+    part11(rows, runlib.run_meta(os.path.join(HERE, "cbm_bench_cactus.csv")))
     part12(rows)
     part13(rows, load("small_maps_cut.csv"))
 

@@ -1,0 +1,8 @@
+empty-32-32 20 1 bscut solved 25 7 valid=1 t-start=match
+empty-32-32 20 1 floww solved 25 127 valid=1 t-start=match
+empty-32-32 40 1 bscut solved 28 22 valid=1 t-start=match
+empty-32-32 40 1 floww solved 28 354 valid=1 t-start=match
+empty-32-32 60 1 bscut solved 28 55 valid=1 t-start=match
+empty-32-32 60 1 floww solved 28 467 valid=1 t-start=match
+empty-32-32 80 1 bscut solved 28 81 valid=1 t-start=match
+empty-32-32 80 1 floww solved 28 723 valid=1 t-start=match

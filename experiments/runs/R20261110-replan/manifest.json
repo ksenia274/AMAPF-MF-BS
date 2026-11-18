@@ -1,0 +1,31 @@
+{
+  "run_id": "R20261110-replan",
+  "legacy": true,
+  "script": "archive/replan_cut.py",
+  "note": "цена одного вызова нижнего уровня в корне (cbm --root-only first/last); журнал 5.2а этап 4, часть 1",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "commits_with_results": [
+    "402724d"
+  ],
+  "params": {
+    "summary": "Berlin_1_256, warehouse-10-20-10-2-1, room-64-64-8; N 128, сценарий 1, команды по 5 (K = 26); --root-only first / last; bs, bspen, bscut (penal); медиана 3 повторов; лимит 600 с, 8000 МБ; старт T lb",
+    "time_limit": 600.0,
+    "mem_limit": 8000,
+    "t_start": "lb",
+    "teams": "size:5"
+  },
+  "files": [
+    {
+      "path": "../../replan_cut.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}
