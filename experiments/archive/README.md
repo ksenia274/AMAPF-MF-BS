@@ -15,6 +15,7 @@ read and write there: run them from `experiments/`, e.g. `python archive/replan_
 | `week6_part2.py` | rdtsc profile of the root (`cbm_prof.exe`), assignment bound | `week6_prof/`, `week6_root_teams.csv`, `week6_root_T.csv`, `week6_part2_report.txt` | `small_maps_diag.md`, Неделя 6, часть 2 |
 | `week6_match.py` | stage A: `--t-start match` against `lb` | `week6_match_hard.csv`, `week6_match_root.csv` | `small_maps_diag.md`, Этап A |
 | `week6_stage_b_big2.py` | stage B on warehouse and Berlin, before the run ended (R20261117-big-match@big2) | `week6_stage_b_big2.md`, `cbm_bench_cactus_match_big2.csv` | report of 2026-11-17 |
+| `flag_noconstr.py` | week 7, C1: blockedToMove without constraints, bs / bspen / bscut against brute force (needs an `audit_build.py` build) | — | `week7_c1_audit.md`, section 5 |
 | `make_colored_yaml.py` | instance for CBS-TA (libMultiRobotPlanning), comparison of 2026-10-20 | — | — |
 
 `small_maps_cut.py`, `small_maps_entries.py` and `small_maps_root.py` import `small_maps_diag.py`, and

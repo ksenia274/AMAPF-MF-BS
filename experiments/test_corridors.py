@@ -256,7 +256,7 @@ def main():
     for low, st in stats.items():
         print(f"  {low}: runs {st['runs']}, solvable {st['solvable']}, mismatches {st['bad']}"
               + (f", node limit {st['limit']}" if a.mode == "cbm" else "")
-              + (f", late_first {st['late_first']}, flag_prune {st['flag_prune']}" if "late_first" in st else ""))
+              + "".join(f", {key} {v}" for key, v in st.items() if key not in ("runs", "solvable", "bad", "limit")))
     sys.exit(1 if bad else 0)
 
 

@@ -20,8 +20,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATCHES = [
     ("#pragma once\n",
      "#pragma once\n#include <cstdio>\n"
-     "struct AuditCounters\n{\n    long long lateFirst = 0, flagPrune = 0;\n"
-     "    ~AuditCounters() { fprintf(stderr, \"audit late_first=%lld flag_prune=%lld\\n\", lateFirst, flagPrune); }\n};\n"
+     "struct AuditCounters\n{\n    long long lateFirst = 0, flagPrune = 0, flagPush[2] = {}, flagCancel[2] = {}, flagExpand[2] = {};\n"
+     "    ~AuditCounters()\n    {\n"
+     "        fprintf(stderr, \"audit late_first=%lld flag_prune=%lld flag_push_impl=%lld flag_push_expl=%lld \"\n"
+     "                \"flag_cancel_impl=%lld flag_cancel_expl=%lld flag_expand_impl=%lld flag_expand_expl=%lld\\n\",\n"
+     "                lateFirst, flagPrune, flagPush[0], flagPush[1], flagCancel[0], flagCancel[1], flagExpand[0], flagExpand[1]);\n"
+     "    }\n};\n"
      "inline AuditCounters auditCounters;\n"),
     # pop: the entry is dropped
     ("            if (itrt->timeStep > prevBlock)\n            {\n                return make_pair(false, Interval());\n",
@@ -39,6 +43,16 @@ PATCHES = [
      "                if (itrt->blockedToMove && !timeStepCostPair.blockedToMove)\n"
      "                    ++auditCounters.flagPrune;\n"
      "                return false;\n"),
+    # flagged nodes: pushed (by the source of the flag), expanded; split by explicitGoalWaits
+    ("    void push(TimestepCostPair p, int parent, int cellID, int pen = 0) { q.push(",
+     "    void push(TimestepCostPair p, int parent, int cellID, int pen = 0) {\n"
+     "        if (p.blockedToMove) ++auditCounters.flagPush[explicitGoalWaits];\n        q.push("),
+    ("                timeStepsWithMoveBlocked.push_back(make_pair(it.h - 1, it.h - 1 >= timeAssigningGoalCell[cellDestination]));\n",
+     "                timeStepsWithMoveBlocked.push_back(make_pair(it.h - 1, it.h - 1 >= timeAssigningGoalCell[cellDestination]));\n"
+     "                if (it.h - 1 >= timeAssigningGoalCell[cellDestination]) ++auditCounters.flagCancel[explicitGoalWaits];\n"),
+    ("                if (tp.timeStepCostPair.blockedToMove)\n                {\n",
+     "                if (tp.timeStepCostPair.blockedToMove)\n                {\n"
+     "                    ++auditCounters.flagExpand[explicitGoalWaits];\n"),
 ]
 
 
