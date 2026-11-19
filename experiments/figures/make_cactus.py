@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Cactus plots of cbm_bench_cactus.py: solved instances by time, one line per low level.
 
-Usage: make_cactus.py BENCH.csv [OUT_DIR]   (OUT_DIR defaults to the folder of this script)
+Usage: make_cactus.py BENCH.csv[,BENCH2.csv,..] [OUT_DIR] [--t-max 60]   (OUT_DIR: the folder of this script)
+  Several CSVs (e.g. stage B and the series that continues it) are drawn as one set of instances; the ID is then
+  <ID1>+<ID2>.. and the caption has one line per run. --t-max: right end of the time axis (the time limit).
   -> <ID>__cactus_<map>.png/.pdf for every map in BENCH.csv, <ID>__cactus_grid_small, <ID>__cactus_grid_large (maps
      in cells; only when every map of the group is in BENCH.csv), <ID>__cactus_small, <ID>__cactus_large (all
      instances of the group; only when the group has a map in BENCH.csv). ID: the run of BENCH.csv (runlib.run_meta,
      from its run_id column or its manifest); under every plot a small grey line: ID, maps, limit, teams, start T.
 Time = total_ms of cbm of the solved runs; times below 0.01 s are drawn at 0.01 s. Every line is labelled at its
-right end with the number of solved instances (no legend); y runs to the number of instances (40 per map, 240 / 160
-for the groups) on every plot.
+right end with the number of solved instances (no legend); y runs to the number of instances (map, N, K, scen) on
+every plot.
 """
 import csv
 import os
@@ -29,9 +31,17 @@ LABELS = {"bs": "Bulk Search", "bspen": "Bulk Search со штрафами", "bs
 COLORS = {"bs": "#6FA0DC", "bspen": "#3B6BA5", "bscut": "#2E8B57", "flow": "#C9822B", "floww": "#B03A5B"}
 SMALL = ["empty-32-32", "random-32-32-10", "room-32-32-4", "maze-32-32-2", "random-64-64-10", "room-64-64-8"]
 LARGE = ["warehouse-10-20-10-2-1", "Berlin_1_256", "Paris_1_256", "Boston_0_256"]
+SMALL_MORE = ["random-32-32-20", "maze-32-32-4", "room-64-64-16", "den312d"]
+LARGE_MORE = ["ost003d", "warehouse-20-40-10-2-1"]
 DASHED = {"bs"}
 T_MIN, T_MAX = 0.01, 60
 TICKS = [0.01, 0.1, 1, 10, 60]
+
+
+def set_t_max(t):
+    global T_MAX, TICKS
+    T_MAX = t
+    TICKS = [x for x in (0.01, 0.1, 1, 10, 100) if x < t * 0.6] + [t]
 
 plt.rcParams.update({"font.size": 11, "axes.titlesize": 12, "axes.labelsize": 11, "xtick.labelsize": 11,
                      "ytick.labelsize": 11, "legend.fontsize": 11})
@@ -43,7 +53,7 @@ def times(rows, variant):
 
 
 def instances(rows):
-    return len({(r["map"], r["N"], r["scen"]) for r in rows})
+    return len({(r["map"], r["N"], r.get("K"), r["scen"]) for r in rows})
 
 
 def style(ax):
@@ -89,7 +99,8 @@ def draw(ax, rows, top, fontsize=11):
 
 def save(fig, out_dir, name, caption=None):
     if caption:
-        fig.text(0.02, -0.02, "\n".join(textwrap.wrap(caption, 120)), ha="left", va="top", fontsize=8,
+        fig.text(0.02, -0.02, "\n".join(w for ln in caption.split("\n") for w in textwrap.wrap(ln, 120)), ha="left",
+                 va="top", fontsize=8,
                  color="#777777")
     for ext in ("png", "pdf"):
         fig.savefig(os.path.join(out_dir, f"{name}.{ext}"), dpi=300, bbox_inches="tight")
@@ -97,10 +108,11 @@ def save(fig, out_dir, name, caption=None):
 
 
 def caption_of(rows, run):
-    """run = (ID, manifest) or None (no caption)"""
+    """run = [(ID, manifest), ..] or None (no caption)"""
     if not run:
         return None
-    return runlib.caption(run[0], run[1], [m for m in SMALL + LARGE if any(r["map"] == m for r in rows)])
+    maps = [m for m in SMALL + LARGE + SMALL_MORE + LARGE_MORE if any(r["map"] == m for r in rows)]
+    return "\n".join(runlib.caption(rid, m, maps) for rid, m in run)
 
 
 def single(rows, title, out_dir, name, run=None):
@@ -116,7 +128,7 @@ def grid(rows, maps, shape, out_dir, name, run=None):
     fig, axes = plt.subplots(*shape, figsize=(7.6 * shape[1], 4.0 * shape[0]))
     for ax, m in zip(axes.flat, maps):
         rs = [r for r in rows if r["map"] == m]
-        draw(ax, rs, 40, fontsize=10)
+        draw(ax, rs, instances(rs), fontsize=10)
         style(ax)
         ax.set_title(m)
     fig.subplots_adjust(left=0.05, right=0.86, wspace=0.75, hspace=0.4)
@@ -124,19 +136,27 @@ def grid(rows, maps, shape, out_dir, name, run=None):
 
 
 def main():
-    path = sys.argv[1]
-    out_dir = sys.argv[2] if len(sys.argv) > 2 else os.path.dirname(os.path.abspath(__file__))
-    run = runlib.run_meta(path)
-    rid = run[0]
-    with open(path) as f:
-        rows = list(csv.DictReader(f))
+    args = sys.argv[1:]
+    if "--t-max" in args:
+        i = args.index("--t-max")
+        set_t_max(float(args[i + 1]))
+        del args[i:i + 2]
+    paths = args[0].split(",")
+    out_dir = args[1] if len(args) > 1 else os.path.dirname(os.path.abspath(__file__))
+    run = [runlib.run_meta(p) for p in paths]
+    rid = "+".join(r[0] for r in run)
+    rows = []
+    for p in paths:
+        with open(p) as f:
+            rows += list(csv.DictReader(f))
     present = {r["map"] for r in rows}
-    for m in SMALL + LARGE:
+    for m in SMALL + LARGE + SMALL_MORE + LARGE_MORE:
         rs = [r for r in rows if r["map"] == m]
         if rs:
             single(rs, m, out_dir, f"{rid}__cactus_{m}", run)
     # a grid only when every map of the group is there; a group plot when at least one is
-    for group, shape, gname, title in ((SMALL, (2, 3), "small", "Малые карты"), (LARGE, (2, 2), "large", "Большие карты")):
+    for group, shape, gname, title in ((SMALL, (2, 3), "small", "Малые карты"), (LARGE, (2, 2), "large", "Большие карты"),
+                                       (SMALL_MORE + LARGE_MORE, (2, 3), "more", "Новые карты")):
         if all(m in present for m in group):
             grid(rows, group, shape, out_dir, f"{rid}__cactus_grid_{gname}", run)
         rs = [r for r in rows if r["map"] in group]
