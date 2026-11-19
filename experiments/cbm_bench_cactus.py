@@ -7,6 +7,8 @@ Usage: cbm_bench_cactus.py (--name NAME | --run-id R<YYYYMMDD>-<name>) [--note T
                            [--continue-from CSV[:V1+V2],..] [--retry-timeouts CSV[:V1+V2],..]
        cbm_bench_cactus.py --summary CSV       (markdown table; makespan check over the variants; solved by one
                                                   of floww / bspen and not by bscut and vice versa)
+       cbm_bench_cactus.py --summary CSV1,CSV2,..  (the rows of several runs together: for the makespan check across
+                                                  runs; the table then counts an instance once per run)
 The run ID is R<today>-NAME unless --run-id is given; output in runs/<ID>/ (manifest.json, results.csv with a
 run_id column, run.log), see runlib.py. --resume needs --run-id and the same parameters.
 Instance: random scen s of the map, the first N agents, K = ceil(N/5) teams of consecutive agents (as cbm_bench g5).
@@ -185,9 +187,11 @@ def run(args):
     rn.finish()
 
 
-def summary(path):
-    with open(path) as f:
-        rows = list(csv.DictReader(f))
+def summary(paths):
+    rows = []
+    for path in paths.split(","):
+        with open(path) as f:
+            rows += list(csv.DictReader(f))
     maps = list(dict.fromkeys(r["map"] for r in rows))
     variants = [v for v in VARIANTS if any(r["variant"] == v for r in rows)]
     print("| map | " + " | ".join(f"solved: {v}" for v in variants) + " | timeout_skipped: " +
@@ -229,7 +233,7 @@ def summary(path):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="CBM cactus benchmark (see the module docstring)")
-    ap.add_argument("--summary", metavar="CSV", help="print the table of CSV instead of running")
+    ap.add_argument("--summary", metavar="CSV[,CSV2,..]", help="print the table of the CSVs instead of running")
     ap.add_argument("--name", help="run ID = R<today>-NAME")
     ap.add_argument("--run-id")
     ap.add_argument("--note", default="", help="one line for runs/REGISTRY.md")

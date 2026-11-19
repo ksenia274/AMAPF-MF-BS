@@ -153,8 +153,50 @@ ID каждой серии назначен заранее и передаётс
   раздел 1 аудита C1. Несовпадение — остановка и разбор;
 - сводка `--summary` после каждой серии.
 
-## Что решить вам
+## Решения (2026-11-19)
 
-1. Брать ли bs в серию B (+3,7 ч)?
-2. Добавлять ли в серию C тайм-ауты серии A?
-3. Можно ли сделать П1-П3: изменения скрипта прогона, печати `cbm.cpp` и рисования, без изменения поиска.
+1. Серия B без bs.
+2. В серию C добавляются первые тайм-ауты серии A, только bspen и bscut.
+3. П1-П3 сделаны: 20b69ce, 2024c1f, 428fb25. Перед ними правка посещённости d33469d (аудит C1, раздел 5); код
+   поиска изменился, но на 40 задачах этапа B `flag_prune` = 0, поэтому этап B берётся как есть.
+
+## Команды запуска
+
+Запускать из `experiments/`, по одной серии, в этом порядке. Перед каждой: в репозитории нет изменённых файлов кода
+(`git status`), `cbm.exe` собран из текущего коммита. Прерванную серию продолжает та же команда с `--resume`.
+
+**A** (около 5,5 ч):
+```
+python cbm_bench_cactus.py --run-id R20261120-c2-agents --note "C2 A: N beyond stage B" --variants bs,bspen,bscut,floww --ns "32:100,120,140,160/64:200,240,280,320/large:320,384,448,512" --continue-from cbm_bench_cactus_match.csv --time-limit 60 --mem-limit 8000 --t-start match
+```
+После: `python cbm_bench_cactus.py --summary runs/R20261120-c2-agents/results.csv`;
+`python figures/make_cactus.py cbm_bench_cactus_match.csv,runs/R20261120-c2-agents/results.csv`;
+`python figures/make_c2.py by-n cbm_bench_cactus_match.csv,runs/R20261120-c2-agents/results.csv`.
+
+**B** (около 3,7 ч):
+```
+python cbm_bench_cactus.py --run-id R20261121-c2-teams --note "C2 B: teams at fixed N" --maps room-32-32-4,maze-32-32-2,room-64-64-8,warehouse-10-20-10-2-1,Berlin_1_256 --variants bspen,bscut,floww --ns "room-32-32-4:60/maze-32-32-2:60/room-64-64-8:120/large:192" --teams 1,2,4,8,16,32 --no-skip --time-limit 60 --mem-limit 8000 --t-start match
+```
+После: `python cbm_bench_cactus.py --summary runs/R20261121-c2-teams/results.csv`;
+`python figures/make_c2.py by-k runs/R20261121-c2-teams/results.csv`.
+
+**C, 300 с** (не больше 3,7 ч плюс тайм-ауты серии A):
+```
+python cbm_bench_cactus.py --run-id R20261122-c2-limit300 --note "C2 C: timeouts at 300 s" --maps maze-32-32-2,room-64-64-8,warehouse-10-20-10-2-1,Berlin_1_256 --variants bspen,bscut,floww --retry-timeouts "cbm_bench_cactus_match.csv,runs/R20261120-c2-agents/results.csv:bspen+bscut" --time-limit 300 --mem-limit 8000 --t-start match
+```
+**C, 600 с** (после 300 с):
+```
+python cbm_bench_cactus.py --run-id R20261122-c2-limit600 --note "C2 C: timeouts at 600 s" --maps maze-32-32-2,room-64-64-8,warehouse-10-20-10-2-1,Berlin_1_256 --variants bspen,bscut,floww --retry-timeouts runs/R20261122-c2-limit300/results.csv --time-limit 600 --mem-limit 8000 --t-start match
+```
+После: `python cbm_bench_cactus.py --summary cbm_bench_cactus_match.csv,runs/R20261120-c2-agents/results.csv,runs/R20261122-c2-limit300/results.csv,runs/R20261122-c2-limit600/results.csv`
+(сверка T с решениями тех же задач за 60 с);
+`python figures/make_cactus.py runs/R20261122-c2-limit300/results.csv,runs/R20261122-c2-limit600/results.csv --t-max 600`;
+`python figures/make_c2.py limit cbm_bench_cactus_match.csv,runs/R20261120-c2-agents/results.csv runs/R20261122-c2-limit300/results.csv runs/R20261122-c2-limit600/results.csv`.
+
+**D** (5-8 ч):
+```
+python cbm_bench_cactus.py --run-id R20261123-c2-maps --note "C2 D: new maps" --maps random-32-32-20,maze-32-32-4,room-64-64-16,den312d,ost003d,warehouse-20-40-10-2-1 --variants bs,bspen,bscut,floww --ns "32:20,40,60,80,100,120,140/64:40,80,120,160,200,240,280/large:64,128,192,256,320,384,448" --time-limit 60 --mem-limit 8000 --t-start match
+```
+После: `python cbm_bench_cactus.py --summary runs/R20261123-c2-maps/results.csv`;
+`python figures/make_cactus.py runs/R20261123-c2-maps/results.csv`;
+`python figures/make_c2.py by-n runs/R20261123-c2-maps/results.csv`.
