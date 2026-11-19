@@ -14,7 +14,8 @@
 // Order of the open list: key, then (as in the CBM paper) fewer teams in conflicts, then the later node.
 // Prints "status=solved|timeout|node_limit|memory T=<makespan> nodes_generated=.. nodes_expanded=.. lowlevel_calls=.. lowlevel_ms=.. highlevel_ms=.. total_ms=..
 // lowlevel_sum_T=.. swaps_fixed=.. lowlevel_expansions=.. (Bulk Search variants) last_key=.. expanded_by_key=k:n,.." (last_key = max key expanded, i.e. the
-// current lower bound at a limit) and root_conflict_pairs, pruned_unreachable, replan_ms_median/p90/max,
+// current lower bound at a limit) and root_conflict_pairs, root_conflicting_teams, root_ms (time until the root is
+// planned and evaluated; -1 with the other root fields if it was not finished), pruned_unreachable, replan_ms_median/p90/max,
 // net_nodes_max/net_edges_max (flow: the network of the final T of a replanning), peak_mb (PeakWorkingSetSize);
 // --diag: a second line with the root key, depth, constraints, repeated constraint sets and the number of free
 // neighbours of the cells of the first 20 conflicts of the root (swap: the smaller of the two cells).
@@ -98,6 +99,8 @@ public:
     bool timedOut = false;
     long long prunedUnreachable = 0; // children dropped by startsStayReachable() without a low-level call
     int rootConflictPairs = -1; // -1: the root was not finished
+    int rootConflictingTeams = -1;
+    double rootMs = -1;
     vector<double> replanMs;
     int netNodesMax = 0, netEdgesMax = 0;
     int penGap = 0;
@@ -137,6 +140,7 @@ public:
     shared_ptr<CTNode> solve(double timeLimitSec, long long maxNodes)
     {
         setDeadline(timeLimitSec);
+        auto solveStart = steady_clock::now();
         auto root = make_shared<CTNode>();
         inRoot = true;
         for (unsigned int team = 0; team < teamAgents.size(); ++team)
@@ -149,6 +153,8 @@ public:
         inRoot = false;
         evaluate(*root);
         rootConflictPairs = conflictPairs(*root);
+        rootConflictingTeams = root->conflictingTeams;
+        rootMs = duration<double, milli>(steady_clock::now() - solveStart).count();
         if (diag)
             rootConflictDegrees = firstConflictDegrees(*root, 20);
         rootKey = root->key;
@@ -978,7 +984,8 @@ void printResult(CBM &cbm, const shared_ptr<CTNode> &result, const string &statu
          << " last_key=" << (cbm.expandedByKey.empty() ? -1 : cbm.expandedByKey.rbegin()->first) << " expanded_by_key=";
     for (auto &kv : cbm.expandedByKey)
         cout << (kv.first == cbm.expandedByKey.begin()->first ? "" : ",") << kv.first << ":" << kv.second;
-    cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " pruned_unreachable=" << cbm.prunedUnreachable
+    cout << fixed << setprecision(3) << " root_conflict_pairs=" << cbm.rootConflictPairs << " root_conflicting_teams=" << cbm.rootConflictingTeams
+         << " root_ms=" << cbm.rootMs << " pruned_unreachable=" << cbm.prunedUnreachable
          << " replan_ms_median=" << quantile(0.5) << " replan_ms_p90=" << quantile(0.9) << " replan_ms_max=" << (ms.empty() ? 0.0 : ms.back())
          << " net_nodes_max=" << cbm.netNodesMax << " net_edges_max=" << cbm.netEdgesMax << setprecision(1) << " peak_mb=" << peakMb() << endl;
 }
