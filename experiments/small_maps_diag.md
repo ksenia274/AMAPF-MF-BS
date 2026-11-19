@@ -768,7 +768,8 @@ lines with the number of solved instances, moved apart vertically (and kept belo
 ## Часть 1. Из готовых данных (без запусков)
 
 `python week6_part1.py`: читает `cbm_bench_cactus.csv` и `small_maps_cut.csv`, печатает таблицы, рисует
-`figures/week6_time_bscut_floww.png/.pdf`.
+`figures/week6_time_bscut_floww.png/.pdf` (удалены в 8e98003; сейчас рисует
+`figures/R20261110-big-lb__time_bscut_floww.png/.pdf` с подписью run ID).
 
 ### 1.1 Малые карты: время bscut и floww на задачах, решённых обоими
 
@@ -786,7 +787,9 @@ lines with the number of solved instances, moved apart vertically (and kept belo
 | room-64-64-8 | 39 | 39 | 0 | 10,4 | 6,9 | 24 | 1808 | 24354 |
 | **все малые** | **236** | **236** | **0** | **6,5** | **1,4** | **24** | **252** | **1205** |
 
-![](figures/week6_time_bscut_floww.png)
+![](figures/R20261110-big-lb__time_bscut_floww.png)
+
+(Картинка из того же CSV с run ID; исходная `week6_time_bscut_floww.png` удалена в 8e98003.)
 
 Каждая точка на графике — одна задача, оси логарифмические. Все 236 точек выше диагонали «одинаково»: floww
 работал дольше на каждой задаче. Большинство точек лежит между линиями «в 1 раз» и «в 10 раз», на картах 64x64 они
