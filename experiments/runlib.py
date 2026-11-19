@@ -144,6 +144,8 @@ def run_meta(csv_path):
 
 def teams_text(teams):
     kind, k = teams.split(":")
+    if kind == "fixed":
+        return f"K = {k.replace(',', ', ')}"
     return f"по {k} (K = ⌈N/{k}⌉)" if kind == "size" else f"{k} команды"
 
 
@@ -182,6 +184,10 @@ def update_registry():
 
 def summary_of(p):
     return (f"карты: {', '.join(p['maps'])}; сценарии {p['scens']}; N: "
-            + "; ".join(f"{','.join(map(str, ns))}" for ns in dict.fromkeys(tuple(v) for v in p["N"].values()))
+            + "; ".join(ns if isinstance(ns, str) else ",".join(map(str, ns))
+                        for ns in dict.fromkeys(v if isinstance(v, str) else tuple(v) for v in p["N"].values()))
             + f"; команды {teams_text(p['teams'])}; лимит {p['time_limit']:g} с, {p['mem_limit']} МБ; "
-            f"варианты {', '.join(p['variants'])}; старт T {p['t_start']}")
+            f"варианты {', '.join(p['variants'])}; старт T {p['t_start']}"
+            + ("; без правила пропуска" if p.get("stopping_rule") == "none" else "")
+            + (f"; продолжение {p['continue_from']}" if p.get("continue_from") else "")
+            + (f"; повтор тайм-аутов {p['retry_timeouts']}" if p.get("retry_timeouts") else ""))

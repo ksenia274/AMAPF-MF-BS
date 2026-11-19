@@ -23,13 +23,13 @@ FIELDS = ["N", "K", "scen", "solved", "T", "valid", "nodes_generated", "nodes_ex
           "lowlevel_ms", "total_ms", "last_key", "expanded_by_key", "exit"]
 
 
-def grouped_scen(path, n, out):
-    """K = ceil(N/5) teams of consecutive agents; team g gets as many agents as cbm's i % K gives it (5, or 4 when
-    5 does not divide N). Returns K."""
+def grouped_scen(path, n, out, k=None):
+    """K = ceil(N/5) (or the given k) teams of consecutive agents; team g gets as many agents as cbm's i % K gives it
+    (5, or 4 when 5 does not divide N). Returns K."""
     with open(path) as f:
         lines = f.read().splitlines()
     rows = iter(lines[1:1 + n])
-    k = -(-n // 5)
+    k = k or -(-n // 5)
     new = [None] * n
     for g in range(k):
         for j in range(g, n, k):
