@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261104-small-tstart",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "?",
+  "note": "сравнение старта T 1 и lb (скрипт не сохранился в репозитории)",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "maze-32-32-2, room-64-64-8; N 40, 64, 128; k4 и g5; старт T 1 и lb",
+    "time_limit": null,
+    "t_start": "1, lb"
+  },
+  "files": [
+    {
+      "path": "../../small_maps_tstart.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

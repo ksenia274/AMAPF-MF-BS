@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261104-small-root",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "archive/small_maps_root.py",
+  "note": "штраф корня по частям",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "16 задач small-diag; только корень (--max-nodes 1), штраф корня по частям; bspen с корнем floww; 600 с",
+    "time_limit": 600,
+    "t_start": "lb (по умолчанию)"
+  },
+  "files": [
+    {
+      "path": "../../small_maps_root.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

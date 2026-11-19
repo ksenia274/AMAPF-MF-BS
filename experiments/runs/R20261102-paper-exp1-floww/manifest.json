@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261102-paper-exp1-floww",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "cbm_paper_exp1.py --low floww",
+  "note": "опыт 1 статьи CBM с floww",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "как paper-exp1, --low floww",
+    "time_limit": 60,
+    "t_start": "1 (minT: lb стал умолчанием в 8e4a4e5, 2026-11-03 22:16)"
+  },
+  "files": [
+    {
+      "path": "../../cbm_paper_exp1_floww.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

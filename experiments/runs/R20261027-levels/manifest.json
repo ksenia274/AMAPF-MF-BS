@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261027-levels",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "?",
+  "note": "диагностика CBM для слайдов (рисунок cbm_levels.png)",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "Berlin_1_256, random-32-32-10, room-64-64-8; N 64-512; K 4, 8; сценарий 1; лимит 60 с",
+    "time_limit": 60,
+    "t_start": "1 (minT: lb стал умолчанием в 8e4a4e5, 2026-11-03 22:16)"
+  },
+  "files": [
+    {
+      "path": "../../figures/cbm_levels.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261116-hard16-match",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "archive/week6_match.py hard",
+  "note": "этап A: --t-start match против lb на 16 трудных задачах",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "16 трудных задач из small_maps_diag.csv; cbm --diag; лимит 60 с, 8000 МБ; match для bs, bspen, bscut, flow, floww; lb для bs и flow (lb остальных: R20261110-hard16)",
+    "time_limit": 60,
+    "t_start": "match, lb"
+  },
+  "files": [
+    {
+      "path": "../../week6_match_hard.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

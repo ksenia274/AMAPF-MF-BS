@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261103-paper-exp1-bspen",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "cbm_paper_exp1.py --low bspen",
+  "note": "опыт 1 статьи CBM с bspen",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "как paper-exp1, --low bspen",
+    "time_limit": 60,
+    "t_start": "1 (minT: lb стал умолчанием в 8e4a4e5, 2026-11-03 22:16)"
+  },
+  "files": [
+    {
+      "path": "../../cbm_paper_exp1_bspen.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

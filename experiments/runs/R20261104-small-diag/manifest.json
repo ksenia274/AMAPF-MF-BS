@@ -1,0 +1,31 @@
+{
+  "run_id": "R20261104-small-diag",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "archive/small_maps_diag.py",
+  "note": "почему bspen решает меньше floww: разбор 16 задач",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "16 задач малых карт: решены floww и не решены bspen (из cbm_bench_5_1.csv) и 10 решённых обоими; bspen --diag 600 с, --pen-gap 60 с, floww только корень",
+    "time_limit": 600,
+    "t_start": "lb (по умолчанию)"
+  },
+  "files": [
+    {
+      "path": "../../small_maps_diag.csv",
+      "role": "results"
+    },
+    {
+      "path": "../../small_maps_diag.log",
+      "role": "log"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

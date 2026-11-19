@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261104-cactus-tstart1",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "cbm_bench_cactus.py --t-start 1",
+  "note": "кактус-прогон со стартом T = 1 на двух картах (сравнение с lb)",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "maze-32-32-2, room-32-32-4; сценарии 1-10; N 20-80; команды по 5; bs, bspen; лимит 60 с, 8000 МБ",
+    "time_limit": 60,
+    "t_start": "1"
+  },
+  "files": [
+    {
+      "path": "../../cbm_bench_cactus_tstart1.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

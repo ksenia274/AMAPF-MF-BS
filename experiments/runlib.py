@@ -157,9 +157,14 @@ def update_registry():
     rows = []
     for m in manifests():
         p = m["params"]
-        files = ", ".join(f"`{fl['path'].replace('../../', '')}`" + (f" ({fl['snapshot']})" if "snapshot" in fl else "")
-                          for fl in m["files"])
+        files = ", ".join(f"`{os.path.normpath(os.path.join('runs', m['run_id'], fl['path'])).replace(os.sep, '/')}`"
+                          + (f" ({fl['snapshot']})" if "snapshot" in fl else "") for fl in m["files"])
         state = "legacy" if m.get("legacy") else ("done" if m["finished"] else "not finished")
+        if m.get("id_assigned"):
+            state += ", ID по дате файла"
+        par = p.get("summary") or summary_of(p)
+        if p.get("summary") and p.get("t_start") and "старт T" not in par:
+            par += f"; старт T {p['t_start']}"
         commit = m["commit"] or "?"
         if m.get("commits_with_results"):
             commit += "; результаты: " + ", ".join(m["commits_with_results"])
@@ -167,7 +172,7 @@ def update_registry():
             commit += " + changes"
         rows.append(f"| {m['run_id']} | {state} | {(m['started'] or '?')[:16].replace('T', ' ')} | "
                     f"{(m['finished'] or '?')[:16].replace('T', ' ')} | `{m['script']}` | {commit} | "
-                    f"{p.get('summary') or summary_of(p)} | {files} | {m.get('note', '')} |")
+                    f"{par} | {files} | {m.get('note', '')} |")
     with open(os.path.join(RUNS, "REGISTRY.md"), "w", encoding="utf-8") as f:
         f.write("# Прогоны\n\nФайл создаётся из `runs/*/manifest.json` (`runlib.update_registry`), руками не править.\n"
                 "Пути файлов — от `experiments/`. legacy: прогон до появления ID, его manifest заполнен задним числом.\n\n"

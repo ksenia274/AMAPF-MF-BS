@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261103-replan-scaling-3c",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "archive/replan_scaling.py",
+  "note": "этап 3в: то же после --t-start lb",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "как replan-scaling, плюс корень g5 целиком (Berlin, empty-256-256, N 128, bs); лимит 600 с",
+    "time_limit": 600,
+    "t_start": "1, lb"
+  },
+  "files": [
+    {
+      "path": "../../replan_scaling_3c.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

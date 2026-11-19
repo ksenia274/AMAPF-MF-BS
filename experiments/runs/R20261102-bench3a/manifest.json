@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261102-bench3a",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "cbm_bench.py --stage 3a",
+  "note": "этап 3а: нижние уровни CBM на малых картах",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "6 малых карт; N 20, 40 (32×32), 64, 128 (64×64); сценарии 1-3; команды k4 (4 команды) и g5 (по 5); bs, bs-late, flow, floww; лимит 60 с, 8000 МБ",
+    "time_limit": 60,
+    "t_start": "1 (minT: lb стал умолчанием в 8e4a4e5, 2026-11-03 22:16)"
+  },
+  "files": [
+    {
+      "path": "../../cbm_bench_3a.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

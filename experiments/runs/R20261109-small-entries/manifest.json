@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261109-small-entries",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "archive/small_maps_entries.py",
+  "note": "5.2а этап 1: классы штрафов за вход и ожидание",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "16 задач small-diag; только корень; откуда штрафы за вход у bspen; 600 с",
+    "time_limit": 600,
+    "t_start": "lb (по умолчанию)"
+  },
+  "files": [
+    {
+      "path": "../../small_maps_entries.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}

@@ -1,0 +1,27 @@
+{
+  "run_id": "R20261102-replan-scaling",
+  "legacy": true,
+  "id_assigned": "retroactively from file mtime",
+  "script": "archive/replan_scaling.py (версия этапа 3б)",
+  "note": "этап 3б: время одного вызова нижнего уровня в корне",
+  "started": null,
+  "finished": null,
+  "commit": null,
+  "dirty": null,
+  "params": {
+    "summary": "10 карт; сценарий 1; k4; N 64 (32×32) / 128; --root-only first / last; bs, flow, floww; медиана 3 повторов; лимит 600 с",
+    "time_limit": 600,
+    "t_start": "1 (minT: lb стал умолчанием в 8e4a4e5, 2026-11-03 22:16)"
+  },
+  "files": [
+    {
+      "path": "../../replan_scaling.csv",
+      "role": "results"
+    }
+  ],
+  "machine": {
+    "node": null,
+    "note": "не записано: прогон сделан до появления manifest; вероятно, эта же машина (HOME-PC, i3-1115G4, 4 потока, 16 ГБ)"
+  },
+  "sessions": []
+}
