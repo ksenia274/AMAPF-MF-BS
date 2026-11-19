@@ -244,7 +244,7 @@ public:
 
     // starts and goals are free cell ids of the grid.
     BulkSearchTeam(const Grid &grid, const vector<int> &starts, const vector<int> &goals)
-        : g(grid), n(grid.numCells), startCells(starts), isGoalCell(grid.numCells, 0), edges(n), visitedTimeSTeps(n),
+        : g(grid), n(grid.numCells), startCells(starts), isGoalCell(grid.numCells, 0), edges(n), visitedTimeSTeps(n), visitedBlocked(n),
           blocks(n), timeAssigningGoalCell(n, INF), heuristic(n)
     {
         for (int goal : goals)
@@ -438,6 +438,11 @@ private:
     // The edges will be stored in the 'edges[destination]'.
     vector<set<Edge>> edges;
     vector<set<TimestepCostPair>> visitedTimeSTeps;
+    // Expanded entries with blockedToMove. Rule (A) drops a normal entry only for a normal one, a flagged entry for
+    // either. Rule (B) stops an interval before the next expanded entry of either kind: in the tail of a taken goal
+    // without explicit waits a normal entry is a cancelled wait l-1 of an expanded flagged l, and stopping at l keeps
+    // it at the step l-1 (week7_c1_audit.md, section 5).
+    vector<set<TimestepCostPair>> visitedBlocked;
     // Boundaries of the waiting chains ("bulks"): b in blocks[cell] means the edge (cell, b) -> (cell, b+1) is cut,
     // either because the flow uses it or (for b = 2t) because of a vertex constraint at step t.
     // Going backwards is decided by `edges` and timeAssigningGoalCell, never by blocks.
@@ -549,6 +554,18 @@ private:
         return it == blocks[cell].end() ? INF : *it;
     }
 
+    // Rule (A): an expanded entry of the same bulk at a step in (prevBlock, ts].
+    static bool coveredBy(const set<TimestepCostPair> &visited, int ts, int prevBlock)
+    {
+        auto it = visited.upper_bound(TimestepCostPair(ts));
+        return it != visited.begin() && prev(it)->timeStep > prevBlock;
+    }
+    // Rule (B): the first expanded entry after ts, INF if none.
+    static int nextVisited(const set<TimestepCostPair> &visited, int ts)
+    {
+        auto it = visited.upper_bound(TimestepCostPair(ts));
+        return it == visited.end() ? INF : it->timeStep;
+    }
     pair<bool, Interval> checkTimestepAndGetUnvisitedSafeInterval(TimestepCostPair timeStepCostPair, int cellID)
     {
         int prevBlock = -1, nxtBlock = maxTimestep;
@@ -567,24 +584,14 @@ private:
             nxtBlock = min(nxtBlock, nextSoftCut(cellID, timeStepCostPair.timeStep));
             prevBlock = max(prevBlock, prevSoftCut(cellID, timeStepCostPair.timeStep));
         }
-        int nxtVisitedTimestep = maxTimestep + 1;
-        auto itrt = visitedTimeSTeps[cellID].upper_bound(TimestepCostPair(timeStepCostPair.timeStep));
-        if (itrt != visitedTimeSTeps[cellID].begin())
-        {
-            --itrt;
-            if (itrt->timeStep > prevBlock)
-            {
-                return make_pair(false, Interval());
-            }
-            ++itrt;
-        }
-
-        if (itrt != visitedTimeSTeps[cellID].end() && itrt->timeStep <= nxtBlock)
-        {
-            nxtVisitedTimestep = itrt->timeStep;
-            return {true, Interval(timeStepCostPair.timeStep, nxtVisitedTimestep - 1)};
-        }
-        return {true, Interval(timeStepCostPair.timeStep, nxtBlock)};
+        int ts = timeStepCostPair.timeStep;
+        bool flagged = timeStepCostPair.blockedToMove;
+        if (coveredBy(visitedTimeSTeps[cellID], ts, prevBlock) || (flagged && coveredBy(visitedBlocked[cellID], ts, prevBlock)))
+            return make_pair(false, Interval());
+        int nxtVisitedTimestep = min(nextVisited(visitedTimeSTeps[cellID], ts), nextVisited(visitedBlocked[cellID], ts));
+        if (nxtVisitedTimestep != INF && nxtVisitedTimestep <= nxtBlock)
+            return {true, Interval(ts, nxtVisitedTimestep - 1)};
+        return {true, Interval(ts, nxtBlock)};
     }
     bool checkTimestep(TimestepCostPair timeStepCostPair, int cellID)
     {
@@ -597,16 +604,9 @@ private:
         }
         if (cutMode)
             prevBlock = max(prevBlock, prevSoftCut(cellID, timeStepCostPair.timeStep));
-        auto itrt = visitedTimeSTeps[cellID].upper_bound(TimestepCostPair(timeStepCostPair.timeStep));
-        if (itrt != visitedTimeSTeps[cellID].begin())
-        {
-            --itrt;
-            if (itrt->timeStep > prevBlock)
-            {
-                return false;
-            }
-        }
-        return true;
+        int ts = timeStepCostPair.timeStep;
+        return !coveredBy(visitedTimeSTeps[cellID], ts, prevBlock) &&
+               !(timeStepCostPair.blockedToMove && coveredBy(visitedBlocked[cellID], ts, prevBlock));
     }
     bool isThereAnEdge(int source, int destination, int timeStep)
     {
@@ -907,6 +907,7 @@ private:
             for (int i = 0; i < n; ++i)
             {
                 visitedTimeSTeps[i].clear();
+                visitedBlocked[i].clear();
             }
             PROF_ADD(clear, clearStart);
 #ifdef BS_PROFILE
@@ -941,7 +942,7 @@ private:
                     sinkNodeID = nodeID;
                     break;
                 }
-                visitedTimeSTeps[currentCell].insert(timeStepCostPair);
+                (timeStepCostPair.blockedToMove ? visitedBlocked : visitedTimeSTeps)[currentCell].insert(timeStepCostPair);
                 const vector<int> &nebs = g.nebors[currentCell];
                 Interval currentInterval = res.second;
                 // bscut: waiting across the soft cut that ends the piece

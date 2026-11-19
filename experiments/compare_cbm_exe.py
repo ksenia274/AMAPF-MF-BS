@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Regression: two cbm.exe on the 16 instances of small_maps_diag.csv; every output field except the timings must agree.
+"""Regression: two cbm.exe on the 16 instances of small_maps_diag.csv; every output field of both except the timings
+must agree (a field printed by one exe only is listed, not compared). total_ms of both is printed (OLD runs right
+before NEW on every instance).
 
 Usage: compare_cbm_exe.py OLD_CBM_EXE NEW_CBM_EXE [--low bspen] [--max-nodes 3000] [--t-start lb] [--baseline FILE]
 --baseline: the outputs of OLD are read from FILE (JSON); if FILE does not exist, OLD is run once and FILE is written
@@ -17,14 +19,19 @@ from cbm_paper_exp1 import grouped_scen
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TIMINGS = {"lowlevel_ms", "highlevel_ms", "total_ms", "replan_ms_median", "replan_ms_p90", "replan_ms_max", "pen_share",
-           "peak_mb"}
+           "peak_mb", "root_ms"}
 
 
 def run(exe, mp, scen, r, k, a):
     o = subprocess.run([os.path.abspath(exe), mp, scen, r["N"], str(k), "-", "--low", a.low, "--diag",
                         "--max-nodes", a.max_nodes, "--time-limit", "600", "--t-start", a.t_start],
                        capture_output=True, text=True).stdout
-    return {x: y for x, y in (t.split("=", 1) for t in o.split() if "=" in t) if x not in TIMINGS}
+    return dict(t.split("=", 1) for t in o.split() if "=" in t)
+
+
+def same(old, new):
+    keys = (set(old) & set(new)) - TIMINGS
+    return all(old[x] == new[x] for x in keys)
 
 
 def main():
@@ -41,6 +48,8 @@ def main():
     rows = list(csv.DictReader(open(os.path.join(HERE, "small_maps_diag.csv"))))
     differ = 0
     olds = []
+    only = set()
+    ms = [0, 0]
     for i, r in enumerate(rows):
         mp, src = map_and_scen(r["map"], int(r["scen"]))
         if r["mode"] == "k4":
@@ -51,12 +60,16 @@ def main():
         old = saved[i] if saved else run(a.old, mp, scen, r, k, a)
         olds.append(old)
         new = old if os.path.abspath(a.new) == os.path.abspath(a.old) else run(a.new, mp, scen, r, k, a)
-        differ += old != new
-        print(r["map"], r["N"], r["mode"], r["scen"], "same" if old == new else f"DIFF {[old, new]}",
-              new.get("status"), new.get("nodes_generated"), flush=True)
+        differ += not same(old, new)
+        only |= set(old) ^ set(new)
+        t = [int(old.get("total_ms", 0)), int(new.get("total_ms", 0))]
+        ms = [ms[0] + t[0], ms[1] + t[1]]
+        print(r["map"], r["N"], r["mode"], r["scen"], "same" if same(old, new) else f"DIFF {[old, new]}",
+              new.get("status"), new.get("nodes_generated"), f"total_ms {t[0]} -> {t[1]}", flush=True)
     if a.baseline and not saved:
         json.dump(olds, open(a.baseline, "w"))
-    print(f"{a.low} t-start={a.t_start}: compared={len(rows)} differ={differ}")
+    print(f"{a.low} t-start={a.t_start}: compared={len(rows)} differ={differ} total_ms {ms[0]} -> {ms[1]}"
+          + (f" fields of one exe only: {sorted(only)}" if only else ""))
 
 
 if __name__ == "__main__":
