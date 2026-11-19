@@ -2,13 +2,14 @@
 """Stage B on the two large maps done so far (warehouse-10-20-10-2-1, Berlin_1_256): cbm_bench_cactus_match_big2.csv
 (--t-start match) against cbm_bench_cactus.csv (lb). No runs.
 
-Usage: week6_stage_b_big2.py   (prints markdown; writes figures/cactus_<map>_big2.png/.pdf)
+Usage: archive/week6_stage_b_big2.py (from experiments/)   (prints markdown; writes figures/cactus_<map>_big2.png/.pdf)
 """
 import os
 import statistics
 import sys
 
-from week6_part1 import HERE, VARIANTS, load, solved_by
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # experiments/ (this script is in archive/)
+from week6_part1 import HERE, VARIANTS, load, solved_by  # noqa: E402
 
 sys.path.insert(0, os.path.join(HERE, "figures"))
 import make_cactus  # noqa: E402
