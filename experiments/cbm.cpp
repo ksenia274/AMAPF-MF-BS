@@ -629,6 +629,15 @@ private:
         return result;
     }
 
+    // Upper bound of the search maxT = w*h + k + last (k robots of the team, last = the largest t of its
+    // constraints) never cuts off the minimal T* of a solvable team. A vertex constraint t forbids the cell at step
+    // t, an edge constraint t forbids the move t -> t+1 (addEdgeConstraint), so from step last+1 on nothing is
+    // forbidden. If T* > last+1, the positions of an optimal solution at step last+1 are a solvable unlabeled
+    // problem without constraints (its tail solves it), and by Yu, LaValle, "Multi-agent Path Planning and Network
+    // Flow" (WAFR 2012, arXiv 1204.5717) it has a solution of length <= k + V - 1 (V free cells; per connected
+    // component k_c + V_c - 1, which is not larger). Their model forbids head-on swaps, ours allows them inside a
+    // team, so that solution is valid here. Glued after the first last+1 steps:
+    // T* <= last + 1 + k + V - 1 = last + k + V <= w*h + k + last.
     template <class Solver>
     bool solveTeam(Solver &solver, int team, TeamPlan &plan, int minT)
     {
